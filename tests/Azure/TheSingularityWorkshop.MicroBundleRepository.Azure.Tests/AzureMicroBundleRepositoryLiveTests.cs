@@ -1,1 +1,38 @@
-using System.Security.Cryptography;\nusing TheSingularityWorkshop.MicroBundleRepository.Azure;\nusing TheSingularityWorkshop.MicroBundleRepository.Core;\n\nnamespace TheSingularityWorkshop.MicroBundleRepository.Azure.Tests;\n\npublic sealed class AzureMicroBundleRepositoryLiveTests\n{\n    [Fact]\n    public async Task AzureBlob_RoundTrip_PreservesContentAndIdentity()\n    {\n        var storageAccountUri = Environment.GetEnvironmentVariable("MICROBUNDLE_STORAGE_ACCOUNT_URI");\n        if (string.IsNullOrWhiteSpace(storageAccountUri))\n            return;\n\n        var repository = new AzureMicroBundleRepository(\n            new AzureMicroBundleRepositoryOptions\n            {\n                StorageAccountUri = new Uri(storageAccountUri),\n                ContainerName = Environment.GetEnvironmentVariable("MICROBUNDLE_CONTAINER_NAME") ?? "microbundles"\n            });\n\n        await repository.InitializeAsync();\n\n        var content = System.Text.Encoding.UTF8.GetBytes(\n            $"MicroBundleRepository Azure smoke test {Guid.NewGuid():N}");\n        var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();\n        var address = new MicroBundleArtifactAddress(0x534D4F4B455F415A, "0.1.0-smoke", hash);\n        var artifact = new MicroBundleArtifact(address, content);\n\n        await repository.PutAsync(artifact);\n        var retrieved = await repository.GetAsync(address);\n\n        Assert.NotNull(retrieved);\n        Assert.Equal(address, retrieved!.Address);\n        Assert.Equal(content, retrieved.Content.ToArray());\n    }\n}\n
+using System.Security.Cryptography;
+using TheSingularityWorkshop.MicroBundleRepository.Azure;
+using TheSingularityWorkshop.MicroBundleRepository.Core;
+
+namespace TheSingularityWorkshop.MicroBundleRepository.Azure.Tests;
+
+public sealed class AzureMicroBundleRepositoryLiveTests
+{
+    [Fact]
+    public async Task AzureBlob_RoundTrip_PreservesContentAndIdentity()
+    {
+        var storageAccountUri = Environment.GetEnvironmentVariable("MICROBUNDLE_STORAGE_ACCOUNT_URI");
+        if (string.IsNullOrWhiteSpace(storageAccountUri))
+            return;
+
+        var repository = new AzureMicroBundleRepository(
+            new AzureMicroBundleRepositoryOptions
+            {
+                StorageAccountUri = new Uri(storageAccountUri),
+                ContainerName = Environment.GetEnvironmentVariable("MICROBUNDLE_CONTAINER_NAME") ?? "microbundles"
+            });
+
+        await repository.InitializeAsync();
+
+        var content = System.Text.Encoding.UTF8.GetBytes(
+            $"MicroBundleRepository Azure smoke test {Guid.NewGuid():N}");
+        var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
+        var address = new MicroBundleArtifactAddress(0x534D4F4B455F415AUL, "0.1.0-smoke", hash);
+        var artifact = new MicroBundleArtifact(address, content);
+
+        await repository.PutAsync(artifact);
+        var retrieved = await repository.GetAsync(address);
+
+        Assert.NotNull(retrieved);
+        Assert.Equal(address, retrieved!.Address);
+        Assert.Equal(content, retrieved.Content.ToArray());
+    }
+}
