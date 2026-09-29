@@ -13,6 +13,9 @@ public readonly record struct MicroBundleArtifactAddress
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
         ArgumentException.ThrowIfNullOrWhiteSpace(contentHash);
 
+        if (version.Contains('/') || version.Contains('\\'))
+            throw new ArgumentException("Version must be a single storage-safe path segment.", nameof(version));
+
         if (contentHash.Length != 64 || contentHash.Any(c => !Uri.IsHexDigit(c)))
             throw new ArgumentException("Content hash must be a 64-character hexadecimal SHA-256 value.", nameof(contentHash));
 
