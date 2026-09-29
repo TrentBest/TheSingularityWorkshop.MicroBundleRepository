@@ -105,9 +105,10 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
         if (string.IsNullOrWhiteSpace(options.ContainerName))
             throw new ArgumentException("Container name is required.", nameof(options));
 
-        return new BlobContainerClient(
+        var service = new BlobServiceClient(
             options.StorageAccountUri,
-            options.ContainerName,
             new DefaultAzureCredential());
+
+        return service.GetBlobContainerClient(options.ContainerName);
     }
 }
