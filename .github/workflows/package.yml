@@ -1,1 +1,75 @@
-name: Package\n\non:\n  push:\n    branches:\n      - master\n      - implementation-**\n  pull_request:\n  workflow_dispatch:\n    inputs:\n      publish:\n        description: Publish packages to NuGet.org\n        required: true\n        default: false\n        type: boolean\n\npermissions:\n  contents: read\n\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n      - name: Setup .NET\n        uses: actions/setup-dotnet@v4\n        with:\n          dotnet-version: 8.0.x\n      - name: Restore\n        run: dotnet restore TheSingularityWorkshop.MicroBundleRepository.slnx\n      - name: Build\n        run: dotnet build TheSingularityWorkshop.MicroBundleRepository.slnx --configuration Release --no-restore\n      - name: Test\n        run: dotnet test TheSingularityWorkshop.MicroBundleRepository.slnx --configuration Release --no-build --collect:"XPlat Code Coverage"\n      - name: Pack Core\n        run: dotnet pack src/Core/TheSingularityWorkshop.MicroBundleRepository.Core/TheSingularityWorkshop.MicroBundleRepository.Core.csproj --configuration Release --no-build --output ./artifacts\n      - name: Pack Azure\n        run: dotnet pack src/Azure/TheSingularityWorkshop.MicroBundleRepository.Azure/TheSingularityWorkshop.MicroBundleRepository.Azure.csproj --configuration Release --no-build --output ./artifacts\n      - name: Upload packages\n        uses: actions/upload-artifact@v4\n        with:\n          name: nuget-packages\n          path: ./artifacts/*.nupkg\n\n  publish:\n    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish == true }}\n    needs: verify\n    runs-on: ubuntu-latest\n    permissions:\n      contents: read\n      id-token: write\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n      - name: Setup .NET\n        uses: actions/setup-dotnet@v4\n        with:\n          dotnet-version: 8.0.x\n      - name: Download packages\n        uses: actions/download-artifact@v4\n        with:\n          name: nuget-packages\n          path: ./artifacts\n      - name: Login to NuGet\n        uses: NuGet/login@v1\n        id: nuget-login\n        with:\n          user: TheSingularityWorkshop\n      - name: Publish packages\n        run: dotnet nuget push "./artifacts/*.nupkg" --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate\n
+name: Package
+
+on:
+  push:
+    branches:
+      - master
+      - implementation-**
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish packages to NuGet.org
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Restore
+        run: dotnet restore TheSingularityWorkshop.MicroBundleRepository.slnx
+      - name: Build
+        run: dotnet build TheSingularityWorkshop.MicroBundleRepository.slnx --configuration Release --no-restore
+      - name: Test
+        run: dotnet test TheSingularityWorkshop.MicroBundleRepository.slnx --configuration Release --no-build --collect:"XPlat Code Coverage"
+      - name: Pack Core
+        run: dotnet pack src/Core/TheSingularityWorkshop.MicroBundleRepository.Core/TheSingularityWorkshop.MicroBundleRepository.Core.csproj --configuration Release --no-build --output ./artifacts
+      - name: Pack Azure
+        run: dotnet pack src/Azure/TheSingularityWorkshop.MicroBundleRepository.Azure/TheSingularityWorkshop.MicroBundleRepository.Azure.csproj --configuration Release --no-build --output ./artifacts
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./artifacts/*.nupkg
+
+  publish:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish == true }}
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./artifacts
+      - name: Login to NuGet
+        uses: NuGet/login@v1
+        id: nuget-login
+        with:
+          user: TheSingularityWorkshop
+      - name: Publish packages
+        shell: bash
+        run: |
+          for package in ./artifacts/*.nupkg; do
+            dotnet nuget push "$package" --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+          done
