@@ -61,22 +61,35 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
         var blob = _container.GetBlobClient(GetBlobName(artifact.Address));
 
         using var stream = new MemoryStream(artifact.Content.ToArray(), writable: false);
-        await blob.UploadAsync(
-            stream,
-            new BlobUploadOptions
-            {
-                HttpHeaders = new BlobHttpHeaders
+
+        try
+        {
+            await blob.UploadAsync(
+                stream,
+                new BlobUploadOptions
                 {
-                    ContentType = "application/octet-stream"
+                    HttpHeaders = new BlobHttpHeaders
+                    {
+                        ContentType = "application/octet-stream"
+                    },
+                    Metadata = new Dictionary<string, string>
+                    {
+                        ["bundle-id"] = artifact.Address.BundleId.ToString(),
+                        ["version"] = artifact.Address.Version,
+                        ["content-sha256"] = artifact.Address.ContentHash
+                    },
+                    Conditions = new BlobRequestConditions
+                    {
+                        IfNoneMatch = ETag.All
+                    }
                 },
-                Metadata = new Dictionary<string, string>
-                {
-                    ["bundle-id"] = artifact.Address.BundleId.ToString(),
-                    ["version"] = artifact.Address.Version,
-                    ["content-sha256"] = artifact.Address.ContentHash
-                }
-            },
-            cancellationToken);
+                cancellationToken);
+        }
+        catch (RequestFailedException ex) when (ex.Status == 412)
+        {
+            // Content-addressed writes are immutable. If the exact address already
+            // exists, the repository is already in the requested state.
+        }
     }
 
     internal static string GetBlobName(MicroBundleArtifactAddress address) =>
