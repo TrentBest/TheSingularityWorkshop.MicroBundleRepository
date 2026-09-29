@@ -26,10 +26,10 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
     }
 
     /// <summary>
-    /// Creates the configured container if it does not already exist.
+    /// Creates the configured private container if it does not already exist.
     /// </summary>
     public Task InitializeAsync(CancellationToken cancellationToken = default) =>
-        _container.CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: cancellationToken);
+        _container.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
 
     public async ValueTask<MicroBundleArtifact?> GetAsync(
         MicroBundleArtifactAddress address,
@@ -85,7 +85,9 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
     private static BlobContainerClient CreateContainerClient(AzureMicroBundleRepositoryOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
-        ArgumentNullException.ThrowIfNull(options.StorageAccountUri);
+
+        if (options.StorageAccountUri is null)
+            throw new ArgumentException("Storage account URI is required.", nameof(options));
 
         if (string.IsNullOrWhiteSpace(options.ContainerName))
             throw new ArgumentException("Container name is required.", nameof(options));
