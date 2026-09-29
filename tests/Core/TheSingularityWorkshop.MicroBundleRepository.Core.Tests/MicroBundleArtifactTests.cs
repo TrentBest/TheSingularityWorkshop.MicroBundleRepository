@@ -13,6 +13,15 @@ public sealed class MicroBundleArtifactTests
     }
 
     [Fact]
+    public void Address_rejects_path_separators_in_version()
+    {
+        var hash = new string('0', 64);
+
+        Assert.Throws<ArgumentException>(() =>
+            new MicroBundleArtifactAddress(100, "1.0/0", hash));
+    }
+
+    [Fact]
     public void Artifact_rejects_content_that_does_not_match_address()
     {
         var address = new MicroBundleArtifactAddress(
