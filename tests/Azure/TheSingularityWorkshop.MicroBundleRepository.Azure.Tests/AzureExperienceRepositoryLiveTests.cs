@@ -28,7 +28,7 @@ public sealed class AzureExperienceRepositoryLiveTests
         await repository.InitializeAsync();
 
         var content = Encoding.UTF8.GetBytes(
-            $"""{{"experienceId":3010,"nonce":"{Guid.NewGuid():N}"}}""");
+            """{"experienceId":3010,"nonce":""" + Guid.NewGuid().ToString("N") + """}""");
         var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
         var address = new ExperienceArtifactAddress(3010, "0.1.0-smoke", hash);
         var artifact = new ExperienceArtifact(address, content);
