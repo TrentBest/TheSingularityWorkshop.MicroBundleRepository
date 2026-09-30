@@ -186,14 +186,53 @@ FSM_COS
 Storage can evolve later. The composition contract does not need to know that it was Azure today.
 
 
-## Experience storage
+## Experience publication state
 
-The same repository now provides an IExperienceRepository delivery boundary beside IMicroBundleRepository.
+The Experience artifact repository is immutable. Publication is a separate pointer that identifies which immutable artifact is currently live.
 
-Azure-backed Experience artifacts use immutable content addressing:
+~~~text
+experiences/
+├── artifacts/{experienceId}/{version}/{sha256}.experience
+└── publications/{experienceId}.publication.json
+~~~
 
-experiences/artifacts/{experienceId}/{version}/{sha256}.experience
+The publication lifecycle is:
 
-The storage layer intentionally stores serialized bytes rather than depending on WebPage or a specific Experience implementation. A host can retrieve the verified artifact, deserialize its published Experience definition, and hand its MicroBundle requirements to FSM_COS.
+~~~text
+publish v1
+    ↓
+publication → v1
+    ↓ modify
+publication → v2
+    ↓ unpublish
+no publication
+~~~
 
-Azure remains the durable byte substrate; repository code remains the identity/delivery/integrity boundary.
+`IExperienceCatalog` owns that pointer. Unpublishing removes the pointer; it does not delete the immutable artifact bytes. This keeps artifact identity, publication state, and FSM_COS composition as separate boundaries.
+
+~~~csharp
+public interface IExperienceCatalog
+{
+    ValueTask<ExperiencePublication?> GetPublishedAsync(...);
+    ValueTask PublishAsync(ExperiencePublication publication, ...);
+    ValueTask UnpublishAsync(ulong experienceId, ...);
+}
+~~~
+
+That gives an Experience a durable path from definition to consumption:
+
+~~~text
+Experience definition
+       ↓
+serialize
+       ↓
+immutable artifact
+       ↓
+Azure Blob Storage
+       ↓
+publication pointer
+       ↓
+FSM_COS
+       ↓
+RuntimeAssembly
+~~~
