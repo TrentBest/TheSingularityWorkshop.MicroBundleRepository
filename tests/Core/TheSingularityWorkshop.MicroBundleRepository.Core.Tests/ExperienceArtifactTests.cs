@@ -35,7 +35,7 @@ public sealed class ExperienceArtifactTests
     [Fact]
     public void Artifact_PreservesVerifiedContentAndIdentity()
     {
-        var content = Encoding.UTF8.GetBytes("{"id":3010}");
+        var content = Encoding.UTF8.GetBytes("{\"id\":3010}");
         var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
         var address = new ExperienceArtifactAddress(3010, "1.0.0", hash);
 
