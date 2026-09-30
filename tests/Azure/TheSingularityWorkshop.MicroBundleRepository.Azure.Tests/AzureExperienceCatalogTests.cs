@@ -15,7 +15,10 @@ public sealed class AzureExperienceCatalogTests
     [Fact]
     public void Default_container_name_is_experiences()
     {
-        var options = new AzureExperienceRepositoryOptions();
+        var options = new AzureExperienceRepositoryOptions
+        {
+            StorageAccountUri = new Uri("https://example.blob.core.windows.net")
+        };
 
         Assert.Equal("experiences", options.ContainerName);
     }
