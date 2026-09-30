@@ -184,3 +184,16 @@ FSM_COS
 ~~~
 
 Storage can evolve later. The composition contract does not need to know that it was Azure today.
+
+
+## Experience storage
+
+The same repository now provides an IExperienceRepository delivery boundary beside IMicroBundleRepository.
+
+Azure-backed Experience artifacts use immutable content addressing:
+
+experiences/artifacts/{experienceId}/{version}/{sha256}.experience
+
+The storage layer intentionally stores serialized bytes rather than depending on WebPage or a specific Experience implementation. A host can retrieve the verified artifact, deserialize its published Experience definition, and hand its MicroBundle requirements to FSM_COS.
+
+Azure remains the durable byte substrate; repository code remains the identity/delivery/integrity boundary.
