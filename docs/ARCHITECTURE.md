@@ -69,3 +69,45 @@ Azure Blob Storage does not:
 - become a general-purpose application database
 
 Those concerns belong elsewhere in the architecture.
+
+
+## Experience artifacts
+
+Experiences use the same durable delivery pattern without coupling storage to the WebForge Experience model.
+
+```text
+Published Experience definition
+          |
+          v
+IExperienceRepository
+          |
+          v
+Azure Blob Storage
+          |
+          v
+verified Experience bytes
+          |
+          v
+FSM_COS
+   dependency closure
+   load / arbitration
+   RuntimeAssembly
+```
+
+Experience artifact identity is:
+
+- Experience ID
+- explicit version
+- SHA-256 content identity
+
+The Azure layout is:
+
+```text
+experiences/
+└── artifacts/
+    └── {experienceId}/
+        └── {version}/
+            └── {sha256}.experience
+```
+
+The repository stores opaque serialized bytes. It does not own IExperience, GUI behavior, MicroBundle execution, or composition policy. This keeps published Experience storage usable by WebForge and other hosts.
