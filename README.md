@@ -145,6 +145,10 @@ The repository answers:
 
 > **Given this complete MicroBundle artifact address, where are its bytes and can I verify them?**
 
+For operational observation, the repository host also exposes an artifact inventory. This is deliberately narrower than semantic discovery: it reports stored artifact identity, size, and storage metadata without resolving dependencies or assigning meaning.
+
+The Workshop can manifest repository delivery through explicit **mailboxes**. A mailbox is an intake/delivery surface over a declared destination; the underlying repository still performs deterministic, content-addressed storage.
+
 FSM_COS answers:
 
 > **Given the requested MicroBundles, how do I compose and arbitrate them into a RuntimeAssembly?**
