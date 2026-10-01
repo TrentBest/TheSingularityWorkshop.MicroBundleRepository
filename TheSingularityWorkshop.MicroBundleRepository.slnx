@@ -1,6 +1,7 @@
 <Solution>
   <Project Path="src/Core/TheSingularityWorkshop.MicroBundleRepository.Core/TheSingularityWorkshop.MicroBundleRepository.Core.csproj" />
   <Project Path="src/Azure/TheSingularityWorkshop.MicroBundleRepository.Azure/TheSingularityWorkshop.MicroBundleRepository.Azure.csproj" />
+  <Project Path="src/Local/TheSingularityWorkshop.MicroBundleRepository.Local/TheSingularityWorkshop.MicroBundleRepository.Local.csproj" />
   <Project Path="src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest/TheSingularityWorkshop.MicroBundleRepository.Rest.csproj" />
   <Project Path="src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest.Host/TheSingularityWorkshop.MicroBundleRepository.Rest.Host.csproj" />
   <Project Path="src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli/TheSingularityWorkshop.MicroBundleRepository.Cli.csproj" />
