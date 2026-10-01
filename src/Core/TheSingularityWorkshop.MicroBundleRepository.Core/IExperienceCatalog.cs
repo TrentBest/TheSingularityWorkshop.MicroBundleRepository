@@ -1,10 +1,17 @@
 namespace TheSingularityWorkshop.MicroBundleRepository.Core;
 
+
 /// <summary>
 /// Durable publication state for Experiences.
 /// </summary>
 public interface IExperienceCatalog
 {
+    /// <summary>
+    /// Gets all currently published Experience pointers.
+    /// </summary>
+    ValueTask<IReadOnlyList<ExperiencePublication>> ListPublishedAsync(
+        CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Gets the currently published artifact for an Experience, or null when unpublished.
     /// </summary>
