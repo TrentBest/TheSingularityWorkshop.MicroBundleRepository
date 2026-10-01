@@ -11,12 +11,18 @@ if (!Uri.TryCreate(storageAccountUri, UriKind.Absolute, out var storageUri))
 
 var containerName = builder.Configuration["Repository:ContainerName"] ?? "microbundles";
 
-builder.Services.AddSingleton<IMicroBundleRepository>(_ =>
+builder.Services.AddSingleton<AzureMicroBundleRepository>(_ =>
     new AzureMicroBundleRepository(new AzureMicroBundleRepositoryOptions
     {
         StorageAccountUri = storageUri,
         ContainerName = containerName
     }));
+
+builder.Services.AddSingleton<IMicroBundleRepository>(services =>
+    services.GetRequiredService<AzureMicroBundleRepository>());
+
+builder.Services.AddSingleton<IMicroBundleRepositoryObserver>(services =>
+    services.GetRequiredService<AzureMicroBundleRepository>());
 
 builder.Services.AddCors(options =>
 {
@@ -37,6 +43,23 @@ app.MapGet("/", () => new
 });
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+
+app.MapGet(
+    "/api/microbundles",
+    async (
+        IMicroBundleRepositoryObserver observer,
+        CancellationToken cancellationToken) =>
+    {
+        var observations = await observer.ListAsync(cancellationToken);
+
+        return Results.Ok(observations.Select(observation =>
+            new MicroBundleArtifactObservationDto(
+                observation.Address.BundleId,
+                observation.Address.Version,
+                observation.Address.ContentHash,
+                observation.ContentLength,
+                observation.LastModified)));
+    });
 
 app.MapGet(
     "/api/microbundles/{bundleId}/{version}/{contentHash}",
