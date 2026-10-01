@@ -1,28 +1,43 @@
 using TheSingularityWorkshop.MicroBundleRepository.Azure;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
+using TheSingularityWorkshop.MicroBundleRepository.Local;
 using TheSingularityWorkshop.MicroBundleRepository.Rest;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var storageAccountUri = builder.Configuration["Repository:StorageAccountUri"];
-if (!Uri.TryCreate(storageAccountUri, UriKind.Absolute, out var storageUri))
-    throw new InvalidOperationException(
-        "Repository:StorageAccountUri must be configured with an absolute Azure Storage account URI.");
+var mode = builder.Configuration["Repository:Mode"] ?? "Azure";
 
-var containerName = builder.Configuration["Repository:ContainerName"] ?? "microbundles";
+if (string.Equals(mode, "Local", StringComparison.OrdinalIgnoreCase))
+{
+    var root = builder.Configuration["Repository:LocalRoot"]
+        ?? Path.Combine(builder.Environment.ContentRootPath, "microbundles");
 
-builder.Services.AddSingleton<AzureMicroBundleRepository>(_ =>
-    new AzureMicroBundleRepository(new AzureMicroBundleRepositoryOptions
-    {
-        StorageAccountUri = storageUri,
-        ContainerName = containerName
-    }));
+    var local = new FileSystemMicroBundleRepository(root);
+    builder.Services.AddSingleton<IMicroBundleRepository>(local);
+    builder.Services.AddSingleton<IMicroBundleRepositoryObserver>(local);
+}
+else
+{
+    var storageAccountUri = builder.Configuration["Repository:StorageAccountUri"];
+    if (!Uri.TryCreate(storageAccountUri, UriKind.Absolute, out var storageUri))
+        throw new InvalidOperationException(
+            "Repository:StorageAccountUri must be configured with an absolute Azure Storage account URI.");
 
-builder.Services.AddSingleton<IMicroBundleRepository>(services =>
-    services.GetRequiredService<AzureMicroBundleRepository>());
+    var containerName = builder.Configuration["Repository:ContainerName"] ?? "microbundles";
 
-builder.Services.AddSingleton<IMicroBundleRepositoryObserver>(services =>
-    services.GetRequiredService<AzureMicroBundleRepository>());
+    builder.Services.AddSingleton<AzureMicroBundleRepository>(_ =>
+        new AzureMicroBundleRepository(new AzureMicroBundleRepositoryOptions
+        {
+            StorageAccountUri = storageUri,
+            ContainerName = containerName
+        }));
+
+    builder.Services.AddSingleton<IMicroBundleRepository>(services =>
+        services.GetRequiredService<AzureMicroBundleRepository>());
+
+    builder.Services.AddSingleton<IMicroBundleRepositoryObserver>(services =>
+        services.GetRequiredService<AzureMicroBundleRepository>());
+}
 
 builder.Services.AddCors(options =>
 {
@@ -35,14 +50,20 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 app.UseCors();
 
-app.MapGet("/", () => new
+app.MapGet("/", (IConfiguration configuration) => new
 {
     name = "TheSingularityWorkshop.MicroBundleRepository.Rest",
     role = "microbundle-repository",
-    status = "alpha"
+    status = "alpha",
+    storage = configuration["Repository:Mode"] ?? "Azure"
 });
 
-app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+app.MapGet("/health", (IConfiguration configuration) =>
+    Results.Ok(new
+    {
+        status = "healthy",
+        storage = configuration["Repository:Mode"] ?? "Azure"
+    }));
 
 app.MapGet(
     "/api/microbundles",
