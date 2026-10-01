@@ -70,20 +70,30 @@ src/
 ├── Core/
 │   └── TheSingularityWorkshop.MicroBundleRepository.Core
 │       └── platform-neutral contracts and artifact identity
-└── Azure/
-    └── TheSingularityWorkshop.MicroBundleRepository.Azure
-        └── Azure Blob Storage implementation
+├── Azure/
+│   └── TheSingularityWorkshop.MicroBundleRepository.Azure
+│       └── Azure Blob Storage implementation
+├── REST/
+│   ├── TheSingularityWorkshop.MicroBundleRepository.Rest
+│   │   └── REST delivery adapter
+│   └── TheSingularityWorkshop.MicroBundleRepository.Rest.Host
+│       └── REST API host
+└── CLI/
+    └── TheSingularityWorkshop.MicroBundleRepository.Cli
+        └── platform-neutral human operational client
 
 tests/
 ├── Core/
 │   └── deterministic artifact identity tests
-└── Azure/
-    └── deterministic Azure path/configuration tests
+├── Azure/
+│   └── deterministic Azure path/configuration tests
+└── REST/
+    └── REST boundary tests
 ~~~
 
 ### Core
 
-`TheSingularityWorkshop.MicroBundleRepository.Core` has no Azure dependency.
+`TheSingularityWorkshop.MicroBundleRepository.Core` has no Azure, GUI, or host dependency.
 
 Its central contract is:
 
@@ -105,6 +115,57 @@ public interface IMicroBundleRepository
 `TheSingularityWorkshop.MicroBundleRepository.Azure` uses the Microsoft Azure SDK and `DefaultAzureCredential`.
 
 That means the storage account key does not belong in application configuration or source control. Local development can authenticate through Visual Studio or Azure CLI; Azure-hosted applications can later use managed identity without changing the repository contract.
+
+## Human operation without GUI
+
+The repository now has a deliberately small console client:
+
+~~~text
+CLI
+ |
+ | HTTP
+ v
+Repository REST API
+ |
+ v
+IMicroBundleRepository
+ |
+ v
+Azure Blob Storage
+~~~
+
+The CLI is not a second repository implementation. It is a thin operational surface over the REST boundary, and it has no dependency on WebForge, Blazor, WPF, Unity, FSM_COS, or GUI packages.
+
+Set `MICRO_BUNDLE_REPOSITORY_URL` or pass `--url`:
+
+~~~powershell
+$env:MICRO_BUNDLE_REPOSITORY_URL = "http://localhost:5000/"
+dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- health
+~~~
+
+Inspect the repository:
+
+~~~powershell
+dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- list
+~~~
+
+Publish a local artifact:
+
+~~~powershell
+dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- put 2110 1.0.0 .undle.bin
+~~~
+
+Retrieve a known artifact:
+
+~~~powershell
+dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- get 2110 1.0.0 <sha256> .undle.bin
+~~~
+
+The CLI computes the SHA-256 from the supplied bytes and the existing Core artifact contract verifies the identity before the request is sent. That gives us a simple human-operated path for publishing and inspecting the small MicroBundles that will eventually compose the zeroth ontology:
+
+**The Singularity Workshop.**
+
+A future GUI, Workshop mailbox, or other client can use the same REST boundary without changing the repository contract.
 
 ## Azure configuration
 
@@ -188,7 +249,6 @@ FSM_COS
 ~~~
 
 Storage can evolve later. The composition contract does not need to know that it was Azure today.
-
 
 ## Experience publication state
 
