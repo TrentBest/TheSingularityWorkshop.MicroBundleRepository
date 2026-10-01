@@ -11,5 +11,6 @@
   <ItemGroup>
     <ProjectReference Include="../TheSingularityWorkshop.MicroBundleRepository.Rest/TheSingularityWorkshop.MicroBundleRepository.Rest.csproj" />
     <ProjectReference Include="../../Azure/TheSingularityWorkshop.MicroBundleRepository.Azure/TheSingularityWorkshop.MicroBundleRepository.Azure.csproj" />
+    <ProjectReference Include="../../Local/TheSingularityWorkshop.MicroBundleRepository.Local/TheSingularityWorkshop.MicroBundleRepository.Local.csproj" />
   </ItemGroup>
 </Project>
