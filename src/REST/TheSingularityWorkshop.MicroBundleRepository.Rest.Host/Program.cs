@@ -10,12 +10,27 @@ if (!Uri.TryCreate(storageAccountUri, UriKind.Absolute, out var storageUri))
         "Repository:StorageAccountUri must be configured with an absolute Azure Storage account URI.");
 
 var containerName = builder.Configuration["Repository:ContainerName"] ?? "microbundles";
+var experienceContainerName = builder.Configuration["Repository:ExperienceContainerName"] ?? "experiences";
 
 builder.Services.AddSingleton<IMicroBundleRepository>(_ =>
     new AzureMicroBundleRepository(new AzureMicroBundleRepositoryOptions
     {
         StorageAccountUri = storageUri,
         ContainerName = containerName
+    }));
+
+builder.Services.AddSingleton<IExperienceRepository>(_ =>
+    new AzureExperienceRepository(new AzureExperienceRepositoryOptions
+    {
+        StorageAccountUri = storageUri,
+        ContainerName = experienceContainerName
+    }));
+
+builder.Services.AddSingleton<IExperienceCatalog>(_ =>
+    new AzureExperienceCatalog(new AzureExperienceRepositoryOptions
+    {
+        StorageAccountUri = storageUri,
+        ContainerName = experienceContainerName
     }));
 
 builder.Services.AddCors(options =>
@@ -100,6 +115,72 @@ app.MapPut(
         {
             return Results.BadRequest(new { error = ex.Message });
         }
+    });
+
+app.MapGet(
+    "/api/experiences",
+    async (
+        IExperienceCatalog catalog,
+        CancellationToken cancellationToken) =>
+    {
+        var publications = await catalog.ListPublishedAsync(cancellationToken);
+        return Results.Ok(publications.Select(publication => new
+        {
+            experienceId = publication.ExperienceId,
+            version = publication.Address.Version,
+            contentHash = publication.Address.ContentHash
+        }));
+    });
+
+app.MapGet(
+    "/api/experiences/{experienceId:long}",
+    async (
+        ulong experienceId,
+        IExperienceCatalog catalog,
+        CancellationToken cancellationToken) =>
+    {
+        var publication = await catalog.GetPublishedAsync(experienceId, cancellationToken);
+        if (publication is null)
+            return Results.NotFound();
+
+        return Results.Ok(new
+        {
+            experienceId = publication.ExperienceId,
+            version = publication.Address.Version,
+            contentHash = publication.Address.ContentHash
+        });
+    });
+
+app.MapGet(
+    "/api/experiences/{experienceId:long}/{version}/{contentHash}",
+    async (
+        ulong experienceId,
+        string version,
+        string contentHash,
+        IExperienceRepository repository,
+        CancellationToken cancellationToken) =>
+    {
+        ExperienceArtifactAddress address;
+        try
+        {
+            address = new ExperienceArtifactAddress(experienceId, version, contentHash);
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(new { error = ex.Message });
+        }
+
+        var artifact = await repository.GetAsync(address, cancellationToken);
+        if (artifact is null)
+            return Results.NotFound();
+
+        return Results.Ok(new
+        {
+            experienceId = artifact.Address.ExperienceId,
+            version = artifact.Address.Version,
+            contentHash = artifact.Address.ContentHash,
+            contentBase64 = Convert.ToBase64String(artifact.Content.ToArray())
+        });
     });
 
 app.Run();
