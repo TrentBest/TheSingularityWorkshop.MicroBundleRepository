@@ -41,9 +41,19 @@ public sealed class RestMicroBundleRepositoryObserver : IMicroBundleRepositoryOb
             throw new HttpRequestException(
                 $"MicroBundle Repository inventory request failed with HTTP {response.StatusCode}: {response.Body}");
 
-        return JsonSerializer.Deserialize<List<MicroBundleArtifactObservation>>(
-                   response.Body,
-                   JsonOptions)
-               ?? Array.Empty<MicroBundleArtifactObservation>();
+        var observations = JsonSerializer.Deserialize<List<MicroBundleArtifactObservationDto>>(
+                               response.Body,
+                               JsonOptions)
+                           ?? new List<MicroBundleArtifactObservationDto>();
+
+        return observations
+            .Select(observation => new MicroBundleArtifactObservation(
+                new MicroBundleArtifactAddress(
+                    observation.BundleId,
+                    observation.Version,
+                    observation.ContentHash),
+                observation.ContentLength,
+                observation.LastModified))
+            .ToArray();
     }
 }
