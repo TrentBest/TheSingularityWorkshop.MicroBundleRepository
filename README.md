@@ -186,9 +186,20 @@ FSM_COS
 Storage can evolve later. The composition contract does not need to know that it was Azure today.
 
 
-## Experience publication state
+## Experience discovery and publication state
 
 The Experience artifact repository is immutable. Publication is a separate pointer that identifies which immutable artifact is currently live.
+
+The REST host exposes the first discovery path for hosts such as AnyApp:
+
+```text
+GET /api/experiences
+GET /api/experiences/{experienceId}
+GET /api/experiences/{experienceId}/{version}/{sha256}
+```
+
+The discovery endpoint returns only published artifact identity. It does not deserialize or execute the Experience. The selected artifact bytes remain the host/Experience boundary's responsibility.
+
 
 ~~~text
 experiences/
