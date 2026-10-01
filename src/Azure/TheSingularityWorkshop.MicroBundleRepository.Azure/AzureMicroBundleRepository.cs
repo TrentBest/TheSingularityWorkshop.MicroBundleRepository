@@ -9,7 +9,7 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Azure;
 /// <summary>
 /// Stores MicroBundle artifacts as deterministic Azure block blobs.
 /// </summary>
-public sealed class AzureMicroBundleRepository : IMicroBundleRepository
+public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroBundleRepositoryObserver
 {
     private const string ArtifactPrefix = "artifacts";
 
@@ -50,6 +50,30 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
         {
             return null;
         }
+    }
+
+    public async ValueTask<IReadOnlyList<MicroBundleArtifactObservation>> ListAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var observations = new List<MicroBundleArtifactObservation>();
+
+        await foreach (var blob in _container.GetBlobsAsync(
+                           traits: BlobTraits.Metadata,
+                           prefix: ArtifactPrefix + "/",
+                           cancellationToken: cancellationToken))
+        {
+            if (!TryParseArtifactObservation(blob, out var observation))
+                continue;
+
+            observations.Add(observation);
+        }
+
+        observations.Sort((left, right) =>
+            left.Address.BundleId != right.Address.BundleId
+                ? left.Address.BundleId.CompareTo(right.Address.BundleId)
+                : StringComparer.Ordinal.Compare(left.Address.Version, right.Address.Version));
+
+        return observations;
     }
 
     public async ValueTask PutAsync(
@@ -94,6 +118,44 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
 
     internal static string GetBlobName(MicroBundleArtifactAddress address) =>
         $"{ArtifactPrefix}/{address.BundleId}/{address.Version}/{address.ContentHash}.bundle";
+
+    private static bool TryParseArtifactObservation(
+        BlobItem blob,
+        out MicroBundleArtifactObservation observation)
+    {
+        observation = default!;
+
+        var parts = blob.Name.Split('/');
+        if (parts.Length != 4 ||
+            !string.Equals(parts[0], ArtifactPrefix, StringComparison.Ordinal) ||
+            !parts[3].EndsWith(".bundle", StringComparison.Ordinal))
+            return false;
+
+        var hash = parts[3][..^".bundle".Length];
+
+        try
+        {
+            var address = new MicroBundleArtifactAddress(
+                ulong.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture),
+                parts[2],
+                hash);
+
+            observation = new MicroBundleArtifactObservation(
+                address,
+                blob.Properties.ContentLength ?? 0,
+                blob.Properties.LastModified);
+
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+    }
 
     private static BlobContainerClient CreateContainerClient(AzureMicroBundleRepositoryOptions options)
     {
