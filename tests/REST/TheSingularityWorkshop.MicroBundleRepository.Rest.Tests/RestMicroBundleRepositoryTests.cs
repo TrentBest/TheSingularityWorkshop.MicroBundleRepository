@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text.Json;
 using TheSingularityWorkshop.FSM_REST;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 using TheSingularityWorkshop.MicroBundleRepository.Rest;
@@ -14,6 +15,7 @@ public sealed class RestMicroBundleRepositoryTests
         var content = new byte[] { 1, 2, 3, 5, 8 };
         var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
         var address = new MicroBundleArtifactAddress(42, "1.0.0", hash);
+        var dto = new MicroBundleArtifactDto(42, "1.0.0", hash, Convert.ToBase64String(content));
 
         var transport = new StubTransport(request =>
         {
@@ -26,7 +28,7 @@ public sealed class RestMicroBundleRepositoryTests
                 200,
                 "OK",
                 new Dictionary<string, string>(),
-                $$"""{"bundleId":42,"version":"1.0.0","contentHash":"{{hash}}","contentBase64":"{{Convert.ToBase64String(content)}}"}}""");
+                JsonSerializer.Serialize(dto));
         });
 
         var repository = new RestMicroBundleRepository(
@@ -89,13 +91,14 @@ public sealed class RestMicroBundleRepositoryTests
         var content = new byte[] { 1, 2 };
         var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
         var address = new MicroBundleArtifactAddress(4, "1.0.0", hash);
+        var dto = new MicroBundleArtifactDto(5, "1.0.0", hash, Convert.ToBase64String(content));
 
         var transport = new StubTransport(_ =>
             new RestResponse(
                 200,
                 "OK",
                 new Dictionary<string, string>(),
-                $$"""{"bundleId":5,"version":"1.0.0","contentHash":"{{hash}}","contentBase64":"{{Convert.ToBase64String(content)}}"}}"""));
+                JsonSerializer.Serialize(dto)));
 
         var repository = new RestMicroBundleRepository(
             new Uri("https://repository.test"),
