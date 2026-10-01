@@ -33,6 +33,36 @@ public sealed class AzureExperienceCatalog : IExperienceCatalog
     public Task InitializeAsync(CancellationToken cancellationToken = default) =>
         _container.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
 
+    public async ValueTask<IReadOnlyList<ExperiencePublication>> ListPublishedAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var publications = new List<ExperiencePublication>();
+
+        await foreach (var item in _container.GetBlobsAsync(
+            new GetBlobsOptions { Prefix = PublicationPrefix + "/" },
+            cancellationToken))
+        {
+            if (!item.Name.EndsWith(".publication.json", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var response = await _container
+                .GetBlobClient(item.Name)
+                .DownloadContentAsync(cancellationToken);
+
+            var publication = JsonSerializer.Deserialize<ExperiencePublication>(
+                response.Value.Content.ToString(),
+                JsonOptions);
+
+            if (publication is not null)
+                publications.Add(publication);
+        }
+
+        return publications
+            .OrderBy(publication => publication.ExperienceId)
+            .ThenBy(publication => publication.Address.Version, StringComparer.Ordinal)
+            .ToArray();
+    }
+
     public async ValueTask<ExperiencePublication?> GetPublishedAsync(
         ulong experienceId,
         CancellationToken cancellationToken = default)
