@@ -18,7 +18,12 @@ public sealed class AssemblyMicroBundleArtifactMaterializer : IMicroBundleArtifa
     {
         ArgumentNullException.ThrowIfNull(artifact);
 
-        var assembly = Assembly.Load(artifact.Content.ToArray());
+        var payload = MicroBundleAssemblyPayload.FromBytes(artifact.Content);
+        if (payload.BundleId != artifact.Address.BundleId)
+            throw new InvalidOperationException(
+                $"MicroBundle payload ID {payload.BundleId} does not match artifact ID {artifact.Address.BundleId}.");
+
+        var assembly = Assembly.Load(payload.AssemblyBytes.ToArray());
         var candidates = assembly
             .GetTypes()
             .Where(type =>
