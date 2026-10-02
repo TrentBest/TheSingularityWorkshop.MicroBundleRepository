@@ -9,16 +9,27 @@ public sealed class MicroBundleArtifact
 {
     private readonly byte[] _content;
 
-    public MicroBundleArtifact(MicroBundleArtifactAddress address, ReadOnlyMemory<byte> content)
+    /// <summary>
+    /// Creates an artifact and verifies that the supplied bytes match its address.
+    /// </summary>
+    public MicroBundleArtifact(
+        MicroBundleArtifactAddress address,
+        ReadOnlyMemory<byte> content)
     {
-        ArgumentNullException.ThrowIfNull(address.Version);
-        ArgumentNullException.ThrowIfNull(address.ContentHash);
-
         _content = content.ToArray();
 
-        var actualHash = Convert.ToHexString(SHA256.HashData(_content)).ToLowerInvariant();
-        if (!string.Equals(actualHash, address.ContentHash, StringComparison.Ordinal))
-            throw new ArgumentException("The supplied content does not match the artifact content hash.", nameof(content));
+        var actualHash = Convert.ToHexString(
+            SHA256.HashData(_content)).ToLowerInvariant();
+
+        if (!string.Equals(
+                actualHash,
+                address.ContentHash,
+                StringComparison.Ordinal))
+        {
+            throw new ArgumentException(
+                "The supplied content does not match the artifact content hash.",
+                nameof(content));
+        }
 
         Address = address;
     }
@@ -31,12 +42,15 @@ public sealed class MicroBundleArtifact
         string version,
         ReadOnlyMemory<byte> content)
     {
-        var hash = Convert.ToHexString(SHA256.HashData(content.Span)).ToLowerInvariant();
+        var hash = Convert.ToHexString(
+            SHA256.HashData(content.Span)).ToLowerInvariant();
+
         return new MicroBundleArtifact(
             new MicroBundleArtifactAddress(bundleId, version, hash),
             content);
     }
 
+    /// <summary>Gets the complete immutable artifact address.</summary>
     public MicroBundleArtifactAddress Address { get; }
 
     /// <summary>Returns a read-only view of the artifact bytes.</summary>
