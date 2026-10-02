@@ -17,6 +17,7 @@ public sealed class AzureExperienceCatalog : IExperienceCatalog
 
     private readonly BlobContainerClient _container;
 
+    /// <summary>Creates a publication catalog from Azure Blob Storage configuration.</summary>
     public AzureExperienceCatalog(AzureExperienceRepositoryOptions options)
         : this(CreateContainerClient(options))
     {
@@ -33,6 +34,7 @@ public sealed class AzureExperienceCatalog : IExperienceCatalog
     public Task InitializeAsync(CancellationToken cancellationToken = default) =>
         _container.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
 
+    /// <summary>Lists the currently published Experience pointers in deterministic order.</summary>
     public async ValueTask<IReadOnlyList<ExperiencePublication>> ListPublishedAsync(
         CancellationToken cancellationToken = default)
     {
@@ -63,6 +65,7 @@ public sealed class AzureExperienceCatalog : IExperienceCatalog
             .ToArray();
     }
 
+    /// <summary>Gets the current publication pointer for one Experience.</summary>
     public async ValueTask<ExperiencePublication?> GetPublishedAsync(
         ulong experienceId,
         CancellationToken cancellationToken = default)
@@ -82,6 +85,7 @@ public sealed class AzureExperienceCatalog : IExperienceCatalog
         }
     }
 
+    /// <summary>Moves the publication pointer to the supplied immutable artifact.</summary>
     public async ValueTask PublishAsync(
         ExperiencePublication publication,
         CancellationToken cancellationToken = default)
@@ -107,6 +111,7 @@ public sealed class AzureExperienceCatalog : IExperienceCatalog
             cancellationToken);
     }
 
+    /// <summary>Removes the publication pointer without deleting its immutable artifact.</summary>
     public async ValueTask UnpublishAsync(
         ulong experienceId,
         CancellationToken cancellationToken = default)
