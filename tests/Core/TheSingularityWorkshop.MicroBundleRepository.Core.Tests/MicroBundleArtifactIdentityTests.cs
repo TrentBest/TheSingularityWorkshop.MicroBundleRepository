@@ -6,6 +6,13 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Core.Tests;
 public sealed class MicroBundleArtifactIdentityTests
 {
     [Fact]
+    public void Address_RejectsZeroBundleId()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => new MicroBundleArtifactAddress(0, "1.0.0", new string('a', 64)));
+    }
+
+    [Fact]
     public void Address_NormalizesHashToLowercase()
     {
         var hash = new string('A', 64);
@@ -16,10 +23,9 @@ public sealed class MicroBundleArtifactIdentityTests
     }
 
     [Theory]
-    [InlineData(0, "1.0.0")]
     [InlineData(7001, "")]
     [InlineData(7001, "   ")]
-    public void Address_RejectsInvalidIdentity(ulong bundleId, string version)
+    public void Address_RejectsMissingVersion(ulong bundleId, string version)
     {
         var hash = new string('a', 64);
 
