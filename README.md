@@ -265,3 +265,8 @@ FSM_COS
        ↓
 RuntimeAssembly
 ~~~
+
+
+## Core contract guide
+
+The platform-neutral artifact contract is documented in [docs/CORE_CONTRACT.md](docs/CORE_CONTRACT.md). It explains the identity model, byte verification, payload format, Experience publication boundary, extension model, and 1.0.0 release checklist.
