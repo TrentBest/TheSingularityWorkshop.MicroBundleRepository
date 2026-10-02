@@ -48,6 +48,45 @@ jobs:
         run: dotnet pack src/Azure/TheSingularityWorkshop.MicroBundleRepository.Azure/TheSingularityWorkshop.MicroBundleRepository.Azure.csproj --configuration Release --no-build --output ./artifacts
       - name: Pack REST
         run: dotnet pack src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest/TheSingularityWorkshop.MicroBundleRepository.Rest.csproj --configuration Release --no-build --output ./artifacts
+      - name: Validate stable package dependency gate
+        shell: python
+        run: |
+          import glob
+          import re
+          import zipfile
+          import xml.etree.ElementTree as ET
+
+          prerelease = re.compile(r"-[0-9A-Za-z]")
+          failures = []
+
+          for path in glob.glob("artifacts/*.nupkg"):
+              with zipfile.ZipFile(path) as package:
+                  nuspec_name = next(
+                      name for name in package.namelist()
+                      if name.endswith(".nuspec")
+                  )
+                  root = ET.fromstring(package.read(nuspec_name))
+                  version = root.findtext(
+                      ".//{*}metadata/{*}version"
+                  ) or ""
+
+                  if prerelease.search(version):
+                      continue
+
+                  for dep in root.findall(".//{*}metadata/{*}dependencies/{*}group/{*}dependency"):
+                      dep_version = dep.attrib.get("version", "")
+                      if prerelease.search(dep_version):
+                          failures.append(
+                              f"{path}: stable {version} has prerelease dependency "
+                              f"{dep.attrib.get('id')} {dep_version}"
+                          )
+
+          if failures:
+              print("Stable package dependency gate failed:")
+              print("\n".join(failures))
+              raise SystemExit(1)
+
+          print("Stable package dependency gate passed.")
       - name: Upload packages
         uses: actions/upload-artifact@v4
         with:
