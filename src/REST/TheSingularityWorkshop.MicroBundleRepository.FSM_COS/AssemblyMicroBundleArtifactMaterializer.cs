@@ -1,5 +1,5 @@
 using System.Reflection;
-using TheSingularityWorkshop.FSM_COS;
+using TheSingularityWorkshop.MicroBundleDomain;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 
 namespace TheSingularityWorkshop.MicroBundleRepository.FSM_COS;
@@ -14,8 +14,7 @@ namespace TheSingularityWorkshop.MicroBundleRepository.FSM_COS;
 /// </remarks>
 public sealed class AssemblyMicroBundleArtifactMaterializer : IMicroBundleArtifactMaterializer
 {
-    /// <summary>Loads and discovers the uniquely matching MicroBundle in an assembly artifact.</summary>
-    public IMicroBundle Materialize(MicroBundleArtifact artifact)
+    public TheSingularityWorkshop.MicroBundleDomain.IMicroBundle Materialize(MicroBundleArtifact artifact)
     {
         ArgumentNullException.ThrowIfNull(artifact);
 
@@ -30,10 +29,10 @@ public sealed class AssemblyMicroBundleArtifactMaterializer : IMicroBundleArtifa
             .Where(type =>
                 !type.IsAbstract &&
                 !type.IsInterface &&
-                typeof(IMicroBundle).IsAssignableFrom(type) &&
+                typeof(TheSingularityWorkshop.MicroBundleDomain.IMicroBundle).IsAssignableFrom(type) &&
                 type.GetConstructor(Type.EmptyTypes) is not null)
             .Select(type => Activator.CreateInstance(type))
-            .OfType<IMicroBundle>()
+            .OfType<TheSingularityWorkshop.MicroBundleDomain.IMicroBundle>()
             .ToArray();
 
         var matches = candidates
