@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img" aria-labelledby="title desc">
+  <title id="title">MicroBundle Repository boundary</title>
+  <desc id="desc">MicroBundle Repository boundary. The repository delivers verified opaque artifacts; the composition host interprets them and FSM_COS composes them.</desc>
+  <style>
+    .bg{fill:#0b1020}.box{fill:#121a2d;stroke:#7dd3fc;stroke-width:2;rx:16}.core{fill:#172554;stroke:#a5b4fc;stroke-width:2;rx:16}.accent{fill:#132e2a;stroke:#5eead4;stroke-width:2;rx:16}.warn{fill:#2b2110;stroke:#fbbf24;stroke-width:2;rx:16}
+    .t{fill:#f8fafc;font:600 24px system-ui,sans-serif}.s{fill:#cbd5e1;font:400 18px system-ui,sans-serif}.h{fill:#7dd3fc;font:700 30px system-ui,sans-serif}.arrow{stroke:#94a3b8;stroke-width:3;fill:none;marker-end:url(#a)}
+  </style>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#94a3b8"/></marker></defs>
+  <rect class="bg" width="1200" height="680"/>
+  The repository delivers verified opaque artifacts; the composition host interprets them and FSM_COS composes them.
+</svg>
