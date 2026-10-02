@@ -23,6 +23,20 @@ public sealed class MicroBundleArtifact
         Address = address;
     }
 
+    /// <summary>
+    /// Creates a content-addressed artifact from raw MicroBundle representation bytes.
+    /// </summary>
+    public static MicroBundleArtifact Create(
+        ulong bundleId,
+        string version,
+        ReadOnlyMemory<byte> content)
+    {
+        var hash = Convert.ToHexString(SHA256.HashData(content.Span)).ToLowerInvariant();
+        return new MicroBundleArtifact(
+            new MicroBundleArtifactAddress(bundleId, version, hash),
+            content);
+    }
+
     public MicroBundleArtifactAddress Address { get; }
 
     /// <summary>Returns a read-only view of the artifact bytes.</summary>
