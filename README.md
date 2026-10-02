@@ -274,6 +274,38 @@ RuntimeAssembly
 ~~~
 
 
+## Package build graph
+
+The NuGet packages form a dependency DAG. A stable package must not depend on a prerelease first-party package, even though NuGet technically permits such a dependency.
+
+The current release topology and build layers are documented in [docs/PACKAGE_BUILD_GRAPH.md](docs/PACKAGE_BUILD_GRAPH.md).
+
+~~~text
+independent roots
+   |       |       |
+   v       v       v
+ API   Serialization   Domain
+          |
+          v
+ Repository.Core 1.0.0
+          |
+          v
+ Repository.Azure
+
+Domain + API
+      |
+      v
+   FSM_COS
+      |
+      v
+   FSM_REST
+      |
+      v
+ Repository.Rest
+~~~
+
+CI now checks packed stable packages for direct prerelease dependency metadata before artifacts become eligible for the release workflow. The graph remains a release-engineering concern; it does not become part of the runtime repository contract.
+
 ## Core contract guide
 
 The platform-neutral artifact contract is documented in [docs/CORE_CONTRACT.md](docs/CORE_CONTRACT.md). It explains the identity model, byte verification, payload format, Experience publication boundary, extension model, and 1.0.0 release checklist.
