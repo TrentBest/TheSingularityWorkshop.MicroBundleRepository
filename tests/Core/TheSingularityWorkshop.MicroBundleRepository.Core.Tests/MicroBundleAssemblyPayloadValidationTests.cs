@@ -29,7 +29,7 @@ public sealed class MicroBundleAssemblyPayloadValidationTests
     [Fact]
     public void FromBytes_RejectsTrailingBytes()
     {
-        var payload = new MicroBundleAssemblyPayload(7001, [1, 2, 3]);
+        var payload = new MicroBundleAssemblyPayload(7001, new byte[] { 1, 2, 3 });
         var bytes = payload.ToBytes().Concat(new byte[] { 0xFF }).ToArray();
 
         Assert.Throws<InvalidDataException>(
@@ -39,7 +39,7 @@ public sealed class MicroBundleAssemblyPayloadValidationTests
     [Fact]
     public void FromBytes_RejectsUnsupportedFormatVersion()
     {
-        var payload = new MicroBundleAssemblyPayload(7001, [1]);
+        var payload = new MicroBundleAssemblyPayload(7001, new byte[] { 1 });
         var bytes = payload.ToBytes();
 
         BinaryPrimitives.WriteUInt32LittleEndian(bytes.AsSpan(4, 4), 99);
@@ -51,7 +51,7 @@ public sealed class MicroBundleAssemblyPayloadValidationTests
     [Fact]
     public void FromBytes_RejectsZeroBundleId()
     {
-        var payload = new MicroBundleAssemblyPayload(7001, [1]);
+        var payload = new MicroBundleAssemblyPayload(7001, new byte[] { 1 });
         var bytes = payload.ToBytes();
 
         BinaryPrimitives.WriteUInt64LittleEndian(bytes.AsSpan(8, 8), 0);
