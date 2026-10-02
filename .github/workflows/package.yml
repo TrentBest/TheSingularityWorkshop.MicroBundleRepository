@@ -8,8 +8,17 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
+      package:
+        description: Package to publish
+        required: true
+        default: Core
+        type: choice
+        options:
+          - Core
+          - Azure
+          - REST
       publish:
-        description: Publish packages to NuGet.org
+        description: Publish the selected package to NuGet.org
         required: true
         default: false
         type: boolean
@@ -69,9 +78,27 @@ jobs:
         id: nuget-login
         with:
           user: TheSingularityWorkshop
-      - name: Publish packages
+      - name: Publish selected package
         shell: bash
         run: |
-          for package in ./artifacts/*.nupkg; do
-            dotnet nuget push "$package" --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
-          done
+          case "${{ inputs.package }}" in
+            Core)
+              package="./artifacts/TheSingularityWorkshop.MicroBundleRepository.Core.1.0.0.nupkg"
+              ;;
+            Azure)
+              package="./artifacts/TheSingularityWorkshop.MicroBundleRepository.Azure.0.1.0-alpha.1.nupkg"
+              ;;
+            REST)
+              package="./artifacts/TheSingularityWorkshop.MicroBundleRepository.Rest.0.1.0-alpha.3.nupkg"
+              ;;
+            *)
+              echo "Unsupported package selection: ${{ inputs.package }}"
+              exit 1
+              ;;
+          esac
+
+          test -f "$package"
+          dotnet nuget push "$package" \
+            --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
