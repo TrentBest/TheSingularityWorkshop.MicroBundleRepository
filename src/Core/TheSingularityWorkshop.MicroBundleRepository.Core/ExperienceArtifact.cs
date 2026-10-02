@@ -9,19 +9,27 @@ public sealed class ExperienceArtifact
 {
     private readonly byte[] _content;
 
-    /// <summary>Creates an artifact and verifies its declared SHA-256 identity.</summary>
-    public ExperienceArtifact(ExperienceArtifactAddress address, ReadOnlyMemory<byte> content)
+    /// <summary>
+    /// Creates an artifact and verifies its declared SHA-256 identity.
+    /// </summary>
+    public ExperienceArtifact(
+        ExperienceArtifactAddress address,
+        ReadOnlyMemory<byte> content)
     {
-        ArgumentNullException.ThrowIfNull(address.Version);
-        ArgumentNullException.ThrowIfNull(address.ContentHash);
-
         _content = content.ToArray();
 
-        var actualHash = Convert.ToHexString(SHA256.HashData(_content)).ToLowerInvariant();
-        if (!string.Equals(actualHash, address.ContentHash, StringComparison.Ordinal))
+        var actualHash = Convert.ToHexString(
+            SHA256.HashData(_content)).ToLowerInvariant();
+
+        if (!string.Equals(
+                actualHash,
+                address.ContentHash,
+                StringComparison.Ordinal))
+        {
             throw new ArgumentException(
                 "The supplied content does not match the artifact content hash.",
                 nameof(content));
+        }
 
         Address = address;
     }
