@@ -141,6 +141,24 @@ It does not:
 
 Those boundaries matter.
 
+The first concrete payload format is a compiled MicroBundle assembly wrapped in a small domain-owned binary envelope supplied through `TheSingularityWorkshop.FSM_Serialization`. The repository still stores and verifies opaque bytes; the composition-side materializer interprets the envelope and binds the requested `IMicroBundle`.
+
+~~~text
+MicroBundle assembly
+      ↓
+FSM_Serialization envelope
+      ↓
+SHA-256 artifact identity
+      ↓
+Azure Blob Storage
+      ↓
+verified bytes
+      ↓
+composition-side materializer
+      ↓
+IMicroBundle
+~~~
+
 The repository answers:
 
 > **Given this complete MicroBundle artifact address, where are its bytes and can I verify them?**
