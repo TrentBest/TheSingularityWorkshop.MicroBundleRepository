@@ -7,6 +7,7 @@
     <AssemblyName>TheSingularityWorkshop.MicroBundleRepository.Rest.Host</AssemblyName>
     <RootNamespace>TheSingularityWorkshop.MicroBundleRepository.Rest.Host</RootNamespace>
     <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../TheSingularityWorkshop.MicroBundleRepository.Rest/TheSingularityWorkshop.MicroBundleRepository.Rest.csproj" />
