@@ -9,13 +9,14 @@ public sealed class ExperienceArtifactTests
     [Fact]
     public void Address_UsesDeterministicContentAddressedPath()
     {
+        var hash = new string('a', 64);
         var address = new ExperienceArtifactAddress(
             3010,
             "1.0.0",
-            "abcdef123456");
+            hash);
 
         Assert.Equal(
-            "artifacts/3010/1.0.0/abcdef123456.experience",
+            "artifacts/3010/1.0.0/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.experience",
             address.BlobName);
     }
 
@@ -23,10 +24,13 @@ public sealed class ExperienceArtifactTests
     public void Artifact_RejectsContentWithIncorrectHash()
     {
         var content = Encoding.UTF8.GetBytes("experience");
+        var otherContent = Encoding.UTF8.GetBytes("different");
+        var hash = Convert.ToHexString(
+            SHA256.HashData(otherContent)).ToLowerInvariant();
         var address = new ExperienceArtifactAddress(
             3010,
             "1.0.0",
-            "not-the-content-hash");
+            hash);
 
         Assert.Throws<ArgumentException>(
             () => new ExperienceArtifact(address, content));
@@ -35,8 +39,9 @@ public sealed class ExperienceArtifactTests
     [Fact]
     public void Artifact_PreservesVerifiedContentAndIdentity()
     {
-        var content = Encoding.UTF8.GetBytes("{\"id\":3010}");
-        var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
+        var content = Encoding.UTF8.GetBytes("{"id":3010}");
+        var hash = Convert.ToHexString(
+            SHA256.HashData(content)).ToLowerInvariant();
         var address = new ExperienceArtifactAddress(3010, "1.0.0", hash);
 
         var artifact = new ExperienceArtifact(address, content);
