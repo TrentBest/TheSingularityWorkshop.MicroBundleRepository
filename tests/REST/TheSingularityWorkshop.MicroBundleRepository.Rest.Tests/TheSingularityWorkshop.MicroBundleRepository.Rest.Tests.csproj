@@ -10,5 +10,6 @@
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
     <ProjectReference Include="../../../src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest/TheSingularityWorkshop.MicroBundleRepository.Rest.csproj" />
+    <ProjectReference Include="../../../src/REST/TheSingularityWorkshop.MicroBundleRepository.FSM_COS/TheSingularityWorkshop.MicroBundleRepository.FSM_COS.csproj" />
   </ItemGroup>
 </Project>
