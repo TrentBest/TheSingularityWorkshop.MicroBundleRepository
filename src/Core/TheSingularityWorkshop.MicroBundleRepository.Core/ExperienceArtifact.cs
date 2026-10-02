@@ -16,6 +16,8 @@ public sealed class ExperienceArtifact
         ExperienceArtifactAddress address,
         ReadOnlyMemory<byte> content)
     {
+        ArgumentNullException.ThrowIfNull(address);
+
         _content = content.ToArray();
 
         var actualHash = Convert.ToHexString(
