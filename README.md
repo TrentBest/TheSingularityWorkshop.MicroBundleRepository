@@ -216,6 +216,9 @@ Storage can evolve later. The composition contract does not need to know that it
 
 
 ## Experience discovery and publication state
+![Publication and immutable artifact identity](docs/assets/publication-vs-artifact.svg)
+
+
 
 The Experience artifact repository is immutable. Publication is a separate pointer that identifies which immutable artifact is currently live.
 
