@@ -15,12 +15,15 @@ public sealed class AssemblyMicroBundleArtifactMaterializerTests
         var assemblyPath = typeof(TestBundle).Assembly.Location;
         var bytes = File.ReadAllBytes(assemblyPath);
         var payload = new MicroBundleAssemblyPayload(TestBundle.BundleId, bytes);
-        var artifact = MicroBundleArtifact.Create(TestBundle.BundleId, "1.0.0", payload.ToBytes());
+        var artifact = MicroBundleArtifact.Create(
+            TestBundle.BundleId,
+            "1.0.0",
+            payload.ToBytes());
 
         var bundle = new AssemblyMicroBundleArtifactMaterializer().Materialize(artifact);
 
-        Assert.IsType<TestBundle>(bundle);
         Assert.Equal(TestBundle.BundleId, bundle.Id);
+        Assert.Equal(nameof(TestBundle), bundle.GetType().Name);
     }
 
     [Fact]
