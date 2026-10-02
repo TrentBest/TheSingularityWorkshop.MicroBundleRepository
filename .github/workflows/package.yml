@@ -39,6 +39,8 @@ jobs:
         run: dotnet pack src/Azure/TheSingularityWorkshop.MicroBundleRepository.Azure/TheSingularityWorkshop.MicroBundleRepository.Azure.csproj --configuration Release --no-build --output ./artifacts
       - name: Pack REST
         run: dotnet pack src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest/TheSingularityWorkshop.MicroBundleRepository.Rest.csproj --configuration Release --no-build --output ./artifacts
+      - name: Pack FSM_COS integration
+        run: dotnet pack src/REST/TheSingularityWorkshop.MicroBundleRepository.FSM_COS/TheSingularityWorkshop.MicroBundleRepository.FSM_COS.csproj --configuration Release --no-build --output ./artifacts
       - name: Upload packages
         uses: actions/upload-artifact@v4
         with:
