@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="360" viewBox="0 0 1120 360">
+<rect width="1120" height="360" rx="28" fill="#0b1020"/>
+<text x="560" y="48" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial" font-size="27" font-weight="700">Repository REST 1.0.0 — Delivery Edge</text>
+<g font-family="Segoe UI,Arial" text-anchor="middle">
+<rect x="50" y="110" width="215" height="76" rx="15" fill="#111827" stroke="#60a5fa" stroke-width="2"/>
+<text x="157" y="141" fill="#fff" font-size="18" font-weight="700">Repository Core</text><text x="157" y="166" fill="#93c5fd" font-size="15">1.0.0 stable</text>
+<rect x="50" y="215" width="215" height="76" rx="15" fill="#111827" stroke="#60a5fa" stroke-width="2"/>
+<text x="157" y="246" fill="#fff" font-size="18" font-weight="700">FSM_COS</text><text x="157" y="271" fill="#93c5fd" font-size="15">1.0.0 stable</text>
+<rect x="330" y="135" width="235" height="120" rx="20" fill="#172554" stroke="#fbbf24" stroke-width="3"/>
+<text x="447" y="174" fill="#fff" font-size="21" font-weight="700">Repository REST</text>
+<text x="447" y="202" fill="#fde68a" font-size="18">1.0.0 release prep</text>
+<text x="447" y="229" fill="#c7d2fe" font-size="14">delivery boundary</text>
+<rect x="630" y="135" width="205" height="120" rx="20" fill="#111827" stroke="#60a5fa" stroke-width="2"/>
+<text x="732" y="174" fill="#fff" font-size="20" font-weight="700">FSM_REST</text>
+<text x="732" y="202" fill="#93c5fd" font-size="17">1.0.0 stable</text>
+<text x="732" y="229" fill="#94a3b8" font-size="14">transport surface</text>
+<rect x="900" y="135" width="170" height="120" rx="20" fill="#111827" stroke="#64748b" stroke-width="2"/>
+<text x="985" y="174" fill="#e5e7eb" font-size="19" font-weight="700">Client</text>
+<text x="985" y="202" fill="#94a3b8" font-size="15">request</text>
+<text x="985" y="228" fill="#94a3b8" font-size="15">response</text>
+</g>
+<g stroke="#93c5fd" stroke-width="3" fill="none"><path d="M265 148 C295 148 300 170 330 170"/><path d="M265 253 C295 253 300 220 330 220"/><path d="M565 195 L630 195"/><path d="M835 195 L900 195"/></g>
+<text x="560" y="320" text-anchor="middle" fill="#dbeafe" font-family="Segoe UI,Arial" font-size="14">Delivery is not composition • transport is not storage • interoperability is not ownership</text>
+</svg>
