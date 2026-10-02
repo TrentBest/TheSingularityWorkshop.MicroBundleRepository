@@ -1,5 +1,7 @@
 # TheSingularityWorkshop.MicroBundleRepository.Core
 
+![MicroBundle repository federation](images/repository-federation.svg)
+
 **Platform-neutral contracts and immutable artifact identity for MicroBundle repositories.**
 
 This package is the contract layer between MicroBundle composition and physical storage.
@@ -177,6 +179,10 @@ The separation is intentional:
 ## Documentation
 
 The deeper contract, rationale, extension model, testing philosophy, and release checklist are documented in docs/CORE_CONTRACT.md.
+
+Repository theory is documented in [docs/REPOSITORY_THEORY.md](../../../docs/REPOSITORY_THEORY.md), including content identity, immutable artifacts, caching, federation, and the distinction between repository custody and ecosystem admission.
+
+Extrinsic hosting is documented in [docs/FEDERATED_HOSTING.md](../../../docs/FEDERATED_HOSTING.md). An external repository can implement the same Core contract and participate through an admission/federation layer without moving its artifacts into Workshop storage.
 
 The repository-level architecture and Azure setup guides provide the infrastructure context.
 
