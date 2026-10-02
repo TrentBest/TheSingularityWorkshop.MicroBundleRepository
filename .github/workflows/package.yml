@@ -8,8 +8,16 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
+      package:
+        description: Package to publish after verification
+        required: true
+        type: choice
+        options:
+          - core
+          - azure
+          - rest
       publish:
-        description: Publish packages to NuGet.org
+        description: Publish the selected package to NuGet.org
         required: true
         default: false
         type: boolean
@@ -39,6 +47,39 @@ jobs:
         run: dotnet pack src/Azure/TheSingularityWorkshop.MicroBundleRepository.Azure/TheSingularityWorkshop.MicroBundleRepository.Azure.csproj --configuration Release --no-build --output ./artifacts
       - name: Pack REST
         run: dotnet pack src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest/TheSingularityWorkshop.MicroBundleRepository.Rest.csproj --configuration Release --no-build --output ./artifacts
+      - name: Validate stable package dependency gate
+        shell: python
+        run: |
+          import glob
+          import zipfile
+          import xml.etree.ElementTree as ET
+
+          failures = []
+          for package_path in glob.glob("artifacts/*.nupkg"):
+              with zipfile.ZipFile(package_path) as package:
+                  nuspec_name = next(name for name in package.namelist() if name.endswith(".nuspec"))
+                  root = ET.fromstring(package.read(nuspec_name))
+
+              ns = {"n": "http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd"}
+              version = root.findtext("n:metadata/n:version", namespaces=ns) or ""
+              if "-" in version:
+                  continue
+
+              for dependency in root.findall("n:metadata/n:dependencies//n:dependency", namespaces=ns):
+                  dependency_version = dependency.attrib.get("version", "")
+                  if "-" in dependency_version:
+                      failures.append(
+                          f"{version} contains prerelease dependency "
+                          f"{dependency.attrib.get('id')} {dependency_version}"
+                      )
+
+          if failures:
+              print("Stable package dependency gate failed:")
+              for failure in failures:
+                  print(f" - {failure}")
+              raise SystemExit(1)
+
+          print("Stable package dependency gate passed.")
       - name: Upload packages
         uses: actions/upload-artifact@v4
         with:
@@ -64,14 +105,33 @@ jobs:
         with:
           name: nuget-packages
           path: ./artifacts
+      - name: Select package
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${{ inputs.package }}" in
+            core)
+              package="./artifacts/TheSingularityWorkshop.MicroBundleRepository.Core.1.0.0.nupkg"
+              ;;
+            azure)
+              package="./artifacts/TheSingularityWorkshop.MicroBundleRepository.Azure.0.1.0-alpha.1.nupkg"
+              ;;
+            rest)
+              package="./artifacts/TheSingularityWorkshop.MicroBundleRepository.Rest.1.0.0.nupkg"
+              ;;
+            *)
+              echo "Unknown package selection."
+              exit 1
+              ;;
+          esac
+
+          test -f "$package"
+          cp "$package" ./artifacts/selected.nupkg
+          echo "Selected package: $package"
       - name: Login to NuGet
         uses: NuGet/login@v1
         id: nuget-login
         with:
           user: TheSingularityWorkshop
-      - name: Publish packages
-        shell: bash
-        run: |
-          for package in ./artifacts/*.nupkg; do
-            dotnet nuget push "$package" --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
-          done
+      - name: Publish selected package
+        run: dotnet nuget push "./artifacts/selected.nupkg" --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
