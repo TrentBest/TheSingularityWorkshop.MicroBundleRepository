@@ -63,6 +63,37 @@ No database lookup is required to locate a complete artifact address.
 
 The repository verifies the SHA-256 before materializing the immutable artifact object. Storage metadata repeats the identity for inspection, but the bytes remain authoritative.
 
+## 1.0.0 release posture
+
+The Repository REST adapter is the downstream edge of the current release frontier:
+
+```text
+MicroBundleRepository.Core 1.0.0
+             │
+             ├──────────────┐
+             ▼              │
+       Repository REST      │
+             │              │
+             ▼              │
+       FSM_REST 1.0.0       │
+             │              │
+             └──────┐       │
+                    ▼       │
+              FSM_COS 1.0.0
+```
+
+The REST adapter can become stable only when its first-party runtime dependencies are stable. Its job remains narrow: expose the repository through REST; it does not become the composition engine.
+
+### Release gate
+
+The workflow verifies the complete solution, packs all repository packages, rejects stable packages with prerelease first-party dependencies, and publishes **only the explicitly selected package** after a manual workflow dispatch with `publish: true`.
+
+See [Repository Theory](docs/REPOSITORY_THEORY.md) and [Federated Hosting](docs/FEDERATED_HOSTING.md) for the storage, identity, federation, and ownership boundaries.
+
+<p align="center">
+  <img src="docs/assets/rest-release-frontier.svg" alt="MicroBundle Repository REST release frontier">
+</p>
+
 ## Projects
 
 ~~~text
