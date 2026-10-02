@@ -9,7 +9,7 @@ public sealed class MicroBundleAssemblyPayloadValidationTests
     public void Constructor_RejectsZeroBundleId()
     {
         Assert.Throws<ArgumentOutOfRangeException>(
-            () => new MicroBundleAssemblyPayload(0, [1]));
+            () => new MicroBundleAssemblyPayload(0, new byte[] { 1 }));
     }
 
     [Fact]
