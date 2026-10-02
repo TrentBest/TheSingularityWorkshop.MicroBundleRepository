@@ -106,7 +106,7 @@ public sealed class MicroBundleAssemblyPayload : IBinarySerializable
         if (bytes.IsEmpty)
             throw new ArgumentException("Payload bytes are required.", nameof(bytes));
 
-        using var stream = new MemoryBinaryStream(bytes);
+        using var stream = new MemoryBinaryStream(bytes.ToArray());
         var payload = new MicroBundleAssemblyPayload();
         payload.Unpack(stream);
         return payload;
