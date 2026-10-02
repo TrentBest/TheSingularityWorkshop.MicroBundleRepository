@@ -20,15 +20,15 @@ This is a release-governance rule, not a NuGet technical restriction. NuGet can 
                                     |
                                     v
                          +----------------------+
-                         | FSM_COS alpha        |
-                         | depends on FSM_API   |
-                         | + MicroBundleDomain  |
+                         | FSM_COS 1.0.0 prep  |
+                         | depends on stable   |
+                         | FSM_API + Domain     |
                          +----------+-----------+
                                     |
                                     v
                          +----------------------+
-                         | FSM_REST alpha       |
-                         | depends on FSM_COS   |
+                         | FSM_REST 1.0.0 prep  |
+                         | depends on COS 1.0  |
                          +----------------------+
 
 +----------------------+
@@ -53,11 +53,11 @@ This is a release-governance rule, not a NuGet technical restriction. NuGet can 
 | alpha                        |
 +------------------------------+
 
-MicroBundleRepository.Rest
+MicroBundleRepository.Rest 1.0.0 prep
     |
-    +-- MicroBundleRepository.Core
-    +-- FSM_REST alpha
-    +-- FSM_COS alpha
+    +-- MicroBundleRepository.Core 1.0.0
+    +-- FSM_REST 1.0.0
+    +-- FSM_COS 1.0.0
 ~~~
 
 ## Release layers
@@ -80,26 +80,24 @@ The Azure adapter is downstream of Core through a project reference and can beco
 
 ### Layer 2 — composition-dependent packages
 
-TheSingularityWorkshop.FSM_COS currently depends on FSM_API 1.0.13 and MicroBundleDomain 0.1.0-alpha.2. Therefore FSM_COS remains prerelease until its MicroBundleDomain dependency is promoted and the COS package itself completes stable-release work.
+TheSingularityWorkshop.FSM_COS release-prep PR #12 now targets 1.0.0 with FSM_API 1.0.13 and MicroBundleDomain 1.0.0. Its stable dependency closure is ready; the remaining work is release verification and human approval.
 
-TheSingularityWorkshop.FSM_REST currently depends on FSM_COS 0.1.0-alpha.3. Therefore it remains prerelease until the COS dependency is stable.
+TheSingularityWorkshop.FSM_REST release-prep PR #4 now targets 1.0.0 and explicitly depends on FSM_COS 1.0.0. Its CI is expected to remain blocked until COS 1.0.0 is actually published.
 
 ### Layer 3 — repository REST adapter
 
-TheSingularityWorkshop.MicroBundleRepository.Rest currently depends on Repository Core, FSM_REST 0.1.0-alpha.4, and FSM_COS 0.1.0-alpha.3.
-
-Consequently it cannot be a stable package yet.
+TheSingularityWorkshop.MicroBundleRepository.Rest release-prep PR #13 now targets 1.0.0 and explicitly depends on Repository Core 1.0.0, FSM_REST 1.0.0, and FSM_COS 1.0.0. It is intentionally downstream of the two composition packages.
 
 ~~~text
 Repository Core 1.0.0
        |
        +-- stable dependency closure
 
-Repository REST 0.x
+Repository REST 1.0.0 prep
        |
        +-- Core 1.0.0             OK
-       +-- FSM_REST alpha         BLOCKED
-       +-- FSM_COS alpha          BLOCKED
+       +-- FSM_REST 1.0.0        WAITING
+       +-- FSM_COS 1.0.0         WAITING
 ~~~
 
 ## The stable-release frontier
@@ -151,7 +149,7 @@ eligible for human release review
 
 A direct dependency check catches the immediate error. The graph document supplies the transitive context.
 
-The long-term implementation should make the graph machine-readable so CI can calculate the transitive closure rather than relying on documentation.
+The long-term implementation should make the graph machine-readable so CI can calculate the transitive closure rather than relying on documentation. For this release pass, the graph is already being enforced mechanically at the packed-package boundary.
 
 ## Why this belongs in ecosystem theory
 
