@@ -14,7 +14,8 @@ public sealed class AssemblyMicroBundleArtifactMaterializerTests
     {
         var assemblyPath = typeof(TestBundle).Assembly.Location;
         var bytes = File.ReadAllBytes(assemblyPath);
-        var artifact = MicroBundleArtifact.Create(TestBundle.BundleId, "1.0.0", bytes);
+        var payload = new MicroBundleAssemblyPayload(TestBundle.BundleId, bytes);
+        var artifact = MicroBundleArtifact.Create(TestBundle.BundleId, "1.0.0", payload.ToBytes());
 
         var bundle = new AssemblyMicroBundleArtifactMaterializer().Materialize(artifact);
 
@@ -27,7 +28,8 @@ public sealed class AssemblyMicroBundleArtifactMaterializerTests
     {
         var assemblyPath = typeof(TestBundle).Assembly.Location;
         var bytes = File.ReadAllBytes(assemblyPath);
-        var artifact = MicroBundleArtifact.Create(9999, "1.0.0", bytes);
+        var payload = new MicroBundleAssemblyPayload(9999, bytes);
+        var artifact = MicroBundleArtifact.Create(9999, "1.0.0", payload.ToBytes());
 
         var exception = Assert.Throws<InvalidOperationException>(
             () => new AssemblyMicroBundleArtifactMaterializer().Materialize(artifact));
