@@ -23,6 +23,9 @@ Azure Blob Storage
  verified artifact bytes
           |
           v
+ composition host
+          |
+          v
        FSM_COS
    dependency closure
    load once
@@ -111,3 +114,32 @@ experiences/
 ```
 
 The repository stores opaque serialized bytes. It does not own IExperience, GUI behavior, MicroBundle execution, or composition policy. This keeps published Experience storage usable by WebForge and other hosts.
+
+
+## Artifact representation is outside the repository
+
+The repository owns **artifact identity and delivery**, not the executable representation of a MicroBundle.
+
+A host may choose to represent an artifact as a compiled .NET assembly, a binary envelope, or another verified format. The host interprets those bytes after retrieval.
+
+```text
+MicroBundle artifact
+    identity + opaque bytes
+             |
+             v
+    Repository / transport
+             |
+             v
+       verified bytes
+             |
+             v
+      host materializer
+             |
+             v
+        IMicroBundle
+             |
+             v
+          FSM_COS
+```
+
+This keeps `MicroBundleRepository.Core` independent of `FSM_Serialization`, assembly loading, and runtime composition. If a representation proves useful across multiple hosts, it can become its own package later without changing the repository contract.
