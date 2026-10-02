@@ -1,4 +1,8 @@
 # MicroBundle Repository Architecture
+![MicroBundle Repository boundary](assets/repository-boundary.svg)
+
+The repository boundary is intentionally narrower than composition: it delivers verified opaque bytes and stops there.
+
 
 The repository is the durable supply boundary for MicroBundle artifacts.
 
