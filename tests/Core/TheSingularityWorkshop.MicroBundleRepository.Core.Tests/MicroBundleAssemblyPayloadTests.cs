@@ -8,7 +8,7 @@ public sealed class MicroBundleAssemblyPayloadTests
     [Fact]
     public void Round_trip_preserves_bundle_identity_and_bytes()
     {
-        var original = new MicroBundleAssemblyPayload(7001, [1, 2, 3, 4]);
+        var original = new MicroBundleAssemblyPayload(7001, new byte[] { 1, 2, 3, 4 });
 
         var restored = MicroBundleAssemblyPayload.FromBytes(original.ToBytes());
 
