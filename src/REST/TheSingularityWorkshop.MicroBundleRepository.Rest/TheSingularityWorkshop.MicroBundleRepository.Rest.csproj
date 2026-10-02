@@ -8,15 +8,13 @@
     <Version>1.0.0</Version>
     <Authors>Trent Best</Authors>
     <Company>The Singularity Workshop</Company>
-    <Description>REST delivery adapter for the The Singularity Workshop MicroBundle Repository.</Description>
+    <Description>REST delivery adapter for the platform-neutral The Singularity Workshop MicroBundle Repository.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <PackageReleaseNotes>1.0.0: stable REST delivery adapter over the platform-neutral repository contract and stable FSM_COS/FSM_REST capabilities.</PackageReleaseNotes>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageReleaseNotes>1.0.0: stable REST delivery adapter over the platform-neutral repository contract. Composition and artifact materialization remain downstream of the repository boundary.</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="TheSingularityWorkshop.FSM_Rest" Version="1.0.0" />
-    <PackageReference Include="TheSingularityWorkshop.FSM_COS" Version="1.0.0" />
     <ProjectReference Include="../../Core/TheSingularityWorkshop.MicroBundleRepository.Core/TheSingularityWorkshop.MicroBundleRepository.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
