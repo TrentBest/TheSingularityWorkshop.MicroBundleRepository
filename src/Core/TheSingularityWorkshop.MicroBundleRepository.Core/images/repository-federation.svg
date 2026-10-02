@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="820" viewBox="0 0 1400 820" role="img" aria-labelledby="title desc">
+<title id="title">MicroBundle repository federation architecture</title>
+<desc id="desc">External and Workshop repositories feed verified artifacts through an admission boundary into FSM COS and RuntimeAssembly.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L10,3 L0,6 Z"/></marker><style>
+.box{fill:#fff;stroke:#222;stroke-width:3;rx:18}.repo{fill:#eef7ff;stroke:#2878b5;stroke-width:3}.gov{fill:#f3f0ff;stroke:#5b3fa3;stroke-width:3}.core{fill:#f4fff0;stroke:#3d7d32;stroke-width:3}.cos{fill:#fff7e8;stroke:#a86600;stroke-width:3}.text{font-family:Arial,sans-serif;fill:#171717}.h{font-size:25px;font-weight:700}.p{font-size:19px}.small{font-size:16px}.arrow{stroke:#333;stroke-width:3;fill:none;marker-end:url(#arrow)}
+</style></defs>
+<rect width="1400" height="820" fill="#fafafa"/>
+<text x="700" y="55" text-anchor="middle" class="text h">MicroBundle Repository Federation</text>
+<text x="700" y="86" text-anchor="middle" class="text p">External custody + ecosystem admission + normal FSM_COS composition</text>
+<rect x="70" y="145" width="270" height="150" class="box repo"/><text x="205" y="190" text-anchor="middle" class="text h">Workshop Repository</text><text x="205" y="225" text-anchor="middle" class="text p">Workshop-controlled bytes</text><text x="205" y="255" text-anchor="middle" class="text small">content-addressed artifacts</text>
+<rect x="565" y="130" width="270" height="180" class="box repo"/><text x="700" y="178" text-anchor="middle" class="text h">External Repositories</text><text x="700" y="214" text-anchor="middle" class="text p">Publisher A</text><text x="700" y="242" text-anchor="middle" class="text p">Publisher B</text><text x="700" y="270" text-anchor="middle" class="text small">independent custody</text>
+<rect x="1060" y="145" width="270" height="150" class="box repo"/><text x="1195" y="190" text-anchor="middle" class="text h">Private / Local</text><text x="1195" y="225" text-anchor="middle" class="text p">development or</text><text x="1195" y="255" text-anchor="middle" class="text p">organization storage</text>
+<rect x="430" y="385" width="540" height="135" class="box gov"/><text x="700" y="425" text-anchor="middle" class="text h">Admission / Federation Boundary</text><text x="700" y="458" text-anchor="middle" class="text p">Which sources may participate?</text><text x="700" y="488" text-anchor="middle" class="text small">Routing preserves the complete artifact address.</text>
+<rect x="500" y="595" width="400" height="120" class="box core"/><text x="700" y="635" text-anchor="middle" class="text h">Repository.Core</text><text x="700" y="668" text-anchor="middle" class="text p">Verify ID + version + SHA-256</text><text x="700" y="695" text-anchor="middle" class="text small">return verified immutable artifact</text>
+<rect x="1020" y="595" width="290" height="120" class="box cos"/><text x="1165" y="635" text-anchor="middle" class="text h">FSM_COS</text><text x="1165" y="668" text-anchor="middle" class="text p">compose + arbitrate</text><text x="1165" y="695" text-anchor="middle" class="text small">RuntimeAssembly</text>
+<path d="M205 295 L500 385" class="arrow"/><path d="M700 310 L700 385" class="arrow"/><path d="M1195 295 L900 385" class="arrow"/><path d="M700 520 L700 595" class="arrow"/><path d="M900 655 L1020 655" class="arrow"/>
+<text x="700" y="780" text-anchor="middle" class="text p">Interoperability does not imply ownership.</text>
+</svg>
