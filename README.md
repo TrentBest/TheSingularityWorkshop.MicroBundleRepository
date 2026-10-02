@@ -6,6 +6,13 @@ This repository stores and delivers versioned MicroBundle artifacts. It delibera
 
 ## The boundary
 
+![MicroBundle repository federation](docs/diagrams/repository-federation.svg)
+
+The diagram above shows the intended topology: repositories may be Workshop-owned, externally operated, or local/private. Admission controls participation; Core verifies artifact identity; FSM_COS composes the verified capabilities.
+
+See [Repository Theory](docs/REPOSITORY_THEORY.md) for the theory behind the boundary and [Federated Hosting](docs/FEDERATED_HOSTING.md) for the extrinsic-hosting model.
+
+
 ~~~text
 Experience / published manifest
           |
