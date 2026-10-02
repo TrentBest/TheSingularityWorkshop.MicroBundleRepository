@@ -23,6 +23,9 @@ Azure Blob Storage
  verified artifact bytes
           |
           v
+ composition host
+          |
+          v
        FSM_COS
    dependency closure
    load once
@@ -141,7 +144,7 @@ It does not:
 
 Those boundaries matter.
 
-The first concrete payload format is a compiled MicroBundle assembly wrapped in a small domain-owned binary envelope supplied through `TheSingularityWorkshop.FSM_Serialization`. The repository still stores and verifies opaque bytes; the composition-side materializer interprets the envelope and binds the requested `IMicroBundle`.
+The repository does not define a MicroBundle executable format. A composition host may choose a representation such as a compiled assembly wrapped in a binary envelope. That representation is interpreted only after the repository has returned verified opaque bytes.
 
 ~~~text
 MicroBundle assembly
@@ -162,6 +165,10 @@ IMicroBundle
 The repository answers:
 
 > **Given this complete MicroBundle artifact address, where are its bytes and can I verify them?**
+
+The composition host answers:
+
+> **How do I interpret those bytes and bind them into runtime MicroBundles?**
 
 FSM_COS answers:
 
