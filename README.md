@@ -2,6 +2,10 @@
 
 **The durable artifact boundary for MicroBundles.**
 
+![MicroBundle Repository boundary](docs/assets/repository-boundary.svg)
+
+The visual separates three responsibilities that should remain independently replaceable: artifact delivery, artifact interpretation, and runtime composition.
+
 This repository stores and delivers versioned MicroBundle artifacts. It deliberately does not become a database, composition engine, arbitration engine, Experience host, or GUI.
 
 ## The boundary
