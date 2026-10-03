@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+<title id="title">MicroBundle Repository delivery boundary</title><desc id="desc">An immutable artifact flows from a manifest or local cache through the repository into Blob Storage, back as verified bytes, and then into FSM COS for composition.</desc>
+<defs><linearGradient id="bg" x1="0" x2="1"><stop offset="0"/><stop offset="1" stop-color="#182033"/></linearGradient><linearGradient id="repo" x1="0" x2="1"><stop offset="0" stop-color="#6d28d9"/><stop offset="1" stop-color="#2563eb"/></linearGradient><filter id="shadow"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-opacity=".28"/></filter></defs>
+<rect width="1200" height="620" rx="32" fill="url(#bg)"/>
+<text x="70" y="72" fill="white" font-family="Segoe UI,Arial" font-size="34" font-weight="700">The durable MicroBundle delivery boundary</text>
+<text x="70" y="108" fill="#aab4c8" font-family="Segoe UI,Arial" font-size="18">Storage moves bytes. The repository verifies and delivers them. FSM_COS composes them.</text>
+<g font-family="Segoe UI,Arial" text-anchor="middle" filter="url(#shadow)">
+<rect x="70" y="175" width="205" height="110" rx="20" fill="#263247"/><text x="172" y="220" fill="white" font-size="21" font-weight="700">Manifest / Cache</text><text x="172" y="252" fill="#aab4c8" font-size="15">requested artifact</text>
+<rect x="355" y="150" width="250" height="160" rx="24" fill="url(#repo)"/><text x="480" y="207" fill="white" font-size="25" font-weight="700">IMicroBundleRepository</text><text x="480" y="240" fill="#dbeafe" font-size="16">address → bytes</text><text x="480" y="267" fill="#dbeafe" font-size="16">SHA-256 verification</text>
+<rect x="685" y="175" width="205" height="110" rx="20" fill="#263247"/><text x="787" y="220" fill="white" font-size="21" font-weight="700">Azure Blob</text><text x="787" y="252" fill="#aab4c8" font-size="15">durable substrate</text>
+<rect x="965" y="150" width="165" height="160" rx="24" fill="#263247"/><text x="1047" y="207" fill="white" font-size="23" font-weight="700">FSM_COS</text><text x="1047" y="240" fill="#aab4c8" font-size="15">closure</text><text x="1047" y="264" fill="#aab4c8" font-size="15">arbitration</text><text x="1047" y="288" fill="#aab4c8" font-size="15">assembly</text>
+</g>
+<g fill="none" stroke="#93c5fd" stroke-width="5" stroke-linecap="round"><path d="M275 230h72"/><path d="M605 230h72"/><path d="M890 230h60"/></g>
+<g fill="#93c5fd"><path d="m337 218 18 12-18 12z"/><path d="m667 218 18 12-18 12z"/><path d="m950 218 18 12-18 12z"/></g>
+<path d="M787 305v88H480v-83" fill="none" stroke="#64748b" stroke-width="3" stroke-dasharray="9 9"/>
+<path d="m480 310-10 14h20z" fill="#64748b"/>
+<rect x="270" y="410" width="420" height="120" rx="22" fill="#111827" stroke="#334155" stroke-width="2"/>
+<text x="480" y="450" fill="white" font-family="Segoe UI,Arial" font-size="19" font-weight="700" text-anchor="middle">One architectural rule</text>
+<text x="480" y="482" fill="#cbd5e1" font-family="Segoe UI,Arial" font-size="17" text-anchor="middle">Blob Storage = substrate</text>
+<text x="480" y="509" fill="#cbd5e1" font-family="Segoe UI,Arial" font-size="17" text-anchor="middle">Repository = delivery boundary</text>
+</svg>
