@@ -25,6 +25,13 @@ jobs:
           ref: architecture/runtime-contract-ownership
           path: _dependencies/MicroBundleDomain
 
+      - name: Checkout FSM_COS dependency
+        uses: actions/checkout@v7
+        with:
+          repository: TrentBest/TheSingularityWorkshop.FSM_COS
+          ref: architecture/domain-owned-microbundle-contract
+          path: _dependencies/FSM_COS
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
@@ -39,6 +46,13 @@ jobs:
 
       - name: Add local dependency feed
         run: dotnet nuget add source "$GITHUB_WORKSPACE/_dependencies/nuget" --name MicroBundleDomainLocal
+
+      - name: Pack FSM_COS dependency
+        run: |
+          dotnet restore _dependencies/FSM_COS/TheSingularityWorkshop.FSM_COS.sln
+          dotnet build _dependencies/FSM_COS/TheSingularityWorkshop.FSM_COS.sln --configuration Release --no-restore
+          dotnet pack _dependencies/FSM_COS/src/FSM_COS/FSM_COS.csproj --configuration Release --no-build --output _dependencies/nuget
+
 
       - name: Restore
         run: dotnet restore TheSingularityWorkshop.MicroBundleRepository.slnx
