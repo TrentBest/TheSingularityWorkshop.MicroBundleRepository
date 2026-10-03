@@ -14,7 +14,7 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
     private readonly RestMicroBundleRepository _repository;
     private readonly IReadOnlyDictionary<ulong, MicroBundleArtifactAddress> _addresses;
     private readonly IMicroBundleArtifactMaterializer _materializer;
-    private readonly Dictionary<ulong, IMicroBundle> _loaded = new();
+    private readonly Dictionary<ulong, TheSingularityWorkshop.MicroBundleDomain.IMicroBundle> _loaded = new();
 
     public RestMicroBundleCatalog(
         RestMicroBundleRepository repository,
