@@ -41,7 +41,7 @@ public sealed class RestMicroBundleRepository : IMicroBundleRepository
 
         ValidateIdentity(dto, address);
         var content = Convert.FromBase64String(dto.ContentBase64);
-        return new MicroBundleArtifact(address, content);
+        return new MicroBundleArtifact(address, content, dto.SemanticAddress);
     }
 
     public async ValueTask PutAsync(
@@ -54,7 +54,8 @@ public sealed class RestMicroBundleRepository : IMicroBundleRepository
             artifact.Address.BundleId,
             artifact.Address.Version,
             artifact.Address.ContentHash,
-            Convert.ToBase64String(artifact.Content.ToArray()));
+            Convert.ToBase64String(artifact.Content.ToArray()),
+            artifact.SemanticAddress);
 
         var response = await _transport.SendAsync(
             new RestRequest(
