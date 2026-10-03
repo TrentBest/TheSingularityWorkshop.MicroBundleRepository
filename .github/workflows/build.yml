@@ -7,6 +7,9 @@ on:
       - implementation-**
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-24.04
@@ -15,10 +18,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Checkout MicroBundleDomain dependency
+        uses: actions/checkout@v7
+        with:
+          repository: TrentBest/TheSingularityWorkshop.MicroBundleDomain
+          ref: architecture/runtime-contract-ownership
+          path: _dependencies/MicroBundleDomain
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
+
+      - name: Pack MicroBundleDomain dependency
+        run: |
+          dotnet restore _dependencies/MicroBundleDomain/TheSingularityWorkshop.MicroBundleDomain.sln
+          dotnet build _dependencies/MicroBundleDomain/TheSingularityWorkshop.MicroBundleDomain.sln --configuration Release --no-restore
+          mkdir -p _dependencies/nuget
+          dotnet pack _dependencies/MicroBundleDomain/src/MicroBundleDomain/TheSingularityWorkshop.MicroBundleDomain.csproj --configuration Release --no-build --output _dependencies/nuget
+
+      - name: Add local dependency feed
+        run: dotnet nuget add source "$GITHUB_WORKSPACE/_dependencies/nuget" --name MicroBundleDomainLocal
 
       - name: Restore
         run: dotnet restore TheSingularityWorkshop.MicroBundleRepository.slnx
