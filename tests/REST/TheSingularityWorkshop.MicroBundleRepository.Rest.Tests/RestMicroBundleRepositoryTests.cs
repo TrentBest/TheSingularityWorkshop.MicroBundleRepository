@@ -3,6 +3,7 @@ using System.Text.Json;
 using TheSingularityWorkshop.FSM_REST;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 using TheSingularityWorkshop.MicroBundleRepository.Rest;
+using TheSingularityWorkshop.Ontology;
 using Xunit;
 
 namespace TheSingularityWorkshop.MicroBundleRepository.Rest.Tests;
@@ -15,7 +16,8 @@ public sealed class RestMicroBundleRepositoryTests
         var content = new byte[] { 1, 2, 3, 5, 8 };
         var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
         var address = new MicroBundleArtifactAddress(42, "1.0.0", hash);
-        var dto = new MicroBundleArtifactDto(42, "1.0.0", hash, Convert.ToBase64String(content));
+        var semanticAddress = OntologyAddress.Create(42, "1.0.0", "life/animal/fish");
+        var dto = new MicroBundleArtifactDto(42, "1.0.0", hash, Convert.ToBase64String(content), semanticAddress);
 
         var transport = new StubTransport(request =>
         {
@@ -40,6 +42,7 @@ public sealed class RestMicroBundleRepositoryTests
         Assert.NotNull(artifact);
         Assert.Equal(content, artifact!.Content.ToArray());
         Assert.Equal(address, artifact.Address);
+        Assert.Equal(semanticAddress, artifact.SemanticAddress);
     }
 
     [Fact]
@@ -66,7 +69,8 @@ public sealed class RestMicroBundleRepositoryTests
         var content = new byte[] { 13, 21, 34 };
         var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
         var address = new MicroBundleArtifactAddress(9, "2.0.0", hash);
-        var artifact = new MicroBundleArtifact(address, content);
+        var semanticAddress = OntologyAddress.Create(42, "1.0.0", "physics/materials");
+        var artifact = new MicroBundleArtifact(address, content, semanticAddress);
 
         var transport = new StubTransport(request =>
         {
@@ -75,6 +79,7 @@ public sealed class RestMicroBundleRepositoryTests
                 $"https://repository.test/api/microbundles/9/2.0.0/{hash}",
                 request.Uri.ToString());
             Assert.Contains(Convert.ToBase64String(content), request.Body, StringComparison.Ordinal);
+            Assert.Contains("physics/materials", request.Body, StringComparison.Ordinal);
             return new RestResponse(204, "No Content", new Dictionary<string, string>(), string.Empty);
         });
 
