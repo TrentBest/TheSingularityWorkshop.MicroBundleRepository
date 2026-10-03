@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text.Json;
-using TheSingularityWorkshop.FSM_COS;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 using TheSingularityWorkshop.MicroBundleRepository.Rest;
 using TheSingularityWorkshop.MicroBundleRepository.FSM_COS;
@@ -49,7 +48,7 @@ public sealed class RestMicroBundleCatalogTests
 
     private sealed class Materializer : IMicroBundleArtifactMaterializer
     {
-        public IMicroBundle Materialize(MicroBundleArtifact artifact) =>
+        public TheSingularityWorkshop.MicroBundleDomain.IMicroBundle Materialize(MicroBundleArtifact artifact) =>
             artifact.Address.BundleId == 1
                 ? new TestBundle(1, 2)
                 : new TestBundle(2);
@@ -60,12 +59,12 @@ public sealed class RestMicroBundleCatalogTests
         public ulong Id { get; } = id;
         public TheSingularityWorkshop.MicroBundleDomain.MicroBundleDescriptor Descriptor { get; } =
             new(id, "1.0.0");
-        public IReadOnlyList<BundleRequest> Dependencies { get; } =
-            dependencyIds.Select(BundleRequest.Unconfigured).ToArray();
+        public IReadOnlyList<MicroBundleDependencyRequest> Dependencies { get; } =
+            dependencyIds.Select(MicroBundleDependencyRequest.Unconfigured).ToArray();
 
-        public void Load(MicroBundleLoadContext context) { }
+        public void Load(IMicroBundleLoadContext context) { }
 
-        public bool Arbitrate(ArbitrationContext context, int roundIndex) => false;
+        public bool Arbitrate(IMicroBundleArbitrationContext context, int roundIndex) => false;
     }
 
     private sealed class RepositoryTransport(
