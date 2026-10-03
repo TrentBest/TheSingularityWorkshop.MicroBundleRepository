@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
+using TheSingularityWorkshop.Ontology;
 using Xunit;
 
 namespace TheSingularityWorkshop.MicroBundleRepository.Core.Tests;
@@ -20,8 +21,6 @@ public sealed class MicroBundleArtifactTests
             artifact.Address.ContentHash);
         Assert.Equal(content, artifact.Content.ToArray());
     }
-}
-
 
     [Fact]
     public void Artifact_PreservesOptionalOntologySemanticAddress()
@@ -42,3 +41,4 @@ public sealed class MicroBundleArtifactTests
         Assert.Equal(artifact.Address, semanticArtifact.Address);
         Assert.Equal(artifact.Content.ToArray(), semanticArtifact.Content.ToArray());
     }
+}
