@@ -13,48 +13,17 @@ This repository stores and delivers versioned MicroBundle artifacts. It delibera
 
 ## The boundary
 
-~~~text
-Experience / published manifest
-          |
-          v
-   local bundle cache
-          |
-          | missing artifact
-          v
-IMicroBundleRepository
-          |
-          v
-Azure Blob Storage
-          |
-          v
- verified artifact bytes
-          |
-          v
-       FSM_COS
-   dependency closure
-   load once
-   arbitration
-   convergence
-          |
-          v
-   RuntimeAssembly
-~~~
+![MicroBundle Repository delivery boundary](docs/images/microbundle-delivery-boundary.svg)
 
-The architectural invariant is simple:
+The repository sits deliberately between **durable storage** and **composition**. A host asks for a complete artifact address; the repository locates the bytes, verifies their SHA-256 identity, and delivers the immutable artifact to the composition side.
 
 > **Blob Storage is the substrate. The repository is the delivery boundary. FSM_COS is the composition boundary.**
 
 ## Artifact identity
 
-An artifact is addressed by three values:
+![MicroBundle artifact identity](docs/images/microbundle-artifact-identity.svg)
 
-~~~text
-MicroBundle ID
-      +
-explicit version
-      +
-SHA-256 content identity
-~~~
+An artifact is addressed by three values: **MicroBundle ID + explicit version + SHA-256 content identity**.
 
 The physical Azure location is deterministic:
 
@@ -212,6 +181,8 @@ Storage can evolve later. The composition contract does not need to know that it
 
 
 ## Experience discovery and publication state
+
+![Experience artifact publication model](docs/images/experience-publication-model.svg)
 
 The Experience artifact repository is immutable. Publication is a separate pointer that identifies which immutable artifact is currently live.
 
