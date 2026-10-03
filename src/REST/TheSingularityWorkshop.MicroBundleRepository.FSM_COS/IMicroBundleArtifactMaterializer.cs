@@ -1,4 +1,4 @@
-using TheSingularityWorkshop.FSM_COS;
+using TheSingularityWorkshop.MicroBundleDomain;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 
 namespace TheSingularityWorkshop.MicroBundleRepository.FSM_COS;
