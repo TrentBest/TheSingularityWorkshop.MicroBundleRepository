@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text.Json;
+using TheSingularityWorkshop.MicroBundleDomain;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 using TheSingularityWorkshop.MicroBundleRepository.Rest;
 using TheSingularityWorkshop.MicroBundleRepository.FSM_COS;
