@@ -4,18 +4,19 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>true</IsPackable>
-    <PackageId>TheSingularityWorkshop.MicroBundleRepository.Rest</PackageId>
-    <Version>0.1.0-alpha.4</Version>
+    <PackageId>TheSingularityWorkshop.MicroBundleRepository.FSM_COS</PackageId>
+    <Version>0.1.0-alpha.1</Version>
     <Authors>Trent Best</Authors>
     <Company>The Singularity Workshop</Company>
-    <Description>REST delivery adapter for the The Singularity Workshop MicroBundle Repository.</Description>
+    <Description>FSM_COS composition adapters for materializing and cataloging MicroBundles from repository artifacts.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="TheSingularityWorkshop.FSM_Rest" Version="0.1.0-alpha.4" />
-    <ProjectReference Include="../../Core/TheSingularityWorkshop.MicroBundleRepository.Core/TheSingularityWorkshop.MicroBundleRepository.Core.csproj" />
+    <PackageReference Include="TheSingularityWorkshop.FSM_COS" Version="0.1.0-alpha.5" />
+    <PackageReference Include="TheSingularityWorkshop.MicroBundleDomain" Version="1.0.1" />
+    <ProjectReference Include="../TheSingularityWorkshop.MicroBundleRepository.Rest/TheSingularityWorkshop.MicroBundleRepository.Rest.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="" />

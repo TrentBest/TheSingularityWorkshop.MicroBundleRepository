@@ -1,20 +1,20 @@
 using System.Reflection;
-using TheSingularityWorkshop.FSM_COS;
+using TheSingularityWorkshop.MicroBundleDomain;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 
-namespace TheSingularityWorkshop.MicroBundleRepository.Rest;
+namespace TheSingularityWorkshop.MicroBundleRepository.FSM_COS;
 
 /// <summary>
 /// Materializes a MicroBundle artifact whose representation is a .NET assembly.
 /// </summary>
 /// <remarks>
 /// The repository verifies the content hash before this boundary is reached.
-/// The materializer then discovers the requested <see cref="IMicroBundle"/> by
-/// bundle ID. Assembly dependencies are resolved by the host's normal load context.
+/// This adapter belongs to the FSM_COS integration boundary because it discovers
+/// executable composition contracts from repository artifacts.
 /// </remarks>
 public sealed class AssemblyMicroBundleArtifactMaterializer : IMicroBundleArtifactMaterializer
 {
-    public IMicroBundle Materialize(MicroBundleArtifact artifact)
+    public TheSingularityWorkshop.MicroBundleDomain.IMicroBundle Materialize(MicroBundleArtifact artifact)
     {
         ArgumentNullException.ThrowIfNull(artifact);
 
@@ -29,10 +29,10 @@ public sealed class AssemblyMicroBundleArtifactMaterializer : IMicroBundleArtifa
             .Where(type =>
                 !type.IsAbstract &&
                 !type.IsInterface &&
-                typeof(IMicroBundle).IsAssignableFrom(type) &&
+                typeof(TheSingularityWorkshop.MicroBundleDomain.IMicroBundle).IsAssignableFrom(type) &&
                 type.GetConstructor(Type.EmptyTypes) is not null)
             .Select(type => Activator.CreateInstance(type))
-            .OfType<IMicroBundle>()
+            .OfType<TheSingularityWorkshop.MicroBundleDomain.IMicroBundle>()
             .ToArray();
 
         var matches = candidates

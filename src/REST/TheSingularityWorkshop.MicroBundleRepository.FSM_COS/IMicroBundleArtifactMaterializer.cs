@@ -1,7 +1,7 @@
-using TheSingularityWorkshop.FSM_COS;
+using TheSingularityWorkshop.MicroBundleDomain;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 
-namespace TheSingularityWorkshop.MicroBundleRepository.Rest;
+namespace TheSingularityWorkshop.MicroBundleRepository.FSM_COS;
 
 /// <summary>Converts verified repository artifact bytes into a runtime MicroBundle.</summary>
 public interface IMicroBundleArtifactMaterializer

@@ -63,8 +63,8 @@ public sealed class MicroBundleAssemblyPayload : IBinarySerializable
 
     public static MicroBundleAssemblyPayload FromBytes(ReadOnlyMemory<byte> bytes)
     {
-        using var stream = new MemoryBinaryStream(bytes);
-        var payload = new MicroBundleAssemblyPayload(1, [1]);
+        using var stream = new MemoryBinaryStream(bytes.ToArray());
+        var payload = new MicroBundleAssemblyPayload(1, new byte[] { 1 });
         payload.Unpack(stream);
         return payload;
     }

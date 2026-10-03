@@ -1,18 +1,20 @@
 using TheSingularityWorkshop.FSM_COS;
+using TheSingularityWorkshop.MicroBundleDomain;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
+using TheSingularityWorkshop.MicroBundleRepository.Rest;
 
-namespace TheSingularityWorkshop.MicroBundleRepository.Rest;
+namespace TheSingularityWorkshop.MicroBundleRepository.FSM_COS;
 
 /// <summary>
 /// Preloads verified MicroBundle artifacts over REST and exposes the resident
-/// result through the synchronous FSM_COS catalog contract.
+/// result through the FSM_COS catalog boundary.
 /// </summary>
 public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
 {
     private readonly RestMicroBundleRepository _repository;
     private readonly IReadOnlyDictionary<ulong, MicroBundleArtifactAddress> _addresses;
     private readonly IMicroBundleArtifactMaterializer _materializer;
-    private readonly Dictionary<ulong, IMicroBundle> _loaded = new();
+    private readonly Dictionary<ulong, TheSingularityWorkshop.MicroBundleDomain.IMicroBundle> _loaded = new();
 
     public RestMicroBundleCatalog(
         RestMicroBundleRepository repository,
@@ -24,10 +26,6 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
         _materializer = materializer ?? throw new ArgumentNullException(nameof(materializer));
     }
 
-    /// <summary>
-    /// Fetches requested bundles and recursively follows their declared dependencies.
-    /// Composition remains synchronous after preload.
-    /// </summary>
     public async Task PreloadClosureAsync(
         IEnumerable<ulong> rootBundleIds,
         CancellationToken cancellationToken = default)
@@ -68,6 +66,8 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
         }
     }
 
-    public bool TryResolve(ulong bundleId, out IMicroBundle? bundle) =>
+    public bool TryResolve(
+        ulong bundleId,
+        out TheSingularityWorkshop.MicroBundleDomain.IMicroBundle? bundle) =>
         _loaded.TryGetValue(bundleId, out bundle);
 }
