@@ -3,7 +3,7 @@
 [![NuGet version](https://img.shields.io/nuget/v/TheSingularityWorkshop.MicroBundleRepository?style=flat-square&logo=nuget&logoColor=white)](https://www.nuget.org/packages/TheSingularityWorkshop.MicroBundleRepository)
 [![NuGet downloads](https://img.shields.io/nuget/dt/TheSingularityWorkshop.MicroBundleRepository?style=flat-square&logo=nuget&logoColor=white)](https://www.nuget.org/packages/TheSingularityWorkshop.MicroBundleRepository)
 [![Build](https://img.shields.io/github/actions/workflow/status/TrentBest/TheSingularityWorkshop.MicroBundleRepository/build.yml?branch=master&style=flat-square&logo=github)](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/workflows/build.yml)
-[![License](https://img.shields.io/github/license/TheSingularityWorkshop.MicroBundleRepository?style=flat-square)](LICENSE.txt)
+[![License](https://img.shields.io/github/license/TrentBest/TheSingularityWorkshop.MicroBundleRepository?style=flat-square)](LICENSE.txt)
 [![Last commit](https://img.shields.io/github/last-commit/TrentBest/TheSingularityWorkshop.MicroBundleRepository/master?style=flat-square)](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/commits/master)
 [![GitHub issues](https://img.shields.io/github/issues/TrentBest/TheSingularityWorkshop.MicroBundleRepository?style=flat-square)](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/issues)
 
