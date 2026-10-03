@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>true</IsPackable>
     <PackageId>TheSingularityWorkshop.MicroBundleRepository.Rest</PackageId>
-    <Version>0.1.0-alpha.4</Version>
+    <Version>0.1.0-alpha.5</Version>
     <Authors>Trent Best</Authors>
     <Company>The Singularity Workshop</Company>
     <Description>REST delivery adapter for the The Singularity Workshop MicroBundle Repository.</Description>
@@ -15,6 +15,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="TheSingularityWorkshop.FSM_Rest" Version="0.1.0-alpha.4" />
+    <PackageReference Include="TheSingularityWorkshop.Ontology" Version="0.1.0-alpha.2" />
     <ProjectReference Include="../../Core/TheSingularityWorkshop.MicroBundleRepository.Core/TheSingularityWorkshop.MicroBundleRepository.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
