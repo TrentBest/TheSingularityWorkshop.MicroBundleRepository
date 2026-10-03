@@ -10,6 +10,7 @@ public sealed class MicroBundleArtifact
 {
     private readonly byte[] _content;
 
+    /// <summary>Creates an artifact and optionally associates a semantic ontology address.</summary>
     public MicroBundleArtifact(
         MicroBundleArtifactAddress address,
         ReadOnlyMemory<byte> content,
