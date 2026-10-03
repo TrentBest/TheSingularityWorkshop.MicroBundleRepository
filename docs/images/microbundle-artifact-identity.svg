@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
+<title id="title">MicroBundle artifact identity</title><desc id="desc">A MicroBundle artifact is identified by bundle ID, explicit version, and SHA-256 content identity, which map deterministically to a blob path.</desc>
+<defs><linearGradient id="bg" x1="0" x2="1"><stop offset="0"/><stop offset="1" stop-color="#172033"/></linearGradient><linearGradient id="hash" x1="0" x2="1"><stop offset="0" stop-color="#0f766e"/><stop offset="1" stop-color="#2563eb"/></linearGradient></defs>
+<rect width="1200" height="560" rx="32" fill="url(#bg)"/>
+<text x="70" y="70" fill="white" font-family="Segoe UI,Arial" font-size="34" font-weight="700">One complete address → one immutable artifact</text>
+<text x="70" y="105" fill="#aab4c8" font-family="Segoe UI,Arial" font-size="18">No database lookup is required to locate the bytes.</text>
+<g font-family="Segoe UI,Arial" text-anchor="middle">
+<g><rect x="70" y="165" width="300" height="120" rx="22" fill="#263247"/><text x="220" y="205" fill="#93c5fd" font-size="15">MICROBUNDLE ID</text><text x="220" y="247" fill="white" font-size="27" font-weight="700">42</text></g>
+<g><rect x="450" y="165" width="300" height="120" rx="22" fill="#263247"/><text x="600" y="205" fill="#93c5fd" font-size="15">EXPLICIT VERSION</text><text x="600" y="247" fill="white" font-size="27" font-weight="700">1.0.0</text></g>
+<g><rect x="830" y="165" width="300" height="120" rx="22" fill="url(#hash)"/><text x="980" y="205" fill="#dbeafe" font-size="15">SHA-256 CONTENT IDENTITY</text><text x="980" y="247" fill="white" font-size="22" font-weight="700">a83f…91c2</text></g>
+</g>
+<path d="M220 310v70M600 310v70M980 310v70" stroke="#64748b" stroke-width="3" stroke-dasharray="8 8"/>
+<path d="M220 380h760" stroke="#64748b" stroke-width="3"/>
+<path d="M980 380l-13-8v16z" fill="#64748b"/>
+<rect x="170" y="415" width="860" height="82" rx="18" fill="#111827" stroke="#334155"/>
+<text x="600" y="465" fill="#e2e8f0" font-family="Consolas,monospace" font-size="22" text-anchor="middle">microbundles/artifacts/42/1.0.0/a83f…91c2.bundle</text>
+</svg>
