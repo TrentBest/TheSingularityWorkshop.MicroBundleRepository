@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using TheSingularityWorkshop.Ontology;
 
 namespace TheSingularityWorkshop.MicroBundleRepository.Core;
 
@@ -9,7 +10,10 @@ public sealed class MicroBundleArtifact
 {
     private readonly byte[] _content;
 
-    public MicroBundleArtifact(MicroBundleArtifactAddress address, ReadOnlyMemory<byte> content)
+    public MicroBundleArtifact(
+        MicroBundleArtifactAddress address,
+        ReadOnlyMemory<byte> content,
+        OntologyAddress? semanticAddress = null)
     {
         ArgumentNullException.ThrowIfNull(address.Version);
         ArgumentNullException.ThrowIfNull(address.ContentHash);
@@ -21,6 +25,7 @@ public sealed class MicroBundleArtifact
             throw new ArgumentException("The supplied content does not match the artifact content hash.", nameof(content));
 
         Address = address;
+        SemanticAddress = semanticAddress;
     }
 
     /// <summary>
@@ -38,6 +43,12 @@ public sealed class MicroBundleArtifact
     }
 
     public MicroBundleArtifactAddress Address { get; }
+
+    /// <summary>
+    /// Gets the optional semantic ontology address associated with this artifact.
+    /// This metadata does not participate in content identity or storage identity.
+    /// </summary>
+    public OntologyAddress? SemanticAddress { get; }
 
     /// <summary>Returns a read-only view of the artifact bytes.</summary>
     public ReadOnlyMemory<byte> Content => _content;
