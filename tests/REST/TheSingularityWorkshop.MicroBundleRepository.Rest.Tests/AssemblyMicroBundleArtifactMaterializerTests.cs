@@ -18,7 +18,7 @@ public sealed class AssemblyMicroBundleArtifactMaterializerTests
 
         var bundle = new AssemblyMicroBundleArtifactMaterializer().Materialize(artifact);
 
-        Assert.IsType<TestBundle>(bundle);
+        Assert.Equal(typeof(TestBundle).FullName, bundle.GetType().FullName);
         Assert.Equal(TestBundle.BundleId, bundle.Id);
     }
 
