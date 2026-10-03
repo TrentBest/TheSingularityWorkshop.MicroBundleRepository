@@ -1,5 +1,4 @@
 using System.IO;
-using TheSingularityWorkshop.FSM_COS;
 using TheSingularityWorkshop.MicroBundleDomain;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 using TheSingularityWorkshop.MicroBundleRepository.FSM_COS;
@@ -46,12 +45,12 @@ public sealed class AssemblyMicroBundleArtifactMaterializerTests
         public MicroBundleDescriptor Descriptor { get; } =
             new(BundleId, "1.0.0");
 
-        public IReadOnlyList<BundleRequest> Dependencies => [];
+        public IReadOnlyList<MicroBundleDependencyRequest> Dependencies => [];
 
-        public void Load(MicroBundleLoadContext context)
+        public void Load(IMicroBundleLoadContext context)
         {
         }
 
-        public bool Arbitrate(ArbitrationContext context, int roundIndex) => false;
+        public bool Arbitrate(IMicroBundleArbitrationContext context, int roundIndex) => false;
     }
 }
