@@ -21,3 +21,24 @@ public sealed class MicroBundleArtifactTests
         Assert.Equal(content, artifact.Content.ToArray());
     }
 }
+
+
+    [Fact]
+    public void Artifact_PreservesOptionalOntologySemanticAddress()
+    {
+        var content = new byte[] { 1, 2, 3, 4 };
+        var address = OntologyAddress.Create(
+            42,
+            "1.0.0",
+            "life/animal/fish");
+
+        var artifact = MicroBundleArtifact.Create(7, "1.0.0", content);
+        var semanticArtifact = new MicroBundleArtifact(
+            artifact.Address,
+            content,
+            address);
+
+        Assert.Equal(address, semanticArtifact.SemanticAddress);
+        Assert.Equal(artifact.Address, semanticArtifact.Address);
+        Assert.Equal(artifact.Content.ToArray(), semanticArtifact.Content.ToArray());
+    }
