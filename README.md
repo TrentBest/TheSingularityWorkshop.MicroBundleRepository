@@ -4,6 +4,51 @@
 
 This repository stores and delivers versioned MicroBundle artifacts. It deliberately does not become a database, composition engine, arbitration engine, Experience host, or GUI.
 
+## What and Why
+
+MicroBundleRepository owns the durable artifact-delivery boundary: locate and retrieve immutable, versioned MicroBundle bytes, verify their content identity, and materialize them for a consumer. It does not interpret a bundle's domain, resolve composition dependencies, or execute a runtime.
+
+The repository project files currently declare alpha package versions. Confirm each exact package/version on NuGet before relying on it; a source `<Version>` field is not proof of publication.
+
+## 60-Second Quick Start
+
+This is a multi-project infrastructure repository, so the most reliable first step is to open and verify the source.
+
+### 1. Open the solution in Visual Studio
+
+Clone the repository and open `TheSingularityWorkshop.MicroBundleRepository.slnx` in Visual Studio.
+
+### 2. Open the Developer Terminal
+
+Choose **View → Terminal** in Visual Studio and ensure the terminal is at the repository root.
+
+### 3. Restore, build, and test
+
+```powershell
+dotnet restore TheSingularityWorkshop.MicroBundleRepository.slnx
+dotnet build TheSingularityWorkshop.MicroBundleRepository.slnx --configuration Release --no-restore
+dotnet test TheSingularityWorkshop.MicroBundleRepository.slnx --configuration Release
+```
+
+These commands validate the current source and its test projects. They do not require you to publish an artifact or configure a production storage account.
+
+## Add It to an Existing Project
+
+Already have an application? Depend on the smallest responsibility you need.
+
+- **Need the storage/retrieval contract?** Reference `TheSingularityWorkshop.MicroBundleRepository.Core` only.
+- **Need Azure Blob Storage?** Add the Azure implementation and configure `DefaultAzureCredential`; keep credentials out of source control.
+- **Need HTTP delivery?** Use the REST adapter/host only when your deployment requires that transport.
+- **Need runtime composition?** Keep the adapter that materializes verified artifact bytes into runtime MicroBundles outside the repository package. The repository must not depend upward on FSM_COS.
+
+Until the exact Core package version is verified as published, add a local project reference from your application project (adjust the relative path to your clone):
+
+```powershell
+dotnet add reference ..\\TheSingularityWorkshop.MicroBundleRepository\\src\\Core\\TheSingularityWorkshop.MicroBundleRepository.Core\\TheSingularityWorkshop.MicroBundleRepository.Core.csproj
+```
+
+The current REST adapter project declares FSM_COS alpha.3 and FSM_REST alpha.4 dependencies. Treat that adapter as a separate compatibility check against the current alpha.6 line; do not assume the source project graph is already aligned.
+
 ## The boundary
 
 ~~~text
@@ -134,7 +179,6 @@ IMicroBundleRepository
 Azure Blob Storage
 ~~~
 
-The CLI is not a second repository implementation. It is a thin operational surface over the REST boundary, and it has no dependency on WebForge, Blazor, WPF, Unity, FSM_COS, or GUI packages.
 
 Set `MICRO_BUNDLE_REPOSITORY_URL` or pass `--url`:
 
@@ -197,7 +241,6 @@ It does not:
 - arbitrate installed bundles
 - construct RuntimeAssembly
 - own Experience composition
-- host WebForge, Unity, MyVR, or another presentation surface
 - provide general-purpose CRUD/query persistence
 
 Those boundaries matter.
