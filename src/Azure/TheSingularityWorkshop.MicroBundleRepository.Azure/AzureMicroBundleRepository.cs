@@ -15,6 +15,7 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
 
     private readonly BlobContainerClient _container;
 
+    /// <summary>Creates a MicroBundle repository backed by the configured Azure Blob container.</summary>
     public AzureMicroBundleRepository(AzureMicroBundleRepositoryOptions options)
         : this(CreateContainerClient(options))
     {
@@ -31,6 +32,7 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
     public Task InitializeAsync(CancellationToken cancellationToken = default) =>
         _container.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
 
+    /// <summary>Retrieves an artifact by its immutable address, or returns <see langword="null"/> when absent.</summary>
     public async ValueTask<MicroBundleArtifact?> GetAsync(
         MicroBundleArtifactAddress address,
         CancellationToken cancellationToken = default)
@@ -52,6 +54,7 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
         }
     }
 
+    /// <summary>Stores an immutable artifact at its content-addressed location.</summary>
     public async ValueTask PutAsync(
         MicroBundleArtifact artifact,
         CancellationToken cancellationToken = default)
