@@ -17,6 +17,7 @@ public sealed class AzureExperienceCatalog : IExperienceCatalog
 
     private readonly BlobContainerClient _container;
 
+    /// <summary>Creates a catalog backed by the configured Azure Blob container.</summary>
     public AzureExperienceCatalog(AzureExperienceRepositoryOptions options)
         : this(CreateContainerClient(options))
     {
@@ -33,6 +34,7 @@ public sealed class AzureExperienceCatalog : IExperienceCatalog
     public Task InitializeAsync(CancellationToken cancellationToken = default) =>
         _container.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
 
+    /// <summary>Lists the Experience publications currently recorded by the catalog.</summary>
     public async ValueTask<IReadOnlyList<ExperiencePublication>> ListPublishedAsync(
         CancellationToken cancellationToken = default)
     {
@@ -63,6 +65,7 @@ public sealed class AzureExperienceCatalog : IExperienceCatalog
             .ToArray();
     }
 
+    /// <summary>Gets the published Experience record for an identifier, if one exists.</summary>
     public async ValueTask<ExperiencePublication?> GetPublishedAsync(
         ulong experienceId,
         CancellationToken cancellationToken = default)
@@ -82,6 +85,7 @@ public sealed class AzureExperienceCatalog : IExperienceCatalog
         }
     }
 
+    /// <summary>Publishes or replaces the Experience record for its identifier.</summary>
     public async ValueTask PublishAsync(
         ExperiencePublication publication,
         CancellationToken cancellationToken = default)
@@ -107,6 +111,7 @@ public sealed class AzureExperienceCatalog : IExperienceCatalog
             cancellationToken);
     }
 
+    /// <summary>Removes the published Experience record for an identifier, if it exists.</summary>
     public async ValueTask UnpublishAsync(
         ulong experienceId,
         CancellationToken cancellationToken = default)
