@@ -43,6 +43,7 @@ public sealed class MicroBundleArtifact
             content);
     }
 
+    /// <summary>Gets the immutable identity of this artifact.</summary>
     public MicroBundleArtifactAddress Address { get; }
 
     /// <summary>
