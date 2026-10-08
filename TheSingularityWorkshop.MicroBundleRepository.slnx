@@ -3,6 +3,7 @@
   <Project Path="src/Azure/TheSingularityWorkshop.MicroBundleRepository.Azure/TheSingularityWorkshop.MicroBundleRepository.Azure.csproj" />
   <Project Path="src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest/TheSingularityWorkshop.MicroBundleRepository.Rest.csproj" />
   <Project Path="src/REST/TheSingularityWorkshop.MicroBundleRepository.FSM_COS/TheSingularityWorkshop.MicroBundleRepository.FSM_COS.csproj" />
+  <Project Path="src/Tools/TheSingularityWorkshop.MicroBundleRepository.Publisher/TheSingularityWorkshop.MicroBundleRepository.Publisher.csproj" />
   <Project Path="src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest.Host/TheSingularityWorkshop.MicroBundleRepository.Rest.Host.csproj" />
   <Project Path="tests/Core/TheSingularityWorkshop.MicroBundleRepository.Core.Tests/TheSingularityWorkshop.MicroBundleRepository.Core.Tests.csproj" />
   <Project Path="tests/Azure/TheSingularityWorkshop.MicroBundleRepository.Azure.Tests/TheSingularityWorkshop.MicroBundleRepository.Azure.Tests.csproj" />
