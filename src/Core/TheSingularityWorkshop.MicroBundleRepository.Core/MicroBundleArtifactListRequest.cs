@@ -25,7 +25,7 @@ public sealed record MicroBundleArtifactListRequest(
         if (Version is not null && string.IsNullOrWhiteSpace(Version))
             throw new ArgumentException("Version cannot be empty when supplied.", nameof(Version));
 
-        if (Version is not null && (Version.Contains('/') || Version.Contains('\\\\')))
+        if (Version is not null && (Version.Contains('/') || Version.Contains('\\')))
             throw new ArgumentException("Version must be a single storage-safe path segment.", nameof(Version));
 
         if (Version is not null && BundleId is null)
