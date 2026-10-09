@@ -52,8 +52,8 @@ The test suite validates the client/contract behavior; it does not, by itself, p
 
 ## 🟪 05 — Further reading
 
-- [Root README](../../../../README.md) — Workshop context and full repository boundary.
-- [Repository architecture](../../../../docs/ARCHITECTURE.md) — separation of discovery, retrieval, and composition.
+- [Root README](../../../README.md) — Workshop context and full repository boundary.
+- [Repository architecture](../../../docs/ARCHITECTURE.md) — separation of discovery, retrieval, and composition.
 - [FSM_COS integration package](../TheSingularityWorkshop.MicroBundleRepository.FSM_COS/README.md) — optional composition-side adapter.
 - [Workshop documentation standard](https://github.com/TrentBest/TheSingularityWorkshop.FSM_COS/blob/development/DOCUMENTATION_STANDARD.md).
 
