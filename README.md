@@ -272,3 +272,19 @@ FSM_COS
        ↓
 RuntimeAssembly
 ~~~
+
+
+## Artifact discovery
+
+A repository must let a host discover stored artifacts without already knowing every complete address. The MicroBundle repository therefore exposes a paginated identity-listing API alongside exact-address retrieval.
+
+~~~http
+GET /api/microbundles?pageSize=100
+GET /api/microbundles?bundleId=2110
+GET /api/microbundles?bundleId=2110&version=1.0.0
+GET /api/microbundles?pageSize=100&continuationToken={opaque-token}
+~~~
+
+The response lists `bundleId`, `version`, and `contentHash` for each artifact, plus an optional continuation token. It does not download payloads or imply that an artifact is compatible, published, or ready for composition. Page sizes are bounded from 1 through 500.
+
+This gives a host a first step to **see what is in the repository**. It can then retrieve a chosen immutable artifact by its complete address, validate/materialize it, and let FSM_COS handle composition. Discovery, artifact retrieval, and runtime composition remain separate operations.
