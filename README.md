@@ -64,7 +64,14 @@ An optional Ontology semantic address may accompany an artifact as metadata; it 
 
 ## 🟢 04 — See it in a minute
 
-The most direct first proof is the artifact-inventory contract exposed by the REST host. With the host running, request a page of stored artifact identities:
+The most direct first proof is the artifact-inventory contract exposed by the REST host. It requires an existing Azure container, a configured storage account URI, and credentials accepted by `DefaultAzureCredential`. From the repository root, set the account URI and start the host:
+
+```powershell
+$env:Repository__StorageAccountUri = "https://YOUR_ACCOUNT.blob.core.windows.net/"
+dotnet run --project src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest.Host
+```
+
+Then request a page of stored artifact identities:
 
 ```http
 GET /api/microbundles?pageSize=100
@@ -96,7 +103,7 @@ These commands validate the source and tests, not a live Azure deployment. Live 
 - [Core package README](src/Core/TheSingularityWorkshop.MicroBundleRepository.Core/README.md) — platform-neutral artifact and repository contracts.
 - [Azure package README](src/Azure/TheSingularityWorkshop.MicroBundleRepository.Azure/README.md) — Blob Storage implementation and operational requirements.
 - [REST package README](src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest/README.md) — HTTP transport boundary.
-- [FSM_COS integration README](src/REST/TheSingularityWorkshop.MicroBundleRepository.FSM_COS/README.md) — composition-side materialization, where that project is present in this branch.
+- [FSM_COS integration README](src/REST/TheSingularityWorkshop.MicroBundleRepository.FSM_COS/README.md) — optional composition-side materialization.
 - [FSM_COS documentation standard](https://github.com/TrentBest/TheSingularityWorkshop.FSM_COS/blob/development/DOCUMENTATION_STANDARD.md) — Workshop-wide documentation intent and presentation guidance.
 - [Branch reconciliation](docs/BRANCH_RECONCILIATION.md) — current branch dispositions and evidence required before deletion.
 
@@ -122,9 +129,12 @@ src/
         └── optional composition-side integration
 
 tests/
-├── Core/  └── artifact identity and contract tests
-├── Azure/ └── blob address, metadata, and adapter tests
-└── REST/  └── transport and API contract tests
+├── Core/
+│   └── artifact identity and contract tests
+├── Azure/
+│   └── blob address, metadata, and adapter tests
+└── REST/
+    └── transport and API contract tests
 ~~~
 
 ### Core
