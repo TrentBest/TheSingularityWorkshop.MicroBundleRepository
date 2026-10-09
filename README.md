@@ -4,71 +4,101 @@
 [![NuGet downloads](https://img.shields.io/nuget/dt/TheSingularityWorkshop.MicroBundleRepository?style=flat-square&logo=nuget&logoColor=white)](https://www.nuget.org/packages/TheSingularityWorkshop.MicroBundleRepository)
 [![Build](https://img.shields.io/github/actions/workflow/status/TrentBest/TheSingularityWorkshop.MicroBundleRepository/build.yml?branch=master&style=flat-square&logo=github)](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/workflows/build.yml)
 [![License](https://img.shields.io/github/license/TrentBest/TheSingularityWorkshop.MicroBundleRepository?style=flat-square)](LICENSE.txt)
-[![Last commit](https://img.shields.io/github/last-commit/TrentBest/TheSingularityWorkshop.MicroBundleRepository/master?style=flat-square)](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/commits/master)
-[![GitHub issues](https://img.shields.io/github/issues/TrentBest/TheSingularityWorkshop.MicroBundleRepository?style=flat-square)](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/issues)
 
-**The durable artifact boundary for MicroBundles.**
+<p align="center">
+  <img src="docs/images/microbundle-repository-boundary.svg" alt="MicroBundle Repository is the durable artifact-delivery boundary between domain-owned MicroBundles and composition hosts." width="1100">
+</p>
 
-This repository stores and delivers versioned MicroBundle artifacts. It deliberately does not become a database, composition engine, arbitration engine, Experience host, or GUI.
+<p align="center">
+  <strong>Where MicroBundles live before they become runtime.</strong><br>
+  <em>Locate the artifact. Verify the bytes. Deliver the capability. Stop there.</em>
+</p>
 
-## The boundary
+## ✳️ 00 — Identity
 
-~~~text
-Experience / published manifest
-          |
-          v
-   local bundle cache
-          |
-          | missing artifact
-          v
-IMicroBundleRepository
-          |
-          v
-Azure Blob Storage
-          |
-          v
- verified artifact bytes
-          |
-          v
-       FSM_COS
-   dependency closure
-   load once
-   arbitration
-   convergence
-          |
-          v
-   RuntimeAssembly
-~~~
+**MicroBundle Repository stores and delivers immutable, versioned MicroBundle artifacts.** It defines the “where” boundary in the Workshop's “what / where / how” architecture.
 
-The architectural invariant is simple:
+This repository is intentionally narrower than a database or runtime. It owns artifact identity, deterministic storage addresses, durable retrieval, integrity verification, and identity-only inventory. It does not decide what a bundle means or how capabilities are composed.
+
+## 🟦 01 — The problem and the short answer
+
+A host may know that it needs a MicroBundle without already possessing the exact bytes. It needs a stable way to identify, store, discover, and retrieve a particular artifact without coupling its runtime to a storage vendor.
+
+The answer is a small platform-neutral repository contract, with storage adapters behind it. The artifact address names a bundle ID, explicit version, and SHA-256 content identity. Listing can discover stored identities; exact-address retrieval remains a separate operation.
+
+## 🟣 02 — Where this fits in the Workshop
+
+| Question | Responsibility |
+|---|---|
+| **What is this capability?** | [MicroBundleDomain](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleDomain) |
+| **Where are its immutable artifact bytes?** | **MicroBundle Repository** |
+| **How are capabilities composed and arbitrated?** | [FSM_COS](https://github.com/TrentBest/TheSingularityWorkshop.FSM_COS) |
+
+These are responsibility boundaries, not mandatory dependencies. A consumer can implement another repository, use the domain package without this storage adapter, or choose a different host. Core should not depend upward on FSM_COS; composition-side materialization belongs outside the storage contract.
+
+The architectural invariant is:
 
 > **Blob Storage is the substrate. The repository is the delivery boundary. FSM_COS is the composition boundary.**
 
-## Artifact identity
+## 🩵 03 — The mental model and contract
 
-An artifact is addressed by three values:
+An artifact has a complete immutable address:
 
-~~~text
-MicroBundle ID
-      +
-explicit version
-      +
-SHA-256 content identity
-~~~
+```text
+MicroBundle ID + explicit version + SHA-256 content identity
+```
 
-The physical Azure location is deterministic:
+For Azure Blob Storage, the deterministic artifact path is:
 
-~~~text
+```text
 microbundles/
 └── artifacts/
     └── {bundleId}/
         └── {version}/
             └── {sha256}.bundle
-~~~
+```
 
-No database lookup is required to locate a complete artifact address.
+The repository locates and returns bytes for a complete address, verifies content identity, and can list stored identities without downloading every payload. A list result is not a dependency graph, publication decision, compatibility verdict, or permission to execute the artifact.
 
-The repository verifies the SHA-256 before materializing the immutable artifact object. Storage metadata repeats the identity for inspection, but the bytes remain authoritative.
+## 🟢 04 — See it in a minute
+
+The most direct first proof is the artifact-inventory contract exposed by the REST host. With the host running, request a page of stored artifact identities:
+
+```http
+GET /api/microbundles?pageSize=100
+```
+
+You can narrow the inventory or continue a page:
+
+```http
+GET /api/microbundles?bundleId=2110&version=1.0.0
+GET /api/microbundles?pageSize=100&continuationToken={opaque-token}
+```
+
+The response contains artifact identity fields (`bundleId`, `version`, and `contentHash`) and may include a continuation token. An empty inventory is a valid result when no artifacts have been stored. Listing does not return payload bytes; retrieve a selected artifact by its complete address in a separate operation.
+
+To build and run the repository's automated checks from source:
+
+```powershell
+dotnet restore TheSingularityWorkshop.MicroBundleRepository.slnx
+dotnet build TheSingularityWorkshop.MicroBundleRepository.slnx --configuration Release
+dotnet test TheSingularityWorkshop.MicroBundleRepository.slnx --configuration Release
+```
+
+These commands validate the source and tests, not a live Azure deployment. Live Azure-backed listing requires configured credentials and has not been claimed as part of the automated CI proof. See [Azure setup](docs/AZURE_SETUP.md) before attempting a real storage account.
+
+## 🟪 05 — Documentation map
+
+- [Architecture](docs/ARCHITECTURE.md) — why storage, artifact identity, and composition are separate boundaries.
+- [Azure setup](docs/AZURE_SETUP.md) — configure the first durable storage adapter and credentials.
+- [Core package README](src/Core/TheSingularityWorkshop.MicroBundleRepository.Core/README.md) — platform-neutral artifact and repository contracts.
+- [Azure package README](src/Azure/TheSingularityWorkshop.MicroBundleRepository.Azure/README.md) — Blob Storage implementation and operational requirements.
+- [REST package README](src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest/README.md) — HTTP transport boundary.
+- [FSM_COS integration README](src/REST/TheSingularityWorkshop.MicroBundleRepository.FSM_COS/README.md) — composition-side materialization, where that project is present in this branch.
+- [FSM_COS documentation standard](https://github.com/TrentBest/TheSingularityWorkshop.FSM_COS/blob/development/DOCUMENTATION_STANDARD.md) — Workshop-wide documentation intent and presentation guidance.
+
+Package versions in project files describe source state, not proof that a version is published on NuGet. Verify each package and its transitive dependency versions before treating it as installable. No package should be released until its own README and relevant usage/contract documentation meet the Workshop standard.
+
 
 ## Projects
 
