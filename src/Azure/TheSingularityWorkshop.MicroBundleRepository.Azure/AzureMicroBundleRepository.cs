@@ -106,7 +106,7 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
                 : $"{ArtifactPrefix}/{request.BundleId.Value}/{request.Version}/";
 
         var pages = _container
-            .GetBlobsAsync(prefix: prefix, cancellationToken: cancellationToken)
+            .GetBlobsAsync(BlobTraits.None, BlobStates.None, prefix, cancellationToken)
             .AsPages(request.ContinuationToken, request.PageSize);
 
         await foreach (var page in pages.WithCancellation(cancellationToken))
