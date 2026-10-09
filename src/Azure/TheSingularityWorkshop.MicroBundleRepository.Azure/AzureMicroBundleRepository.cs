@@ -15,6 +15,8 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
 
     private readonly BlobContainerClient _container;
 
+    /// <summary>Creates a repository backed by the configured Azure Blob container.</summary>
+    /// <param name="options">Storage account and container settings.</param>
     public AzureMicroBundleRepository(AzureMicroBundleRepositoryOptions options)
         : this(CreateContainerClient(options))
     {
@@ -31,6 +33,10 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
     public Task InitializeAsync(CancellationToken cancellationToken = default) =>
         _container.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
 
+    /// <summary>Retrieves and validates the artifact at an exact immutable address.</summary>
+    /// <param name="address">Complete bundle, version, and SHA-256 identity.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    /// <returns>The artifact, or null when the address is not stored.</returns>
     public async ValueTask<MicroBundleArtifact?> GetAsync(
         MicroBundleArtifactAddress address,
         CancellationToken cancellationToken = default)
@@ -52,6 +58,9 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
         }
     }
 
+    /// <summary>Stores an artifact immutably at its deterministic content-addressed location.</summary>
+    /// <param name="artifact">Artifact whose content matches its declared address.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
     public async ValueTask PutAsync(
         MicroBundleArtifact artifact,
         CancellationToken cancellationToken = default)
@@ -92,6 +101,10 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
         }
     }
 
+    /// <summary>Lists artifact identities without downloading their payload bytes.</summary>
+    /// <param name="request">Bounded listing query and optional continuation token.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    /// <returns>A page of matching immutable artifact addresses.</returns>
     public async ValueTask<MicroBundleArtifactListPage> ListAsync(
         MicroBundleArtifactListRequest request,
         CancellationToken cancellationToken = default)
