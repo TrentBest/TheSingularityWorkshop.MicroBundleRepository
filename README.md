@@ -60,6 +60,8 @@ microbundles/
 
 The repository locates and returns bytes for a complete address, verifies content identity, and can list stored identities without downloading every payload. A list result is not a dependency graph, publication decision, compatibility verdict, or permission to execute the artifact.
 
+An optional Ontology semantic address may accompany an artifact as metadata; it does not alter the content hash or deterministic storage path. The Azure adapter preserves that metadata separately, while identity-only listing remains deliberately unaware of semantic meaning.
+
 ## 🟢 04 — See it in a minute
 
 The most direct first proof is the artifact-inventory contract exposed by the REST host. With the host running, request a page of stored artifact identities:
@@ -108,15 +110,21 @@ src/
 ├── Core/
 │   └── TheSingularityWorkshop.MicroBundleRepository.Core
 │       └── platform-neutral contracts and artifact identity
-└── Azure/
-    └── TheSingularityWorkshop.MicroBundleRepository.Azure
-        └── Azure Blob Storage implementation
+├── Azure/
+│   └── TheSingularityWorkshop.MicroBundleRepository.Azure
+│       └── Azure Blob Storage adapter
+└── REST/
+    ├── TheSingularityWorkshop.MicroBundleRepository.Rest
+    │   └── HTTP client adapter
+    ├── TheSingularityWorkshop.MicroBundleRepository.Rest.Host
+    │   └── REST API host
+    └── TheSingularityWorkshop.MicroBundleRepository.FSM_COS
+        └── optional composition-side integration
 
 tests/
-├── Core/
-│   └── deterministic artifact identity tests
-└── Azure/
-    └── deterministic Azure path/configuration tests
+├── Core/  └── artifact identity and contract tests
+├── Azure/ └── blob address, metadata, and adapter tests
+└── REST/  └── transport and API contract tests
 ~~~
 
 ### Core
