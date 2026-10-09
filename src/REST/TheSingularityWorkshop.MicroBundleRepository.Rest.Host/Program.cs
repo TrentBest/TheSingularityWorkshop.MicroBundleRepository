@@ -54,6 +54,38 @@ app.MapGet("/", () => new
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 
 app.MapGet(
+    "/api/microbundles",
+    async (
+        int? pageSize,
+        string? continuationToken,
+        ulong? bundleId,
+        string? version,
+        IMicroBundleRepository repository,
+        CancellationToken cancellationToken) =>
+    {
+        var request = new MicroBundleArtifactListRequest(
+            pageSize ?? 100,
+            continuationToken,
+            bundleId,
+            version);
+
+        try
+        {
+            var page = await repository.ListAsync(request, cancellationToken);
+            return Results.Ok(new MicroBundleArtifactListDto(
+                page.Items.Select(address => new MicroBundleArtifactAddressDto(
+                    address.BundleId,
+                    address.Version,
+                    address.ContentHash)).ToArray(),
+                page.ContinuationToken));
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(new { error = ex.Message });
+        }
+    });
+
+app.MapGet(
     "/api/microbundles/{bundleId}/{version}/{contentHash}",
     async (
         ulong bundleId,
@@ -80,7 +112,8 @@ app.MapGet(
             artifact.Address.BundleId,
             artifact.Address.Version,
             artifact.Address.ContentHash,
-            Convert.ToBase64String(artifact.Content.ToArray())));
+            Convert.ToBase64String(artifact.Content.ToArray()),
+            artifact.SemanticAddress));
     });
 
 app.MapPut(
@@ -104,7 +137,7 @@ app.MapPut(
         {
             var address = new MicroBundleArtifactAddress(bundleId, version, contentHash);
             var content = Convert.FromBase64String(dto.ContentBase64);
-            await repository.PutAsync(new MicroBundleArtifact(address, content), cancellationToken);
+            await repository.PutAsync(new MicroBundleArtifact(address, content, dto.SemanticAddress), cancellationToken);
             return Results.NoContent();
         }
         catch (FormatException ex)

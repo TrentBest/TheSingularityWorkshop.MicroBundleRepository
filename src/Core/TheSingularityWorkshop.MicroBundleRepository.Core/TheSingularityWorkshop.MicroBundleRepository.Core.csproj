@@ -7,12 +7,12 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable>true</IsPackable>
     <PackageId>TheSingularityWorkshop.MicroBundleRepository.Core</PackageId>
-    <Version>0.1.0-alpha.3</Version>
+    <Version>0.1.0-alpha.4</Version>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="TheSingularityWorkshop.FSM_Serialization" Version="0.1.0-alpha.2" />
+    <PackageReference Include="TheSingularityWorkshop.FSM_Serialization" Version="1.0.0" />
     <PackageReference Include="TheSingularityWorkshop.Ontology" Version="0.1.0-alpha.2" />
   </ItemGroup>
 
