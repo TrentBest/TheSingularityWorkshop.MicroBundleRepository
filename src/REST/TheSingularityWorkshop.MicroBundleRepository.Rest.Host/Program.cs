@@ -112,7 +112,8 @@ app.MapGet(
             artifact.Address.BundleId,
             artifact.Address.Version,
             artifact.Address.ContentHash,
-            Convert.ToBase64String(artifact.Content.ToArray())));
+            Convert.ToBase64String(artifact.Content.ToArray()),
+            artifact.SemanticAddress));
     });
 
 app.MapPut(
@@ -136,7 +137,7 @@ app.MapPut(
         {
             var address = new MicroBundleArtifactAddress(bundleId, version, contentHash);
             var content = Convert.FromBase64String(dto.ContentBase64);
-            await repository.PutAsync(new MicroBundleArtifact(address, content), cancellationToken);
+            await repository.PutAsync(new MicroBundleArtifact(address, content, dto.SemanticAddress), cancellationToken);
             return Results.NoContent();
         }
         catch (FormatException ex)
