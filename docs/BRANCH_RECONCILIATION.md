@@ -14,7 +14,7 @@ This document is a working inventory, not permission to delete branches. The goa
 |---|---|---|
 | [#21](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/21) | `work/microbundle-artifact-discovery` | Keep draft while API, Azure metadata behavior, docs, and final CI are reviewed. |
 | [#19](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/19) | `fix/repository-build-errors` | Keep until the four-commit fix is deliberately integrated or superseded. |
-| [#18](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/18) | `docs/readme-standard` | Keep until its useful onboarding/version-accuracy changes are reconciled with the current README. |
+| [#18](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/18) | `docs/readme-standard` | Keep until useful onboarding guidance is reconciled. Its workflow change adds the required `&& false` publish gate, already present on the active branch; do not merge its older workflow wholesale. |
 | [#17](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/17) | `feature/microbundle-publisher` | Keep draft. The publisher and round-trip/materialization work must be reviewed against the repository's release scope before disposition. |
 
 Closed PRs do not prove that their source branches contain no unique work.
