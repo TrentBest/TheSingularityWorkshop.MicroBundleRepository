@@ -38,7 +38,7 @@ The ahead/behind figures below compare each branch with `development` at the tim
 | `implementation-core-azure-blob` | 32 / 45 | **Audit carefully.** An older implementation baseline with many files; compare contracts and tests against the current structure before classifying as superseded. |
 | `release-prep/core-1.0.0` | 59 / 25 | **Preserve pending content audit.** Contains extensive contract/theory/test material; closed release-prep PR status alone is insufficient evidence for deletion. |
 | `release-prep/rest-1.0.0` | 28 / 25 | **Preserve pending content audit.** Contains REST release notes/assets and implementation/test changes; determine what remains valuable. |
-| `work/microbundle-artifact-discovery` | Compared separately to `master`: 50 ahead / 0 behind in the current inventory | **Active branch.** Keep until PR #21 is reviewed and its remaining correctness questions are resolved. |
+| `work/microbundle-artifact-discovery` | Compared separately to `master`: ahead, 0 behind (the count changes as this PR receives commits) | **Active branch.** Keep until PR #21 is reviewed and its remaining correctness questions are resolved. |
 
 ## Deletion rule
 
