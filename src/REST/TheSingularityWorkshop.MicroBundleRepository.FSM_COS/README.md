@@ -27,7 +27,7 @@ Materialization is the point where a consumer-specific payload representation be
 
 ## 🟢 04 — See it in a minute
 
-Start with the [root repository walkthrough](../../../../README.md) to see the artifact inventory and exact-address delivery boundary. Then use this package only in a consumer that already references compatible FSM_COS contracts.
+Start with the [root repository walkthrough](../../../README.md) to see the artifact inventory and exact-address delivery boundary. Then use this package only in a consumer that already references compatible FSM_COS contracts.
 
 There is no honest standalone runtime result to promise without a host, a valid assembly artifact, compatible dependencies, and a composition request. The automated materializer tests are the appropriate source-level proof for the adapter; the repository tests alone do not prove successful end-to-end runtime composition.
 
@@ -39,8 +39,8 @@ dotnet test TheSingularityWorkshop.MicroBundleRepository.slnx --configuration Re
 
 ## 🟪 05 — Further reading
 
-- [Root README](../../../../README.md) — ecosystem roles and artifact flow.
-- [Repository architecture](../../../../docs/ARCHITECTURE.md) — why materialization is outside storage Core.
+- [Root README](../../../README.md) — ecosystem roles and artifact flow.
+- [Repository architecture](../../../docs/ARCHITECTURE.md) — why materialization is outside storage Core.
 - [REST adapter README](../TheSingularityWorkshop.MicroBundleRepository.Rest/README.md) — HTTP transport contract.
 - [FSM_COS documentation standard](https://github.com/TrentBest/TheSingularityWorkshop.FSM_COS/blob/development/DOCUMENTATION_STANDARD.md).
 
