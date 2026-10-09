@@ -13,7 +13,6 @@ internal static class SemanticAddressMetadata
 
     internal static string Write(OntologyAddress address)
     {
-        address.Validate();
         var payload = new Payload(
             address.OntologyId,
             address.OntologyVersion,
