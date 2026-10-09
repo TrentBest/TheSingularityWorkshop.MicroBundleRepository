@@ -112,6 +112,40 @@ public sealed class RestMicroBundleRepositoryTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => repository.GetAsync(address).AsTask());
     }
 
+    [Fact]
+    public async Task ListAsync_requests_a_page_of_artifact_identities()
+    {
+        var hash = new string('a', 64);
+        var dto = new MicroBundleArtifactListDto(
+            new[] { new MicroBundleArtifactAddressDto(42, "1.0.0", hash) },
+            "next-page-token");
+
+        var transport = new StubTransport(request =>
+        {
+            Assert.Equal("GET", request.Method);
+            Assert.Contains("/api/microbundles?pageSize=25&bundleId=42&version=1.0.0", request.Uri.ToString(), StringComparison.Ordinal);
+            Assert.Contains("continuationToken=previous-token", request.Uri.ToString(), StringComparison.Ordinal);
+            return new RestResponse(
+                200,
+                "OK",
+                new Dictionary<string, string>(),
+                JsonSerializer.Serialize(dto));
+        });
+
+        var repository = new RestMicroBundleRepository(new Uri("https://repository.test"), transport);
+        var page = await repository.ListAsync(new MicroBundleArtifactListRequest(
+            PageSize: 25,
+            ContinuationToken: "previous-token",
+            BundleId: 42,
+            Version: "1.0.0"));
+
+        Assert.Single(page.Items);
+        Assert.Equal(42UL, page.Items[0].BundleId);
+        Assert.Equal("1.0.0", page.Items[0].Version);
+        Assert.Equal(hash, page.Items[0].ContentHash);
+        Assert.Equal("next-page-token", page.ContinuationToken);
+    }
+
     private sealed class StubTransport(
         Func<RestRequest, RestResponse> responder) : IRestTransport
     {
