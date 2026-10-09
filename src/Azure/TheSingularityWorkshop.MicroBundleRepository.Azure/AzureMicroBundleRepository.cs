@@ -7,7 +7,7 @@ using TheSingularityWorkshop.MicroBundleRepository.Core;
 namespace TheSingularityWorkshop.MicroBundleRepository.Azure;
 
 /// <summary>
-/// Stores MicroBundle artifacts as deterministic Azure block blobs.
+/// Stores and discovers MicroBundle artifacts as deterministic Azure block blobs.
 /// </summary>
 public sealed class AzureMicroBundleRepository : IMicroBundleRepository
 {
@@ -92,8 +92,64 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
         }
     }
 
+    public async ValueTask<MicroBundleArtifactListPage> ListAsync(
+        MicroBundleArtifactListRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        request.Validate();
+
+        var prefix = request.BundleId is null
+            ? $"{ArtifactPrefix}/"
+            : request.Version is null
+                ? $"{ArtifactPrefix}/{request.BundleId.Value}/"
+                : $"{ArtifactPrefix}/{request.BundleId.Value}/{request.Version}/";
+
+        var pages = _container
+            .GetBlobsAsync(prefix: prefix, cancellationToken: cancellationToken)
+            .AsPages(request.ContinuationToken, request.PageSize);
+
+        await foreach (var page in pages.WithCancellation(cancellationToken))
+        {
+            var addresses = new List<MicroBundleArtifactAddress>(page.Values.Count);
+            foreach (var blob in page.Values)
+            {
+                if (TryParseAddress(blob.Name, out var address))
+                    addresses.Add(address);
+            }
+
+            return new MicroBundleArtifactListPage(addresses, page.ContinuationToken);
+        }
+
+        return new MicroBundleArtifactListPage(Array.Empty<MicroBundleArtifactAddress>(), null);
+    }
+
     internal static string GetBlobName(MicroBundleArtifactAddress address) =>
         $"{ArtifactPrefix}/{address.BundleId}/{address.Version}/{address.ContentHash}.bundle";
+
+    private static bool TryParseAddress(string blobName, out MicroBundleArtifactAddress address)
+    {
+        address = default;
+        var segments = blobName.Split('/');
+        if (segments.Length != 4 ||
+            !string.Equals(segments[0], ArtifactPrefix, StringComparison.Ordinal) ||
+            !segments[3].EndsWith(".bundle", StringComparison.Ordinal))
+            return false;
+
+        if (!ulong.TryParse(segments[1], out var bundleId))
+            return false;
+
+        var hash = segments[3][..^".bundle".Length];
+        try
+        {
+            address = new MicroBundleArtifactAddress(bundleId, segments[2], hash);
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+    }
 
     private static BlobContainerClient CreateContainerClient(AzureMicroBundleRepositoryOptions options)
     {
