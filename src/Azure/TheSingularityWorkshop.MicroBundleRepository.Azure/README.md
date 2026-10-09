@@ -27,16 +27,22 @@ Authentication uses Azure Identity's `DefaultAzureCredential`; storage account k
 
 Listing uses Azure Blob Storage continuation tokens. Callers must treat tokens as opaque and pass them back unchanged. Optional filters narrow listing by bundle ID and exact version.
 
-The configured identity needs permission to read/list and write blobs in the configured private container. Use an appropriate developer credential locally and managed identity in an Azure-hosted environment where available. See [Azure setup](../../../../docs/AZURE_SETUP.md).
+The configured identity needs permission to read/list and write blobs in the configured private container. Use an appropriate developer credential locally and managed identity in an Azure-hosted environment where available. See [Azure setup](../../../docs/AZURE_SETUP.md).
 
 ## 🟢 04 — See it in a minute
 
 After configuring the adapter with your storage account/container options and an authenticated Azure identity, use it through the Core contract:
 
 ```csharp
-IMicroBundleRepository repository = new AzureMicroBundleRepository(options);
-var page = await repository.ListAsync(
-    new MicroBundleArtifactListRequest(pageSize: 100),
+var repository = new AzureMicroBundleRepository(new AzureMicroBundleRepositoryOptions
+{
+    StorageAccountUri = new Uri("https://YOUR_ACCOUNT.blob.core.windows.net/")
+});
+await repository.InitializeAsync(cancellationToken);
+
+IMicroBundleRepository repositoryContract = repository;
+var page = await repositoryContract.ListAsync(
+    new MicroBundleArtifactListRequest(PageSize: 100),
     cancellationToken);
 ```
 
@@ -50,9 +56,9 @@ dotnet test TheSingularityWorkshop.MicroBundleRepository.slnx --configuration Re
 
 ## 🟪 05 — Further reading
 
-- [Azure setup](../../../../docs/AZURE_SETUP.md) — credentials and storage configuration.
-- [Repository architecture](../../../../docs/ARCHITECTURE.md) — artifact identity and delivery boundary.
-- [Root README](../../../../README.md) — full ecosystem map and HTTP discovery examples.
+- [Azure setup](../../../docs/AZURE_SETUP.md) — credentials and storage configuration.
+- [Repository architecture](../../../docs/ARCHITECTURE.md) — artifact identity and delivery boundary.
+- [Root README](../../../README.md) — full ecosystem map and HTTP discovery examples.
 - [Workshop documentation standard](https://github.com/TrentBest/TheSingularityWorkshop.FSM_COS/blob/development/DOCUMENTATION_STANDARD.md).
 
 No live Azure-backed listing claim is made unless the configured cloud operation has actually been exercised. Verify the exact package/dependency versions before installing a published package.
