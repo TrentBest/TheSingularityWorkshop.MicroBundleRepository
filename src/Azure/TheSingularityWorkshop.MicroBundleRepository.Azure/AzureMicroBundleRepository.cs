@@ -127,7 +127,7 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
     internal static string GetBlobName(MicroBundleArtifactAddress address) =>
         $"{ArtifactPrefix}/{address.BundleId}/{address.Version}/{address.ContentHash}.bundle";
 
-    private static bool TryParseAddress(string blobName, out MicroBundleArtifactAddress address)
+    internal static bool TryParseAddress(string blobName, out MicroBundleArtifactAddress address)
     {
         address = default;
         var segments = blobName.Split('/');
