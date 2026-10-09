@@ -1,6 +1,7 @@
 namespace TheSingularityWorkshop.MicroBundleRepository.Rest;
 
-internal sealed record MicroBundleArtifactObservationDto(
+/// <summary>REST representation of a stored MicroBundle artifact observation.</summary>
+public sealed record MicroBundleArtifactObservationDto(
     ulong BundleId,
     string Version,
     string ContentHash,
