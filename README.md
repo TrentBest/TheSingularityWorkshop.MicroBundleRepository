@@ -96,6 +96,7 @@ These commands validate the source and tests, not a live Azure deployment. Live 
 - [REST package README](src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest/README.md) — HTTP transport boundary.
 - [FSM_COS integration README](src/REST/TheSingularityWorkshop.MicroBundleRepository.FSM_COS/README.md) — composition-side materialization, where that project is present in this branch.
 - [FSM_COS documentation standard](https://github.com/TrentBest/TheSingularityWorkshop.FSM_COS/blob/development/DOCUMENTATION_STANDARD.md) — Workshop-wide documentation intent and presentation guidance.
+- [Branch reconciliation](docs/BRANCH_RECONCILIATION.md) — current branch dispositions and evidence required before deletion.
 
 Package versions in project files describe source state, not proof that a version is published on NuGet. Verify each package and its transitive dependency versions before treating it as installable. No package should be released until its own README and relevant usage/contract documentation meet the Workshop standard.
 
