@@ -104,8 +104,24 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
         }
         catch (RequestFailedException ex) when (ex.Status == 412)
         {
-            // Content-addressed writes are immutable. If the exact address already
-            // exists, the repository is already in the requested state.
+            // A failed If-None-Match write only proves that something already
+            // occupies this path. Read it back so a corrupt or inconsistent blob
+            // cannot be mistaken for a successful idempotent write.
+            var existing = await GetAsync(artifact.Address, cancellationToken);
+            if (existing is null)
+            {
+                throw new InvalidOperationException(
+                    $"Azure reported that artifact '{artifact.Address}' already exists, " +
+                    "but it could not be retrieved after the conditional write failed.");
+            }
+
+            if (!existing.Content.Span.SequenceEqual(artifact.Content.Span))
+            {
+                // GetAsync validates the SHA-256 identity; keep this explicit guard
+                // to document the idempotency contract if that implementation changes.
+                throw new InvalidDataException(
+                    $"Azure returned different bytes for existing artifact '{artifact.Address}'.");
+            }
         }
     }
 
