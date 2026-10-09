@@ -40,6 +40,49 @@ public sealed class AzureMicroBundleRepositoryTests
         Assert.False(AzureMicroBundleRepository.TryParseAddress(blobName, out _));
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Semantic_address_metadata_round_trips_scalar_and_multidimensional_indices(bool scalar)
+    {
+        var index = scalar
+            ? new TheSingularityWorkshop.Ontology.OntologyIndex(42)
+            : TheSingularityWorkshop.Ontology.OntologyIndex.Create(2, 14, 7);
+
+        var address = TheSingularityWorkshop.Ontology.OntologyAddress.Create(
+            2110,
+            "1.0.0",
+            "life/animal/fish/locomotion/swim",
+            index);
+
+        var metadata = new Dictionary<string, string>
+        {
+            [SemanticAddressMetadata.Key] = SemanticAddressMetadata.Write(address)
+        };
+
+        var restored = SemanticAddressMetadata.Read(metadata);
+
+        Assert.NotNull(restored);
+        Assert.Equal(address, restored.Value);
+    }
+
+    [Fact]
+    public void Missing_semantic_address_metadata_remains_optional()
+    {
+        Assert.Null(SemanticAddressMetadata.Read(new Dictionary<string, string>()));
+    }
+
+    [Fact]
+    public void Invalid_semantic_address_metadata_fails_explicitly()
+    {
+        var metadata = new Dictionary<string, string>
+        {
+            [SemanticAddressMetadata.Key] = "not-base64"
+        };
+
+        Assert.Throws<InvalidDataException>(() => SemanticAddressMetadata.Read(metadata));
+    }
+
     [Fact]
     public void Default_container_name_is_microbundles()
     {
