@@ -48,8 +48,8 @@ dotnet test TheSingularityWorkshop.MicroBundleRepository.slnx --configuration Re
 
 ## 🟪 05 — Further reading
 
-- [Repository architecture](../../../../docs/ARCHITECTURE.md) — storage, identity, and composition boundaries.
-- [Root README](../../../../README.md) — ecosystem context and the REST inventory example.
+- [Repository architecture](../../../docs/ARCHITECTURE.md) — storage, identity, and composition boundaries.
+- [Root README](../../../README.md) — ecosystem context and the REST inventory example.
 - [Workshop documentation standard](https://github.com/TrentBest/TheSingularityWorkshop.FSM_COS/blob/development/DOCUMENTATION_STANDARD.md) — documentation principles.
 
 Package versions declared in source are not proof of publication. Confirm the exact package version and dependencies on NuGet before relying on a published install.
