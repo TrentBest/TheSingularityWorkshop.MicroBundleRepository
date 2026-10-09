@@ -2,6 +2,7 @@ using Azure;
 using Azure.Identity;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using System.Text.Json;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 
 namespace TheSingularityWorkshop.MicroBundleRepository.Azure;
@@ -50,7 +51,10 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
             using var memory = new MemoryStream();
             await stream.CopyToAsync(memory, cancellationToken);
 
-            return new MicroBundleArtifact(address, memory.ToArray());
+            return new MicroBundleArtifact(
+                address,
+                memory.ToArray(),
+                SemanticAddressMetadata.Read(response.Value.Details.Metadata));
         }
         catch (RequestFailedException ex) when (ex.Status == 404)
         {
@@ -70,6 +74,15 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
         var blob = _container.GetBlobClient(GetBlobName(artifact.Address));
 
         using var stream = new MemoryStream(artifact.Content.ToArray(), writable: false);
+        var metadata = new Dictionary<string, string>
+        {
+            ["bundle-id"] = artifact.Address.BundleId.ToString(),
+            ["version"] = artifact.Address.Version,
+            ["content-sha256"] = artifact.Address.ContentHash
+        };
+
+        if (artifact.SemanticAddress is not null)
+            metadata[SemanticAddressMetadata.Key] = SemanticAddressMetadata.Write(artifact.SemanticAddress.Value);
 
         try
         {
@@ -81,12 +94,7 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
                     {
                         ContentType = "application/octet-stream"
                     },
-                    Metadata = new Dictionary<string, string>
-                    {
-                        ["bundle-id"] = artifact.Address.BundleId.ToString(),
-                        ["version"] = artifact.Address.Version,
-                        ["content-sha256"] = artifact.Address.ContentHash
-                    },
+                    Metadata = metadata,
                     Conditions = new BlobRequestConditions
                     {
                         IfNoneMatch = ETag.All
