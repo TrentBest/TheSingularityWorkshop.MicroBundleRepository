@@ -54,6 +54,38 @@ app.MapGet("/", () => new
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 
 app.MapGet(
+    "/api/microbundles",
+    async (
+        int? pageSize,
+        string? continuationToken,
+        ulong? bundleId,
+        string? version,
+        IMicroBundleRepository repository,
+        CancellationToken cancellationToken) =>
+    {
+        var request = new MicroBundleArtifactListRequest(
+            pageSize ?? 100,
+            continuationToken,
+            bundleId,
+            version);
+
+        try
+        {
+            var page = await repository.ListAsync(request, cancellationToken);
+            return Results.Ok(new MicroBundleArtifactListDto(
+                page.Items.Select(address => new MicroBundleArtifactAddressDto(
+                    address.BundleId,
+                    address.Version,
+                    address.ContentHash)).ToArray(),
+                page.ContinuationToken));
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(new { error = ex.Message });
+        }
+    });
+
+app.MapGet(
     "/api/microbundles/{bundleId}/{version}/{contentHash}",
     async (
         ulong bundleId,
