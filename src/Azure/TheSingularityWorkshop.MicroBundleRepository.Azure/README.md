@@ -27,6 +27,8 @@ Authentication uses Azure Identity's `DefaultAzureCredential`; storage account k
 
 Listing uses Azure Blob Storage continuation tokens. Callers must treat tokens as opaque and pass them back unchanged. Optional filters narrow listing by bundle ID and exact version.
 
+When an artifact carries an optional Ontology `SemanticAddress`, this adapter persists it as separate blob metadata and restores it on retrieval. The semantic address is not included in the artifact path or SHA-256 identity. Blobs written before this metadata was introduced remain readable and return `null` for the optional semantic address.
+
 The configured identity needs permission to read/list and write blobs in the configured private container. Use an appropriate developer credential locally and managed identity in an Azure-hosted environment where available. See [Azure setup](../../../docs/AZURE_SETUP.md).
 
 ## 🟢 04 — See it in a minute
