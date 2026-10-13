@@ -17,7 +17,7 @@ flowchart TD
 
 ## 🟦 01 What
 
-The repository locates and delivers verified MicroBundle artifacts; it is not the composition engine, arbitration engine, Experience host, or GUI.
+It owns artifact retrieval and delivery, including the repository contract and storage adapter boundary. It does not arbitrate, compose, or execute the retrieved capability.
 
 ## 🟣 02 Why
 
