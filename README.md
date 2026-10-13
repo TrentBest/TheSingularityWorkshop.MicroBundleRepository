@@ -1,4 +1,43 @@
+![The Singularity Workshop animated moniker](https://raw.githubusercontent.com/TrentBest/TheSingularityWorkshop.Renderer/development/docs/assets/moniker.svg)
+
 # The Singularity Workshop — MicroBundle Repository
+
+
+> **The durable artifact-delivery boundary for versioned MicroBundles.**
+
+The repository locates and delivers verified MicroBundle artifacts; it is not the composition engine, arbitration engine, Experience host, or GUI.
+
+```mermaid
+flowchart TD
+  H[Host / cache] --> R[IMicroBundleRepository]
+  R --> S[Azure Blob Storage]
+  S --> V[Artifact bytes + identity]
+  V --> C[FSM_COS composition]
+```
+
+## 🟦 01 What
+
+The repository locates and delivers verified MicroBundle artifacts; it is not the composition engine, arbitration engine, Experience host, or GUI.
+
+## 🟣 02 Why
+
+The Workshop is easier to understand when each repository states its responsibility clearly and shows how it connects to the wider system—without claiming ownership of neighboring layers.
+
+## 🔺 03 How
+
+A host requests an artifact through the repository contract; storage supplies bytes; identity and content verification protect the artifact boundary before composition consumes it.
+
+## 🟢 04 See it in a minute
+
+Follow the documented local configuration and build steps below; test the Core contract first, then the Azure adapter with explicitly configured storage.
+
+## 🟪 05 Documentation and theory
+
+[Projects and boundaries](#projects) · [Azure configuration](#azure-configuration) · [Development](#development)
+
+---
+
+## Detailed guide
 
 **The durable artifact boundary for MicroBundles.**
 
