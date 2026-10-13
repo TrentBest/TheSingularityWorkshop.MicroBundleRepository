@@ -21,7 +21,7 @@ The repository locates and delivers verified MicroBundle artifacts; it is not th
 
 ## 🟣 02 Why
 
-The Workshop is easier to understand when each repository states its responsibility clearly and shows how it connects to the wider system—without claiming ownership of neighboring layers.
+Artifact storage and runtime composition solve different problems. A stable repository contract lets hosts retrieve versioned artifacts from local caches or durable storage without teaching FSM_COS how Azure is organized or making storage responsible for arbitration.
 
 ## 🔺 03 How
 
