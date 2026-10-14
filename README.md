@@ -7,6 +7,8 @@
 
 # ✳️ 00 The Singularity Workshop — MicroBundle Repository
 
+This README follows the Workshop's shared [Documentation Standard](https://github.com/TrentBest/TheSingularityWorkshop.FSM_COS/blob/master/DOCUMENTATION_STANDARD.md).
+
 [![NuGet version](https://img.shields.io/nuget/v/TheSingularityWorkshop.MicroBundleRepository?style=flat-square&logo=nuget&logoColor=white)](https://www.nuget.org/packages/TheSingularityWorkshop.MicroBundleRepository)
 [![NuGet downloads](https://img.shields.io/nuget/dt/TheSingularityWorkshop.MicroBundleRepository?style=flat-square&logo=nuget&logoColor=white)](https://www.nuget.org/packages/TheSingularityWorkshop.MicroBundleRepository)
 [![Build](https://img.shields.io/github/actions/workflow/status/TrentBest/TheSingularityWorkshop.MicroBundleRepository/build.yml?branch=master&style=flat-square&logo=github)](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/workflows/build.yml)
