@@ -59,6 +59,7 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroB
 
         await foreach (var blob in _container.GetBlobsAsync(
                            traits: BlobTraits.Metadata,
+                           states: BlobStates.None,
                            prefix: ArtifactPrefix + "/",
                            cancellationToken: cancellationToken))
         {
