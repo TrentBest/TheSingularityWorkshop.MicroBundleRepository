@@ -18,4 +18,12 @@ public interface IMicroBundleRepository
     ValueTask PutAsync(
         MicroBundleArtifact artifact,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists immutable artifact identities without downloading artifact content.
+    /// The continuation token is opaque and must be passed back unchanged.
+    /// </summary>
+    ValueTask<MicroBundleArtifactListPage> ListAsync(
+        MicroBundleArtifactListRequest request,
+        CancellationToken cancellationToken = default);
 }

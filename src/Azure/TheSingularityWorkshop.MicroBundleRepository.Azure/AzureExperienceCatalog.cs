@@ -17,6 +17,8 @@ public sealed class AzureExperienceCatalog : IExperienceCatalog
 
     private readonly BlobContainerClient _container;
 
+    /// <summary>Creates a catalog backed by the configured Azure Blob container.</summary>
+    /// <param name="options">Storage account and container settings.</param>
     public AzureExperienceCatalog(AzureExperienceRepositoryOptions options)
         : this(CreateContainerClient(options))
     {
@@ -33,6 +35,9 @@ public sealed class AzureExperienceCatalog : IExperienceCatalog
     public Task InitializeAsync(CancellationToken cancellationToken = default) =>
         _container.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
 
+    /// <summary>Lists published Experience pointers without deleting immutable artifacts.</summary>
+    /// <param name="cancellationToken">Token used to cancel the listing.</param>
+    /// <returns>Published pointers ordered by Experience ID and version.</returns>
     public async ValueTask<IReadOnlyList<ExperiencePublication>> ListPublishedAsync(
         CancellationToken cancellationToken = default)
     {
@@ -63,6 +68,10 @@ public sealed class AzureExperienceCatalog : IExperienceCatalog
             .ToArray();
     }
 
+    /// <summary>Gets the current published pointer for an Experience.</summary>
+    /// <param name="experienceId">Stable Experience identity.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    /// <returns>The published pointer, or null when the Experience is unpublished.</returns>
     public async ValueTask<ExperiencePublication?> GetPublishedAsync(
         ulong experienceId,
         CancellationToken cancellationToken = default)
@@ -82,6 +91,9 @@ public sealed class AzureExperienceCatalog : IExperienceCatalog
         }
     }
 
+    /// <summary>Sets the published pointer to an immutable Experience artifact.</summary>
+    /// <param name="publication">Publication pointer to store.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
     public async ValueTask PublishAsync(
         ExperiencePublication publication,
         CancellationToken cancellationToken = default)
@@ -107,6 +119,9 @@ public sealed class AzureExperienceCatalog : IExperienceCatalog
             cancellationToken);
     }
 
+    /// <summary>Removes the published pointer without deleting the artifact itself.</summary>
+    /// <param name="experienceId">Stable Experience identity.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
     public async ValueTask UnpublishAsync(
         ulong experienceId,
         CancellationToken cancellationToken = default)

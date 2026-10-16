@@ -68,10 +68,51 @@ public sealed class RestMicroBundleRepository : IMicroBundleRepository
         EnsureSuccess(response);
     }
 
+    public async ValueTask<MicroBundleArtifactListPage> ListAsync(
+        MicroBundleArtifactListRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        request.Validate();
+
+        var response = await _transport.SendAsync(
+            new RestRequest("GET", CreateListUri(request)),
+            cancellationToken);
+
+        EnsureSuccess(response);
+
+        var dto = JsonSerializer.Deserialize<MicroBundleArtifactListDto>(response.Body, JsonOptions)
+            ?? throw new InvalidOperationException("The repository REST API returned an empty artifact list response.");
+
+        var addresses = dto.Items.Select(item =>
+            new MicroBundleArtifactAddress(item.BundleId, item.Version, item.ContentHash)).ToArray();
+
+        return new MicroBundleArtifactListPage(addresses, dto.ContinuationToken);
+    }
+
     private Uri CreateArtifactUri(MicroBundleArtifactAddress address) =>
         new(
             _baseUri,
             $"api/microbundles/{address.BundleId}/{Uri.EscapeDataString(address.Version)}/{address.ContentHash}");
+
+    private Uri CreateListUri(MicroBundleArtifactListRequest request)
+    {
+        var query = new List<string>
+        {
+            $"pageSize={request.PageSize}"
+        };
+
+        if (request.BundleId is not null)
+            query.Add($"bundleId={request.BundleId.Value}");
+
+        if (request.Version is not null)
+            query.Add($"version={Uri.EscapeDataString(request.Version)}");
+
+        if (request.ContinuationToken is not null)
+            query.Add($"continuationToken={Uri.EscapeDataString(request.ContinuationToken)}");
+
+        return new Uri(_baseUri, $"api/microbundles?{string.Join("&", query)}");
+    }
 
     private static Uri EnsureTrailingSlash(Uri uri) =>
         uri.AbsoluteUri.EndsWith("/", StringComparison.Ordinal)
