@@ -5,6 +5,7 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Core;
 /// </summary>
 public readonly record struct MicroBundleArtifactAddress
 {
+    /// <summary>Creates an immutable artifact address from its bundle, version, and content hash.</summary>
     public MicroBundleArtifactAddress(ulong bundleId, string version, string contentHash)
     {
         if (bundleId == 0)
@@ -24,9 +25,15 @@ public readonly record struct MicroBundleArtifactAddress
         ContentHash = contentHash.ToLowerInvariant();
     }
 
+    /// <summary>Gets the immutable MicroBundle identifier.</summary>
     public ulong BundleId { get; }
+
+    /// <summary>Gets the immutable MicroBundle version.</summary>
     public string Version { get; }
+
+    /// <summary>Gets the lowercase SHA-256 content hash.</summary>
     public string ContentHash { get; }
 
+    /// <summary>Returns the canonical bundle/version/content-hash representation.</summary>
     public override string ToString() => $"{BundleId}/{Version}/{ContentHash}";
 }

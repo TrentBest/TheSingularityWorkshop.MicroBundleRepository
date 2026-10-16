@@ -3,11 +3,15 @@ using TheSingularityWorkshop.FSM_Serialization;
 
 namespace TheSingularityWorkshop.MicroBundleRepository.Core;
 
+/// <summary>
+/// Binary payload containing a MicroBundle identifier and its assembly bytes.
+/// </summary>
 public sealed class MicroBundleAssemblyPayload : IBinarySerializable
 {
     private const uint FormatVersion = 1;
     private static readonly byte[] Magic = [0x46, 0x53, 0x4D, 0x42];
 
+    /// <summary>Creates an assembly payload for a MicroBundle.</summary>
     public MicroBundleAssemblyPayload(ulong bundleId, ReadOnlyMemory<byte> assemblyBytes)
     {
         if (bundleId == 0) throw new ArgumentOutOfRangeException(nameof(bundleId));
@@ -16,9 +20,13 @@ public sealed class MicroBundleAssemblyPayload : IBinarySerializable
         AssemblyBytes = assemblyBytes.ToArray();
     }
 
+    /// <summary>Gets or sets the MicroBundle identifier encoded in the payload.</summary>
     public ulong BundleId { get; private set; }
+
+    /// <summary>Gets or sets the assembly bytes encoded in the payload.</summary>
     public ReadOnlyMemory<byte> AssemblyBytes { get; private set; }
 
+    /// <summary>Writes this payload to the supplied binary stream.</summary>
     public void Pack(IBinaryStream stream)
     {
         stream.Write(Magic);
@@ -30,6 +38,7 @@ public sealed class MicroBundleAssemblyPayload : IBinarySerializable
         stream.Write(AssemblyBytes.Span);
     }
 
+    /// <summary>Reads this payload from the supplied binary stream.</summary>
     public void Unpack(IBinaryStream stream)
     {
         Span<byte> magic = stackalloc byte[4];
@@ -54,6 +63,7 @@ public sealed class MicroBundleAssemblyPayload : IBinarySerializable
         AssemblyBytes = bytes;
     }
 
+    /// <summary>Serializes this payload to its deterministic binary representation.</summary>
     public byte[] ToBytes()
     {
         using var stream = new MemoryBinaryStream();
@@ -61,6 +71,7 @@ public sealed class MicroBundleAssemblyPayload : IBinarySerializable
         return stream.ToArray();
     }
 
+    /// <summary>Deserializes a MicroBundle assembly payload from its binary representation.</summary>
     public static MicroBundleAssemblyPayload FromBytes(ReadOnlyMemory<byte> bytes)
     {
         using var stream = new MemoryBinaryStream(bytes.ToArray());
