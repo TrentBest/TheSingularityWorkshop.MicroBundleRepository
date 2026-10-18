@@ -28,6 +28,7 @@ public sealed class AzureExperienceRepositoryTests
 
         Assert.Equal("experiences", options.ContainerName);
     }
+
     [Fact]
     public void Default_max_artifact_size_is_ten_mebibytes()
     {
@@ -39,4 +40,17 @@ public sealed class AzureExperienceRepositoryTests
         Assert.Equal(10 * 1024 * 1024, options.MaxArtifactBytes);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Constructor_rejects_non_positive_max_artifact_size(long maxArtifactBytes)
+    {
+        var options = new AzureExperienceRepositoryOptions
+        {
+            StorageAccountUri = new Uri("https://example.blob.core.windows.net"),
+            MaxArtifactBytes = maxArtifactBytes
+        };
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => new AzureExperienceRepository(options));
+    }
 }
