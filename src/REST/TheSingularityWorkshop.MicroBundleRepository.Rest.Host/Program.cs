@@ -166,7 +166,7 @@ app.MapGet(
     });
 
 app.MapGet(
-    "/api/experiences/{experienceId:long}",
+    "/api/experiences/{experienceId}",
     async (
         ulong experienceId,
         IExperienceCatalog catalog,
@@ -185,7 +185,7 @@ app.MapGet(
     });
 
 app.MapGet(
-    "/api/experiences/{experienceId:long}/{version}/{contentHash}",
+    "/api/experiences/{experienceId}/{version}/{contentHash}",
     async (
         ulong experienceId,
         string version,
