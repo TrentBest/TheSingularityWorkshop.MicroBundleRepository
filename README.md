@@ -99,6 +99,8 @@ These commands validate the source and tests, not a live Azure deployment. Live 
 ## 🟪 05 — Documentation map
 
 - [Architecture](docs/ARCHITECTURE.md) — why storage, artifact identity, and composition are separate boundaries.
+- [Domain map](docs/DOMAIN_MAP.md) — evidence-backed ownership, lifecycle, coverage, and release gaps.
+- [Lifecycle visual](docs/images/microbundle-lifecycle.svg) — implemented paths versus unproven transitions.
 - [Azure setup](docs/AZURE_SETUP.md) — configure the first durable storage adapter and credentials.
 - [Core package README](src/Core/TheSingularityWorkshop.MicroBundleRepository.Core/README.md) — platform-neutral artifact and repository contracts.
 - [Azure package README](src/Azure/TheSingularityWorkshop.MicroBundleRepository.Azure/README.md) — Blob Storage implementation and operational requirements.
