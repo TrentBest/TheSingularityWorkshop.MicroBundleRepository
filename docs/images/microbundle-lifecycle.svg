@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 660" role="img" aria-labelledby="title desc">
+  <title id="title">MicroBundle lifecycle and ownership boundaries</title>
+  <desc id="desc">Solid blue boxes represent implemented contract areas; amber dashed boxes represent incomplete consumer flow or decisions. Domain defines what, repository defines where, FSM COS defines how, and hosts manifest the result.</desc>
+  <defs>
+    <style>
+      .bg{fill:#101820}.heading{font:700 27px system-ui,sans-serif;fill:#f4f7fb}.sub{font:15px system-ui,sans-serif;fill:#c8d2df}
+      .box{fill:#172b3a;stroke:#58b7e8;stroke-width:2}.gap{fill:#30271b;stroke:#f1b64b;stroke-width:2;stroke-dasharray:8 6}
+      .label{font:700 18px system-ui,sans-serif;fill:#f4f7fb}.small{font:14px system-ui,sans-serif;fill:#dce6ee}.muted{font:12px system-ui,sans-serif;fill:#c5cfda}
+      .line{stroke:#8bbbd2;stroke-width:2.5;fill:none}.gapline{stroke:#f1b64b;stroke-width:2.5;stroke-dasharray:7 6;fill:none}
+      .legend{font:13px system-ui,sans-serif;fill:#dce6ee}
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#8bbbd2"/></marker>
+    <marker id="arrowgap" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#f1b64b"/></marker>
+  </defs>
+  <rect class="bg" width="1200" height="660" rx="18"/>
+  <text x="44" y="52" class="heading">MicroBundle domain · What → Where → How → Experience</text>
+  <text x="44" y="80" class="sub">Solid = source contract exists · Dashed amber = missing route, proof, or policy · See docs/DOMAIN_MAP.md for evidence links</text>
+
+  <rect x="42" y="125" width="235" height="126" rx="12" class="box"/>
+  <text x="60" y="157" class="label">1 · Author</text>
+  <text x="60" y="184" class="small">MicroBundleDomain</text>
+  <text x="60" y="207" class="small">Identity · dependencies</text>
+  <text x="60" y="228" class="small">providers · schema · contract</text>
+
+  <path d="M277 188 H315" class="line" marker-end="url(#arrow)"/>
+  <rect x="320" y="125" width="225" height="126" rx="12" class="box"/>
+  <text x="338" y="157" class="label">2 · Package</text>
+  <text x="338" y="184" class="small">ID + version + SHA-256</text>
+  <text x="338" y="207" class="small">Opaque immutable bytes</text>
+  <text x="338" y="228" class="small">Hash checked by artifact type</text>
+
+  <path d="M545 188 H583" class="line" marker-end="url(#arrow)"/>
+  <rect x="588" y="125" width="240" height="126" rx="12" class="box"/>
+  <text x="606" y="157" class="label">3 · Store / retrieve</text>
+  <text x="606" y="184" class="small">Repository Core</text>
+  <text x="606" y="207" class="small">Local + Azure adapters</text>
+  <text x="606" y="228" class="small">MicroBundle REST routes</text>
+
+  <path d="M828 188 H866" class="gapline" marker-end="url(#arrowgap)"/>
+  <rect x="871" y="125" width="287" height="126" rx="12" class="gap"/>
+  <text x="889" y="157" class="label">4 · Select Experience</text>
+  <text x="889" y="184" class="small">Experience artifact + publication</text>
+  <text x="889" y="207" class="small">Contracts / Azure adapters exist</text>
+  <text x="889" y="228" class="small">REST discovery/retrieval missing</text>
+
+  <path d="M1014 251 V299 H827" class="gapline" marker-end="url(#arrowgap)"/>
+  <rect x="588" y="302" width="240" height="116" rx="12" class="gap"/>
+  <text x="606" y="334" class="label">5 · Cache / materialize</text>
+  <text x="606" y="361" class="small">Cache contract undefined</text>
+  <text x="606" y="384" class="small">Materializer integration exists</text>
+  <text x="606" y="403" class="muted">Boundary placement needs review</text>
+
+  <path d="M588 360 H545" class="line" marker-end="url(#arrow)"/>
+  <rect x="320" y="302" width="225" height="116" rx="12" class="box"/>
+  <text x="338" y="334" class="label">6 · Compose</text>
+  <text x="338" y="361" class="small">FSM_COS</text>
+  <text x="338" y="384" class="small">dependency closure</text>
+  <text x="338" y="403" class="small">arbitration · RuntimeAssembly</text>
+
+  <path d="M320 360 H277" class="line" marker-end="url(#arrow)"/>
+  <rect x="42" y="302" width="235" height="116" rx="12" class="box"/>
+  <text x="60" y="334" class="label">7 · Manifest</text>
+  <text x="60" y="361" class="small">WebPage / AnyApp / other host</text>
+  <text x="60" y="384" class="small">Consume composed result</text>
+  <text x="60" y="403" class="small">Not artifact authority</text>
+
+  <rect x="42" y="458" width="1116" height="136" rx="12" fill="#151f29" stroke="#526576" stroke-width="1.5"/>
+  <text x="64" y="490" class="label">Cross-cutting contracts still needing explicit decisions</text>
+  <text x="64" y="520" class="small">Trust: SHA-256 ≠ publisher authenticity · REST authorization and payload bounds</text>
+  <text x="64" y="545" class="small">Cache: immutable bytes vs mutable publication pointer · concurrency · offline/eviction rules</text>
+  <text x="64" y="570" class="small">Operations: inventory vs ontology coverage vs placement · retention/audit · real Azure proof</text>
+
+  <rect x="876" y="618" width="18" height="12" rx="2" class="box"/><text x="902" y="629" class="legend">implemented contract</text>
+  <rect x="1040" y="618" width="18" height="12" rx="2" class="gap"/><text x="1066" y="629" class="legend">gap / proof pending</text>
+</svg>
