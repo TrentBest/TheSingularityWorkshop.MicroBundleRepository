@@ -151,16 +151,8 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
                 if (!TryParseAddress(blob.Name, out var address))
                     continue;
 
-                // Azure's prefix filter is not an exact version filter:
-                // "1.0" also prefixes "1.0.1". Enforce the Core contract here.
-                if (request.BundleId is not null && address.BundleId != request.BundleId.Value)
-                    continue;
-
-                if (request.Version is not null &&
-                    !string.Equals(address.Version, request.Version, StringComparison.Ordinal))
-                    continue;
-
-                addresses.Add(address);
+                if (MatchesRequest(address, request))
+                    addresses.Add(address);
             }
 
             return new MicroBundleArtifactListPage(addresses, page.ContinuationToken);
@@ -171,6 +163,17 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
 
     internal static string GetBlobName(MicroBundleArtifactAddress address) =>
         $"{ArtifactPrefix}/{address.BundleId}/{address.Version}/{address.ContentHash}.bundle";
+
+    internal static bool MatchesRequest(
+        MicroBundleArtifactAddress address,
+        MicroBundleArtifactListRequest request)
+    {
+        // Azure's prefix filter is not an exact version filter:
+        // "1.0" also prefixes "1.0.1". Enforce the Core contract here.
+        return (request.BundleId is null || address.BundleId == request.BundleId.Value) &&
+            (request.Version is null ||
+             string.Equals(address.Version, request.Version, StringComparison.Ordinal));
+    }
 
     internal static bool TryParseAddress(string blobName, out MicroBundleArtifactAddress address)
     {
