@@ -43,7 +43,8 @@ else
     var experienceOptions = new AzureExperienceRepositoryOptions
     {
         StorageAccountUri = storageUri,
-        ContainerName = builder.Configuration["Repository:ExperienceContainerName"] ?? "experiences"
+        ContainerName = builder.Configuration["Repository:ExperienceContainerName"] ?? "experiences",
+        MaxArtifactBytes = builder.Configuration.GetValue<long?>("Repository:MaxExperienceArtifactBytes") ?? 10 * 1024 * 1024
     };
 
     builder.Services.AddSingleton<AzureExperienceRepository>(_ =>
@@ -226,6 +227,12 @@ app.MapGet(
             artifact = await repository.GetAsync(
                 new ExperienceArtifactAddress(experienceId, version, contentHash),
                 cancellationToken);
+        }
+        catch (ExperienceArtifactTooLargeException)
+        {
+            return Results.Problem(
+                title: "Experience artifact exceeds the configured storage limit.",
+                statusCode: StatusCodes.Status413PayloadTooLarge);
         }
         catch (ArgumentException)
         {
