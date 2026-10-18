@@ -15,7 +15,7 @@
   </PropertyGroup>
   <ItemGroup Condition="'$(WorkshopUseRepositorySources)' != 'true'">
     <PackageReference Include="TheSingularityWorkshop.FSM_Rest" Version="0.1.0-alpha.4" />
-    <PackageReference Include="TheSingularityWorkshop.FSM_COS" Version="0.1.0-alpha.3" />
+    <PackageReference Include="TheSingularityWorkshop.FSM_COS" Version="0.1.0-alpha.6" />
     <PackageReference Include="TheSingularityWorkshop.MicroBundleDomain" Version="1.0.1" />
   </ItemGroup>
   <ItemGroup>
