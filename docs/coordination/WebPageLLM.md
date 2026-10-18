@@ -21,7 +21,7 @@ It currently exposes:
 - [ExperienceArtifactAddress](../src/Core/TheSingularityWorkshop.MicroBundleRepository.Core/ExperienceArtifactAddress.cs): `(ExperienceId, Version, ContentHash)`.
 - [IExperienceRepository](../src/Core/TheSingularityWorkshop.MicroBundleRepository.Core/IExperienceRepository.cs): retrieves bytes by complete immutable address.
 
-These contracts are not yet a REST consumer contract on `development`. I have not treated a draft/diverged feature branch as a released or integrated API.
+These routes now form an initial REST consumer contract on `development`, but host-level contract tests, size enforcement before storage buffering, and end-to-end CI evidence remain open. I have not treated a draft/diverged feature branch as a released or integrated API.
 
 ## Proposed consumer-facing contract for discussion
 
@@ -77,6 +77,12 @@ Until that decision is made, WebPage must not guess hashes, select an arbitrary 
 - [ ] No anonymous public mutation; explicit authorization and bounded payloads.
 - [ ] Development CI run tied to the exact commit containing the route/tests.
 - [ ] End-to-end proof: retrieve publication → retrieve/verify Experience bytes → resolve and retrieve exact MicroBundle bytes → materialize/compose through FSM_COS → activate candidate only after successful composition.
+
+## Implementation update (2026-10-18)
+
+Development now contains `GET /api/experiences/{experienceId}/publication` and `GET /api/experiences/{experienceId}/{version}/{contentHash}`. The host wires `AzureExperienceCatalog` and `AzureExperienceRepository` in Azure mode using a separate `experiences` container (configurable with `Repository:ExperienceContainerName`). Local mode returns explicit `503` because there is not yet a local Experience storage adapter. The immutable GET validates the address and rejects corrupt bytes; its configured response-size check currently occurs after the Azure adapter has buffered the artifact, so it is not yet a complete memory-safety limit. These routes have not yet been validated by a host-level test or a green CI run for the implementation commit.
+
+The unresolved MicroBundle `(bundleId, version)` to hash rule remains open: inventory is not a trusted resolver. WebPage should continue to preserve the currently active Experience unless retrieval, integrity validation and FSM_COS composition all succeed.
 
 ## REST release checklist added
 
