@@ -2,7 +2,7 @@
 
 > This is the release checklist for `TheSingularityWorkshop.MicroBundleRepository.Rest` and the consumer-facing REST contract it implements. It records the current `development` branch as inspected on 2026-10-18. A source-declared version is not evidence that a package was published, and a route recommendation is not evidence that the route exists.
 
-**Current disposition: NOT RELEASE-READY.** The development host now maps Experience publication lookup and immutable Experience GET routes backed by Azure storage. Those routes have not yet been covered by host-level contract tests or validated by a green CI run on the implementation commit. Dependency resolution from `(bundleId, version)` to a trusted immutable hash is unresolved; write authorization, body/read limits before buffering, and release evidence remain outstanding.
+**Current disposition: NOT RELEASE-READY.** The development host now maps Experience publication lookup and immutable Experience GET routes backed by Azure storage. Those routes have not yet been covered by host-level contract tests or validated by a green CI run on the implementation commit. Dependency resolution from `(bundleId, version)` to a trusted immutable hash is unresolved; write authorization, MicroBundle request-body limits, host-level tests, trusted dependency resolution, and release evidence remain outstanding. Azure Experience reads now enforce a configurable byte limit before and during buffering; this source change still needs tests and CI verification.
 
 ## 1. Domain map: ownership and boundaries
 
@@ -35,7 +35,7 @@ Evidence inspected:
 | MicroBundle PUT | Host route and client method exist; base64 DTO and Core artifact verify hash | Not production-ready until authentication/authorization, size bounds, collision behavior and failure mappings are proven |
 | MicroBundle inventory | Host `GET /api/microbundles` returns observer inventory | This development route is an unpaginated observation list; the separate draft PR #21 changes the contract to paginated identity discovery. Do not describe that candidate as integrated/released |
 | Experience publication lookup | Development host maps `GET /api/experiences/{experienceId}/publication`; Azure catalog is registered in Azure mode | Implemented in source; host-level contract test and end-to-end evidence missing; local mode returns 503 |
-| Immutable Experience GET | Development host route plus `RestExperienceClient`; client unit tests cover successful retrieval and client-side hash rejection | Implemented in source; host-level contract tests missing; response-size check happens after adapter buffering and is not a full memory bound |
+| Immutable Experience GET | Development host route plus `RestExperienceClient`; client unit tests cover successful retrieval and client-side hash rejection | Implemented in source; host-level contract tests missing; Azure adapter now rejects known oversized blobs before buffering and enforces a byte cap while streaming; this change is not yet covered by adapter/host tests or CI |
 | MicroBundle `(bundleId, version)` → trusted hash | Inventory can show stored addresses; no canonical selection rule is documented | Unresolved domain contract |
 | Error behavior | Basic invalid address and not-found handling exist on MicroBundle GET | Incomplete; storage failures, integrity failures, invalid payloads and service unavailability need stable mappings |
 | Security/limits | Host configures permissive CORS and maps anonymous PUT; no explicit body/payload limit is visible in the checked host source | Release blocker until deliberate policy is implemented and tested |
@@ -67,7 +67,7 @@ Proposed route: `GET /api/experiences/{experienceId}/{version}/{contentHash}`
 - Retrieve only the exact immutable artifact through `IExperienceRepository.GetAsync`.
 - Verify the returned identity and SHA-256 before returning success.
 - Return `404` for an absent exact artifact; use a client error for malformed address and a service/integrity error for corruption or storage failure.
-- Keep response DTOs/versioning documented. Bound decoded bytes, encoded payloads, request body and memory consumption.
+- Keep response DTOs/versioning documented. Bound decoded bytes, encoded payloads, request body and memory consumption. Azure Experience artifact reads now use a configurable pre-buffer/streaming byte cap; MicroBundle HTTP payloads and total request-body limits remain open.
 
 ### 3.3 Resolve every selected MicroBundle deterministically
 
@@ -96,7 +96,7 @@ REST must expose distinguishable outcomes for unpublished/not found, malformed a
 - [x] Add publication lookup and immutable Experience GET routes on `development`.
 - [x] Validate address shape and verify bytes through `ExperienceArtifact` before success.
 - [ ] Add host-level contract tests and run them on the exact implementation commit.
-- [ ] Move/enforce artifact read limits before storage buffering; the current response limit is post-read and is not sufficient for untrusted large artifacts.
+- [x] Enforce a configurable Azure Experience read/write byte limit before and during buffering (`Repository:MaxExperienceArtifactBytes`, default 10 MiB); host-level mapping and tests still need verification. The host's response check remains as a secondary guard.
 - [ ] Keep publication pointer changes separate from immutable artifact storage. Unpublishing must remove the pointer, not silently delete immutable bytes.
 - [ ] Add deterministic error translation; unexpected storage errors must not leak internals or be mapped to false 404 responses.
 - [ ] Keep composition/materialization in the appropriate FSM_COS integration boundary, not in a REST controller.
