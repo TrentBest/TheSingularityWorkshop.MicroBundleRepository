@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using TheSingularityWorkshop.FSM_COS;
+using TheSingularityWorkshop.MicroBundleDomain;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 using TheSingularityWorkshop.MicroBundleRepository.Rest;
 using Xunit;
@@ -41,6 +42,8 @@ public sealed class RestMicroBundleCatalogTests
         Assert.True(catalog.TryResolve(2, out var dependency));
         Assert.Equal(1UL, root!.Id);
         Assert.Equal(2UL, dependency!.Id);
+        Assert.True(catalog.TryResolve(1, "1.0.0", out _));
+        Assert.False(catalog.TryResolve(1, "2.0.0", out _));
     }
 
     private static MicroBundleArtifactAddress Address(ulong id, byte[] content) =>
@@ -56,15 +59,14 @@ public sealed class RestMicroBundleCatalogTests
 
     private sealed class TestBundle(ulong id, params ulong[] dependencyIds) : IMicroBundle
     {
-        public ulong Id { get; } = id;
-        public TheSingularityWorkshop.MicroBundleDomain.MicroBundleDescriptor Descriptor { get; } =
-            new(id, "1.0.0");
-        public IReadOnlyList<BundleRequest> Dependencies { get; } =
-            dependencyIds.Select(BundleRequest.Unconfigured).ToArray();
+        public MicroBundleDescriptor Descriptor { get; } = new(id, "1.0.0");
+        public ulong Id => Descriptor.Id;
+        public IReadOnlyList<MicroBundleDependencyRequest> Dependencies { get; } =
+            dependencyIds.Select(MicroBundleDependencyRequest.Unconfigured).ToArray();
 
-        public void Load(MicroBundleLoadContext context) { }
+        public void Load(IMicroBundleLoadContext context) { }
 
-        public bool Arbitrate(ArbitrationContext context, int roundIndex) => false;
+        public bool Arbitrate(IMicroBundleArbitrationContext context, int roundIndex) => false;
     }
 
     private sealed class RepositoryTransport(
