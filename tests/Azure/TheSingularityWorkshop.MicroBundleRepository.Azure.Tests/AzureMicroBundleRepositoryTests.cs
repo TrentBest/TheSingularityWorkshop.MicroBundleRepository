@@ -84,6 +84,30 @@ public sealed class AzureMicroBundleRepositoryTests
     }
 
     [Fact]
+    public void Version_filter_is_exact_not_a_prefix_match()
+    {
+        var hash = new string('a', 64);
+        var exact = new MicroBundleArtifactAddress(300, "1.0", hash);
+        var prefixed = new MicroBundleArtifactAddress(300, "1.0.1", hash);
+        var request = new MicroBundleArtifactListRequest(BundleId: 300, Version: "1.0");
+
+        Assert.True(AzureMicroBundleRepository.MatchesRequest(exact, request));
+        Assert.False(AzureMicroBundleRepository.MatchesRequest(prefixed, request));
+    }
+
+    [Fact]
+    public void Bundle_filter_excludes_other_bundle_ids()
+    {
+        var hash = new string('a', 64);
+        var request = new MicroBundleArtifactListRequest(BundleId: 300);
+
+        Assert.True(AzureMicroBundleRepository.MatchesRequest(
+            new MicroBundleArtifactAddress(300, "1.0", hash), request));
+        Assert.False(AzureMicroBundleRepository.MatchesRequest(
+            new MicroBundleArtifactAddress(301, "1.0", hash), request));
+    }
+
+    [Fact]
     public void Default_container_name_is_microbundles()
     {
         var options = new AzureMicroBundleRepositoryOptions
