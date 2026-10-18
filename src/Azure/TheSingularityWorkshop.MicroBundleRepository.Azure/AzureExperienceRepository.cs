@@ -61,7 +61,7 @@ public sealed class AzureExperienceRepository : IExperienceRepository
 
             using var memory = new MemoryStream(
                 contentLength is >= 0 and <= int.MaxValue
-                    ? (int)Math.Min(contentLength.Value, _maxArtifactBytes)
+                    ? (int)Math.Min(Math.Min(contentLength.Value, _maxArtifactBytes), 1024 * 1024)
                     : 0);
             var buffer = new byte[81920];
             long totalBytes = 0;
