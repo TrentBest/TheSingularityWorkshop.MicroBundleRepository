@@ -78,6 +78,10 @@ Until that decision is made, WebPage must not guess hashes, select an arbitrary 
 - [ ] Development CI run tied to the exact commit containing the route/tests.
 - [ ] End-to-end proof: retrieve publication → retrieve/verify Experience bytes → resolve and retrieve exact MicroBundle bytes → materialize/compose through FSM_COS → activate candidate only after successful composition.
 
+## REST release checklist added
+
+The repository now tracks the broader package gate in [REST_RELEASE_READINESS.md](../REST_RELEASE_READINESS.md), linked from the root README, REST package README, and domain map. It covers the full domain ownership map, WebPage publication/retrieval contract, unresolved bundle-version-to-hash resolution, security/size limits, HTTP/host test matrix, PR #21 reconciliation, package dependency/API compatibility, and exact-commit release proof. It currently marks the package **not release-ready**; this is a checklist, not an implementation claim.
+
 ## Coordination status
 
 The WebPage request is recorded at [WebPage's MicroBundleRepositoryLLM.md](https://github.com/TrentBest/WebPage/blob/development/docs/coordination/MicroBundleRepositoryLLM.md), commit `ae302eef` per the handoff supplied by WebPage. Relevant repository work remains tracked in [issue #22](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/issues/22), [issue #10](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/issues/10), and [issue #9](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/issues/9).
