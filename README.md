@@ -264,7 +264,7 @@ Storage can evolve later. The composition contract does not need to know that it
 
 The Experience artifact repository is immutable. Publication is a separate pointer that identifies which immutable artifact is currently live.
 
-The REST host exposes the first discovery path for hosts such as AnyApp:
+These are the intended REST discovery paths for hosts such as AnyApp, **not routes currently exposed by the host**:
 
 ```text
 GET /api/experiences
@@ -272,7 +272,7 @@ GET /api/experiences/{experienceId}
 GET /api/experiences/{experienceId}/{version}/{sha256}
 ```
 
-The discovery endpoint returns only published artifact identity. It does not deserialize or execute the Experience. The selected artifact bytes remain the host/Experience boundary's responsibility.
+The current REST host wires MicroBundle artifact inventory and exact-address retrieval only. Experience publication lookup and immutable Experience retrieval remain unimplemented at this transport boundary; see [the tracked gap](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/issues/22). When implemented, discovery should return published artifact identity without deserializing or executing the Experience, while selected immutable bytes remain a separate retrieval operation.
 
 
 ~~~text
