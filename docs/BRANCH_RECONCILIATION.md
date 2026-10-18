@@ -13,7 +13,7 @@ This document is a working inventory, not permission to delete branches. The goa
 | PR | Branch | Current disposition |
 |---|---|---|
 | [#21](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/21) | `work/microbundle-artifact-discovery` | Keep draft while API, Azure metadata behavior, docs, and final CI are reviewed. |
-| [#19](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/19) | `fix/repository-build-errors` | Keep until the four-commit fix is deliberately integrated or superseded. |
+| [#19](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/19) | `fix/repository-build-errors` | **Merged** into `development` on 2026-10-16 (merge commit `9519e628cfb6d0435dcfd97f5926671406a90970`). Audit the branch for unique changes before any deletion. |
 | [#18](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/18) | `docs/readme-standard` | Keep until useful onboarding guidance is reconciled. Its workflow change adds the required `&& false` publish gate, already present on the active branch; do not merge its older workflow wholesale. |
 | [#17](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/17) | `feature/microbundle-publisher` | Keep draft. The publisher and round-trip/materialization work must be reviewed against the repository's release scope before disposition. |
 
@@ -31,7 +31,7 @@ The ahead/behind figures below compare each branch with `development` at the tim
 | `feat/local-microbundle-roundtrip` | 33 / 25 | **Preserve and reconcile.** Includes artifact round-trip and publisher-related work that needs an explicit scope decision. |
 | `feature/microbundle-publisher` | 47 / 25 | **Keep for PR #17.** Publisher executable and tests are substantive work, not disposable branch noise. |
 | `fix/repository-boundary` | 36 / 25 | **Inspect before disposition.** Contains boundary documentation/assets and composition-adapter changes; determine which are superseded by the selected implementation. |
-| `fix/repository-build-errors` | 4 / 0 | **Keep for PR #19.** Small, directly based on `development`; integrate or explicitly supersede before deletion. |
+| `fix/repository-build-errors` | 4 / 0 | **Merged PR #19.** The four-commit fix is integrated; compare branch-only commits and confirm no follow-on dependency before considering deletion. |
 | `forge/experience-publication-catalog` | 8 / 42 | **Audit against current source.** Publication-catalog work may overlap later integration; do not infer it is obsolete from age. |
 | `forge/experience-repository-azure` | 17 / 43 | **Audit against current source.** Contains Experience artifact storage work; determine what is already integrated and what remains unique. |
 | `implementation-azure-solidification` | 3 / 44 | **Inspect its live-Azure tests and setup changes.** Small branch, but unique test/operational work may still be useful. |
