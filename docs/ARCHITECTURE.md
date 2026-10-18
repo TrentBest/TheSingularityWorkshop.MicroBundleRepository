@@ -71,6 +71,10 @@ Azure Blob Storage does not:
 Those concerns belong elsewhere in the architecture.
 
 
+## Simulation-scale artifact delivery
+
+See [Artifact Delivery at Simulation Scale](SIMULATION_SCALE.md) for the distinction between immutable capability artifacts and high-frequency simulation state, including integrity, materialization, caching, and checkpoint boundaries.
+
 ## Experience artifacts
 
 Experiences use the same durable delivery pattern without coupling storage to the WebForge Experience model.
