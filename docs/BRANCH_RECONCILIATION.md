@@ -21,7 +21,7 @@ Closed PRs do not prove that their source branches contain no unique work.
 
 ## Branch inventory
 
-The ahead/behind figures below compare each branch with `development`. The active candidate's count was refreshed on 2026-10-18 against development commit `19c83e5acd884c47e0c0e29214cd04676756933c`; other inventory counts remain from the earlier audit and should be refreshed before branch cleanup. A diverged branch can contain both superseded and still-useful work; these figures alone are not a deletion criterion.
+The ahead/behind figures below compare each branch with `development`. The active candidate's count was refreshed on 2026-10-18 against development commit `81df8cdff756ba6dfea13ba6235d177c5a57371c`; other inventory counts remain from the earlier audit and should be refreshed before branch cleanup. A diverged branch can contain both superseded and still-useful work; these figures alone are not a deletion criterion.
 
 | Branch | Ahead / behind `development` | Recommended disposition |
 |---|---:|---|
@@ -38,7 +38,7 @@ The ahead/behind figures below compare each branch with `development`. The activ
 | `implementation-core-azure-blob` | 32 / 45 | **Audit carefully.** An older implementation baseline with many files; compare contracts and tests against the current structure before classifying as superseded. |
 | `release-prep/core-1.0.0` | 59 / 25 | **Preserve pending content audit.** Contains extensive contract/theory/test material; closed release-prep PR status alone is insufficient evidence for deletion. |
 | `release-prep/rest-1.0.0` | 28 / 25 | **Preserve pending content audit.** Contains REST release notes/assets and implementation/test changes; determine what remains valuable. |
-| `work/microbundle-artifact-discovery` | 96 / 45 (refreshed 2026-10-18) | **Active branch; diverged.** Keep PR #21 in draft. Do not merge or rebase wholesale; reconcile its 96 candidate-only commits against the 45 development-only commits, preserving unique implementation, tests, and documentation. |
+| `work/microbundle-artifact-discovery` | 102 / 46 (refreshed 2026-10-18) | **Active branch; diverged.** Keep PR #21 in draft. Do not merge or rebase wholesale; reconcile its 102 candidate-only commits against the 46 development-only commits, preserving unique implementation, tests, and documentation. |
 
 ## Deletion rule
 
