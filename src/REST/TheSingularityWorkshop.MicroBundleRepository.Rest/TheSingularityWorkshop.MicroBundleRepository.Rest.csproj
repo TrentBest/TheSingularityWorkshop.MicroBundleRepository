@@ -16,6 +16,7 @@
   <ItemGroup Condition="'$(WorkshopUseRepositorySources)' != 'true'">
     <PackageReference Include="TheSingularityWorkshop.FSM_Rest" Version="0.1.0-alpha.4" />
     <PackageReference Include="TheSingularityWorkshop.FSM_COS" Version="0.1.0-alpha.3" />
+    <PackageReference Include="TheSingularityWorkshop.MicroBundleDomain" Version="1.0.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../Core/TheSingularityWorkshop.MicroBundleRepository.Core/TheSingularityWorkshop.MicroBundleRepository.Core.csproj" />
@@ -23,10 +24,12 @@
   <ItemGroup Condition="'$(WorkshopUseRepositorySources)' == 'true'">
     <ProjectReference Include="../../../../TheSingularityWorkshop.FSM_REST/src/FSM_REST/FSM_REST.csproj" />
     <ProjectReference Include="../../../../TheSingularityWorkshop.FSM_COS/src/FSM_COS/FSM_COS.csproj" />
+    <ProjectReference Include="../../../../TheSingularityWorkshop.MicroBundleDomain/TheSingularityWorkshop.MicroBundleDomain.csproj" />
   </ItemGroup>
   <Target Name="ValidateWorkshopRepositorySources" BeforeTargets="PrepareForBuild" Condition="'$(WorkshopUseRepositorySources)' == 'true'">
     <Error Condition="!Exists('../../../../TheSingularityWorkshop.FSM_REST/src/FSM_REST/FSM_REST.csproj')" Text="WorkshopUseRepositorySources=true requires TheSingularityWorkshop.FSM_REST beside this repository." />
     <Error Condition="!Exists('../../../../TheSingularityWorkshop.FSM_COS/src/FSM_COS/FSM_COS.csproj')" Text="WorkshopUseRepositorySources=true requires TheSingularityWorkshop.FSM_COS beside this repository." />
+    <Error Condition="!Exists('../../../../TheSingularityWorkshop.MicroBundleDomain/TheSingularityWorkshop.MicroBundleDomain.csproj')" Text="WorkshopUseRepositorySources=true requires TheSingularityWorkshop.MicroBundleDomain beside this repository." />
   </Target>
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="" />
