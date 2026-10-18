@@ -60,8 +60,8 @@ public sealed class AzureExperienceRepository : IExperienceRepository
                 throw new ExperienceArtifactTooLargeException(_maxArtifactBytes);
 
             using var memory = new MemoryStream(
-                contentLength is >= 0 and <= int.MaxValue
-                    ? (int)Math.Min(Math.Min(contentLength.Value, _maxArtifactBytes), 1024 * 1024)
+                contentLength >= 0 && contentLength <= int.MaxValue
+                    ? (int)Math.Min(Math.Min(contentLength, _maxArtifactBytes), 1024 * 1024)
                     : 0);
             var buffer = new byte[81920];
             long totalBytes = 0;
