@@ -37,6 +37,23 @@ else
 
     builder.Services.AddSingleton<IMicroBundleRepositoryObserver>(services =>
         services.GetRequiredService<AzureMicroBundleRepository>());
+
+    // Experience artifacts and their mutable publication pointer use a separate
+    // container from MicroBundle artifacts. They remain opaque to the REST host.
+    var experienceOptions = new AzureExperienceRepositoryOptions
+    {
+        StorageAccountUri = storageUri,
+        ContainerName = builder.Configuration["Repository:ExperienceContainerName"] ?? "experiences"
+    };
+
+    builder.Services.AddSingleton<AzureExperienceRepository>(_ =>
+        new AzureExperienceRepository(experienceOptions));
+    builder.Services.AddSingleton<IExperienceRepository>(services =>
+        services.GetRequiredService<AzureExperienceRepository>());
+    builder.Services.AddSingleton<AzureExperienceCatalog>(_ =>
+        new AzureExperienceCatalog(experienceOptions));
+    builder.Services.AddSingleton<IExperienceCatalog>(services =>
+        services.GetRequiredService<AzureExperienceCatalog>());
 }
 
 builder.Services.AddCors(options =>
@@ -145,5 +162,112 @@ app.MapPut(
             return Results.BadRequest(new { error = ex.Message });
         }
     });
+
+app.MapGet(
+    "/api/experiences/{experienceId}/publication",
+    async (
+        ulong experienceId,
+        IServiceProvider services,
+        CancellationToken cancellationToken) =>
+    {
+        if (experienceId == 0)
+            return Results.BadRequest(new { error = "Experience ID must be greater than zero." });
+
+        // Local mode currently has no local Experience storage adapter. Return an
+        // explicit service-unavailable response instead of a DI/startup failure.
+        var catalog = services.GetService<IExperienceCatalog>();
+        if (catalog is null)
+            return Results.Problem(
+                title: "Experience publication catalog is not configured.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+
+        var publication = await catalog.GetPublishedAsync(experienceId, cancellationToken);
+        if (publication is null)
+            return Results.NotFound(new { error = "No publication exists for this Experience." });
+
+        if (publication.Address.ExperienceId != experienceId ||
+            !IsValidExperienceAddress(publication.Address.Version, publication.Address.ContentHash))
+        {
+            return Results.Problem(
+                title: "The stored Experience publication address is invalid.",
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        return Results.Ok(new
+        {
+            experienceId = publication.Address.ExperienceId,
+            version = publication.Address.Version,
+            contentHash = publication.Address.ContentHash
+        });
+    });
+
+app.MapGet(
+    "/api/experiences/{experienceId}/{version}/{contentHash}",
+    async (
+        ulong experienceId,
+        string version,
+        string contentHash,
+        IConfiguration configuration,
+        IServiceProvider services,
+        CancellationToken cancellationToken) =>
+    {
+        if (experienceId == 0 || !IsValidExperienceAddress(version, contentHash))
+            return Results.BadRequest(new { error = "The Experience artifact address is invalid." });
+
+        var repository = services.GetService<IExperienceRepository>();
+        if (repository is null)
+            return Results.Problem(
+                title: "Experience artifact storage is not configured.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+
+        ExperienceArtifact? artifact;
+        try
+        {
+            artifact = await repository.GetAsync(
+                new ExperienceArtifactAddress(experienceId, version, contentHash),
+                cancellationToken);
+        }
+        catch (ArgumentException)
+        {
+            // The storage path existed, but its bytes did not match the requested
+            // content identity. Never return corrupt bytes as a successful artifact.
+            return Results.Problem(
+                title: "Experience artifact integrity verification failed.",
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        if (artifact is null)
+            return Results.NotFound();
+
+        // Bound the response payload. Storage adapters should additionally enforce
+        // a read limit before buffering when handling untrusted/large artifacts.
+        var maxArtifactBytes = configuration.GetValue<long?>("Repository:MaxExperienceArtifactBytes") ?? 10 * 1024 * 1024;
+        if (artifact.Content.Length > maxArtifactBytes)
+            return Results.Problem(
+                title: "Experience artifact exceeds the configured response limit.",
+                statusCode: StatusCodes.Status413PayloadTooLarge);
+
+        return Results.Ok(new
+        {
+            experienceId = artifact.Address.ExperienceId,
+            version = artifact.Address.Version,
+            contentHash = artifact.Address.ContentHash,
+            contentBase64 = Convert.ToBase64String(artifact.Content.ToArray())
+        });
+    });
+
+static bool IsValidExperienceAddress(string version, string contentHash)
+{
+    if (string.IsNullOrWhiteSpace(version) ||
+        version.Contains('/') ||
+        version.Contains('\\') ||
+        contentHash.Length != 64 ||
+        !string.Equals(contentHash, contentHash.ToLowerInvariant(), StringComparison.Ordinal))
+    {
+        return false;
+    }
+
+    return contentHash.All(Uri.IsHexDigit);
+}
 
 app.Run();
