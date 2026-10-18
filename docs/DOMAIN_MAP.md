@@ -25,7 +25,7 @@
 2. **Describe configuration** — capability-owned schema/defaults and the rule that Experiences carry overrides rather than duplicate the schema remain tracked in [Domain #11](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleDomain/issues/11).
 3. **Identify artifact** — MicroBundle bytes are addressed by bundle ID, explicit version and SHA-256. The hash proves byte identity, not publisher authenticity or authorization.
 4. **Store and retrieve bytes** — Core defines exact-address access; Azure maps the address to a deterministic blob path. HTTP 412 handling now reads the existing artifact through the hash-verifying retrieval path and rejects differing bytes or semantic metadata; focused conflict/corruption tests are still required.
-5. **Discover artifacts** — `ListAsync` returns paginated identities, optionally filtered by bundle ID/version, without downloading payloads. Continuation tokens are opaque; adapter-level pagination/filter/cancellation tests remain outstanding.
+5. **Discover artifacts** — `ListAsync` returns paginated identities, optionally filtered by bundle ID/version, without downloading payloads. Because Azure's version prefix is not an exact match, the adapter now applies an exact version comparison to parsed identities; focused unit tests cover version-prefix collisions and bundle-ID filtering. Adapter-level pagination/continuation-token/cancellation tests remain outstanding, and the new tests have not yet been run on this head.
 6. **Discover an Experience** — the candidate adds REST routes for published Experience identities, current publication lookup and exact immutable Experience retrieval. Those routes lack focused host-level tests in the candidate and have not been proven end-to-end.
 7. **Materialize and compose** — repository delivery is not dependency closure, arbitration or activation. Those responsibilities belong at the FSM_COS/composition boundary; live WebPage activation remains unproven.
 8. **Operate safely** — authentication/authorization, payload limits, observability, retry policy, retention and live Azure validation need explicit proof before production claims.
@@ -59,8 +59,8 @@ Inventory, ontology coverage and placement are different contracts; see [Reposit
 
 | Area | Candidate evidence | Remaining decision or proof |
 |---|---|---|
-| Content integrity | Artifact constructor verifies SHA-256; unit tests exist | On HTTP 412, verify existing bytes/metadata or return a clear conflict; add corruption/collision tests |
-| Pagination | Request validation and Azure listing source exist | Test next-page token, filters, malformed blob names, cancellation and empty pages |
+| Content integrity | Artifact constructor verifies SHA-256; unit tests exist | On HTTP 412, existing bytes are read through hash verification and semantic metadata is compared; add focused conflict/corruption tests |
+| Pagination | Request validation and Azure listing source exist | Test next-page token, pagination, cancellation and empty pages; pure filter tests now cover exact version and bundle-ID matching |
 | REST compatibility | Candidate adds pagination and Experience routes | `GET /api/microbundles` changes its response contract versus development's observer inventory; preserve it or deliberately version/document the break |
 | Storage modes | Candidate host wires Azure implementations | Decide whether Local mode remains supported; development supports local filesystem mode, candidate requires Azure configuration |
 | Experience routes | List, current publication and exact artifact routes are mapped | Add host-level tests, including missing pointer/artifact, invalid addresses, and IDs beyond signed 64-bit range; route constraints were removed so route binding can accept full-width `ulong` identifiers; host-level tests for values above `long.MaxValue` are still required |
