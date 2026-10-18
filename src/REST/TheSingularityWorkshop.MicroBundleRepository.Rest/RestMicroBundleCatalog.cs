@@ -1,6 +1,7 @@
 using TheSingularityWorkshop.MicroBundleDomain;
 using TheSingularityWorkshop.FSM_COS;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
+using MicroBundle = TheSingularityWorkshop.MicroBundleDomain.IMicroBundle;
 
 namespace TheSingularityWorkshop.MicroBundleRepository.Rest;
 
@@ -13,7 +14,7 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
     private readonly RestMicroBundleRepository _repository;
     private readonly IReadOnlyDictionary<ulong, MicroBundleArtifactAddress> _addresses;
     private readonly IMicroBundleArtifactMaterializer _materializer;
-    private readonly Dictionary<ulong, IMicroBundle> _loaded = new();
+    private readonly Dictionary<ulong, MicroBundle> _loaded = new();
 
     public RestMicroBundleCatalog(
         RestMicroBundleRepository repository,
@@ -76,7 +77,7 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
     public bool TryResolve(
         ulong bundleId,
         string version,
-        out IMicroBundle? bundle)
+        out MicroBundle? bundle)
     {
         if (_loaded.TryGetValue(bundleId, out bundle) &&
             string.Equals(bundle.Descriptor.Version, version, StringComparison.Ordinal))
