@@ -8,4 +8,10 @@ public sealed record AzureExperienceRepositoryOptions
 
     /// <summary>Gets the Blob container used for published Experiences.</summary>
     public string ContainerName { get; init; } = "experiences";
+
+    /// <summary>
+    /// Gets the maximum number of bytes accepted when reading an Experience artifact.
+    /// Defaults to 10 MiB. Values must be greater than zero.
+    /// </summary>
+    public long MaxArtifactBytes { get; init; } = 10 * 1024 * 1024;
 }
