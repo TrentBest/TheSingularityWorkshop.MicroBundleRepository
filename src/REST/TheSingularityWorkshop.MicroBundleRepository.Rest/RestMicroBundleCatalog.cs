@@ -1,3 +1,4 @@
+using TheSingularityWorkshop.MicroBundleDomain;
 using TheSingularityWorkshop.FSM_COS;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 
@@ -61,11 +62,28 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
                 throw new InvalidOperationException(
                     $"Materialized artifact {address} produced MicroBundle {bundle.Id}.");
 
+            if (!string.Equals(bundle.Descriptor.Version, address.Version, StringComparison.Ordinal))
+                throw new InvalidOperationException(
+                    $"Materialized artifact {address} produced MicroBundle version {bundle.Descriptor.Version}.");
+
             _loaded.Add(bundle.Id, bundle);
 
             foreach (var dependency in bundle.Dependencies)
                 pending.Enqueue(dependency.BundleId);
         }
+    }
+
+    public bool TryResolve(
+        ulong bundleId,
+        string version,
+        out IMicroBundle? bundle)
+    {
+        if (_loaded.TryGetValue(bundleId, out bundle) &&
+            string.Equals(bundle.Descriptor.Version, version, StringComparison.Ordinal))
+            return true;
+
+        bundle = null;
+        return false;
     }
 
     public bool TryResolve(ulong bundleId, out IMicroBundle? bundle) =>
