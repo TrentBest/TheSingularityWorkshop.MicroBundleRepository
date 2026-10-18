@@ -35,7 +35,7 @@ Evidence inspected:
 | MicroBundle PUT | Host route and client method exist; base64 DTO and Core artifact verify hash | Not production-ready until authentication/authorization, size bounds, collision behavior and failure mappings are proven |
 | MicroBundle inventory | Host `GET /api/microbundles` returns observer inventory | This development route is an unpaginated observation list; the separate draft PR #21 changes the contract to paginated identity discovery. Do not describe that candidate as integrated/released |
 | Experience publication lookup | Development host maps `GET /api/experiences/{experienceId}/publication`; Azure catalog is registered in Azure mode | Implemented in source; host-level contract test and end-to-end evidence missing; local mode returns 503 |
-| Immutable Experience GET | Development host maps `GET /api/experiences/{experienceId}/{version}/{contentHash}` and verifies through `ExperienceArtifact` | Implemented in source; host-level contract tests missing; response-size check happens after adapter buffering and is not a full memory bound |
+| Immutable Experience GET | Development host route plus `RestExperienceClient`; client unit tests cover successful retrieval and client-side hash rejection | Implemented in source; host-level contract tests missing; response-size check happens after adapter buffering and is not a full memory bound |
 | MicroBundle `(bundleId, version)` → trusted hash | Inventory can show stored addresses; no canonical selection rule is documented | Unresolved domain contract |
 | Error behavior | Basic invalid address and not-found handling exist on MicroBundle GET | Incomplete; storage failures, integrity failures, invalid payloads and service unavailability need stable mappings |
 | Security/limits | Host configures permissive CORS and maps anonymous PUT; no explicit body/payload limit is visible in the checked host source | Release blocker until deliberate policy is implemented and tested |
@@ -117,7 +117,8 @@ REST must expose distinguishable outcomes for unpublished/not found, malformed a
 - [ ] Error tests: storage unavailable, timeout/cancellation, malformed DTO, bad base64, oversized body and permission denial.
 - [ ] Inventory tests: filtering, ordering guarantees if any, page size, opaque continuation token round-trip, invalid token, end-of-list and cancellation.
 - [ ] Azure tests: create-only/idempotent write behavior, collision with differing bytes/metadata, listing pagination and cancellation. Keep cloud tests explicitly opt-in; report their status honestly.
-- [ ] REST client tests: escaping, response DTO compatibility, identity validation, non-success status mapping, cancellation propagation.
+- [x] Add REST client tests for publication lookup, unpublished outcome, immutable retrieval, and corrupt-byte rejection (execution still needs CI confirmation).
+- [ ] Extend REST client tests for reserved-character escaping, response DTO compatibility, identity mismatch, non-success status mapping, and cancellation propagation.
 - [ ] End-to-end test: publication lookup → immutable Experience retrieval and hash verification → exact MicroBundle address resolution/retrieval → FSM_COS materialization/composition → host activation only on success.
 
 ### E. Reconcile the candidate discovery branch
