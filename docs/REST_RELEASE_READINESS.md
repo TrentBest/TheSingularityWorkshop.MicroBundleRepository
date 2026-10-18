@@ -2,7 +2,7 @@
 
 > This is the release checklist for `TheSingularityWorkshop.MicroBundleRepository.Rest` and the consumer-facing REST contract it implements. It records the current `development` branch as inspected on 2026-10-18. A source-declared version is not evidence that a package was published, and a route recommendation is not evidence that the route exists.
 
-**Current disposition: NOT RELEASE-READY.** The MicroBundle byte GET/PUT client path exists, but WebPage's requested Experience publication and immutable Experience retrieval flow is not wired into the `development` REST host. Dependency resolution from `(bundleId, version)` to a trusted immutable hash is also unresolved. Security limits, host-level contract tests, and release evidence remain outstanding.
+**Current disposition: NOT RELEASE-READY.** The development host now maps Experience publication lookup and immutable Experience GET routes backed by Azure storage. Those routes have not yet been covered by host-level contract tests or validated by a green CI run on the implementation commit. Dependency resolution from `(bundleId, version)` to a trusted immutable hash is unresolved; write authorization, body/read limits before buffering, and release evidence remain outstanding.
 
 ## 1. Domain map: ownership and boundaries
 
@@ -34,8 +34,8 @@ Evidence inspected:
 | Exact MicroBundle GET by `(bundleId, version, contentHash)` | Host route and REST client exist; client tests cover successful materialization, 404, PUT and identity mismatch | Partial; add host-level HTTP contract and corruption/error mapping tests |
 | MicroBundle PUT | Host route and client method exist; base64 DTO and Core artifact verify hash | Not production-ready until authentication/authorization, size bounds, collision behavior and failure mappings are proven |
 | MicroBundle inventory | Host `GET /api/microbundles` returns observer inventory | This development route is an unpaginated observation list; the separate draft PR #21 changes the contract to paginated identity discovery. Do not describe that candidate as integrated/released |
-| Experience publication lookup | Core interface and Azure catalog source exist; host does not register the catalog or map a route | Missing from development REST consumer contract |
-| Immutable Experience GET | Core interface and Azure repository source exist; host does not register the repository or map a route | Missing from development REST consumer contract |
+| Experience publication lookup | Development host maps `GET /api/experiences/{experienceId}/publication`; Azure catalog is registered in Azure mode | Implemented in source; host-level contract test and end-to-end evidence missing; local mode returns 503 |
+| Immutable Experience GET | Development host maps `GET /api/experiences/{experienceId}/{version}/{contentHash}` and verifies through `ExperienceArtifact` | Implemented in source; host-level contract tests missing; response-size check happens after adapter buffering and is not a full memory bound |
 | MicroBundle `(bundleId, version)` → trusted hash | Inventory can show stored addresses; no canonical selection rule is documented | Unresolved domain contract |
 | Error behavior | Basic invalid address and not-found handling exist on MicroBundle GET | Incomplete; storage failures, integrity failures, invalid payloads and service unavailability need stable mappings |
 | Security/limits | Host configures permissive CORS and maps anonymous PUT; no explicit body/payload limit is visible in the checked host source | Release blocker until deliberate policy is implemented and tested |
@@ -92,9 +92,11 @@ REST must expose distinguishable outcomes for unpublished/not found, malformed a
 - [ ] Define publication update concurrency semantics and cache freshness/ETag or equivalent policy if consumers need it.
 
 ### B. Implement the missing Experience endpoints
-- [ ] Register `IExperienceCatalog` and `IExperienceRepository` in the host with the intended storage implementation.
-- [ ] Implement publication lookup and immutable Experience GET.
-- [ ] Validate the route address against the returned artifact identity; verify bytes before success.
+- [x] Register `IExperienceCatalog` and `IExperienceRepository` in Azure mode; local mode explicitly reports 503 because no local Experience adapter exists.
+- [x] Add publication lookup and immutable Experience GET routes on `development`.
+- [x] Validate address shape and verify bytes through `ExperienceArtifact` before success.
+- [ ] Add host-level contract tests and run them on the exact implementation commit.
+- [ ] Move/enforce artifact read limits before storage buffering; the current response limit is post-read and is not sufficient for untrusted large artifacts.
 - [ ] Keep publication pointer changes separate from immutable artifact storage. Unpublishing must remove the pointer, not silently delete immutable bytes.
 - [ ] Add deterministic error translation; unexpected storage errors must not leak internals or be mapped to false 404 responses.
 - [ ] Keep composition/materialization in the appropriate FSM_COS integration boundary, not in a REST controller.
