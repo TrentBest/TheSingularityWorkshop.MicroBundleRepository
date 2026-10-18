@@ -261,7 +261,7 @@ static bool IsValidExperienceAddress(string version, string contentHash)
     if (string.IsNullOrWhiteSpace(version) ||
         version.Contains('/') ||
         version.Contains('\\') ||
-        contentHash.Length != 64 ||
+        contentHash is not { Length: 64 } ||
         !string.Equals(contentHash, contentHash.ToLowerInvariant(), StringComparison.Ordinal))
     {
         return false;
