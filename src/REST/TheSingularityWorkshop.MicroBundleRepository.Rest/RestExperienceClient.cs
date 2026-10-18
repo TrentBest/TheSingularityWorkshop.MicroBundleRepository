@@ -102,7 +102,7 @@ public sealed class RestExperienceClient
         !string.IsNullOrWhiteSpace(version) &&
         !version.Contains('/') &&
         !version.Contains('\\') &&
-        contentHash.Length == 64 &&
+        contentHash is { Length: 64 } &&
         string.Equals(contentHash, contentHash.ToLowerInvariant(), StringComparison.Ordinal) &&
         contentHash.All(Uri.IsHexDigit);
 
