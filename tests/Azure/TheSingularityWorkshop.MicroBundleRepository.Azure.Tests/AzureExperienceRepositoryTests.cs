@@ -28,4 +28,15 @@ public sealed class AzureExperienceRepositoryTests
 
         Assert.Equal("experiences", options.ContainerName);
     }
+    [Fact]
+    public void Default_max_artifact_size_is_ten_mebibytes()
+    {
+        var options = new AzureExperienceRepositoryOptions
+        {
+            StorageAccountUri = new Uri("https://example.blob.core.windows.net")
+        };
+
+        Assert.Equal(10 * 1024 * 1024, options.MaxArtifactBytes);
+    }
+
 }
