@@ -17,6 +17,8 @@ The MVP wire representation is JSON with base64 artifact bytes. The repository r
 
 A later binary endpoint can replace the wire encoding without changing IMicroBundleRepository.
 
+The REST client package also includes `RestExperienceClient` for resolving a publication address and retrieving/locally verifying an immutable Experience artifact through `IRestTransport`. It is read-only and does not publish/unpublish, parse manifests, or compose bundles.
+
 The development host also exposes read-only Experience routes backed by the separate Azure `experiences` container: the publication route returns the complete immutable address, and the artifact route returns verified bytes as base64 JSON. These routes are newly added and do not yet have host-level contract tests or end-to-end CI evidence. Local host mode has no local Experience adapter and returns `503 Service Unavailable` for these routes. See the [REST package release checklist](../../../docs/REST_RELEASE_READINESS.md) before treating the full WebPage flow as release-ready.
 
 ## Release readiness
