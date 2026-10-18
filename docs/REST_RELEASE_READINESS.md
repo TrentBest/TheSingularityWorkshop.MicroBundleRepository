@@ -1,0 +1,158 @@
+# REST package — domain map and release readiness
+
+> This is the release checklist for `TheSingularityWorkshop.MicroBundleRepository.Rest` and the consumer-facing REST contract it implements. It records the current `development` branch as inspected on 2026-10-18. A source-declared version is not evidence that a package was published, and a route recommendation is not evidence that the route exists.
+
+**Current disposition: NOT RELEASE-READY.** The MicroBundle byte GET/PUT client path exists, but WebPage's requested Experience publication and immutable Experience retrieval flow is not wired into the `development` REST host. Dependency resolution from `(bundleId, version)` to a trusted immutable hash is also unresolved. Security limits, host-level contract tests, and release evidence remain outstanding.
+
+## 1. Domain map: ownership and boundaries
+
+| Domain concern | Owner | REST package responsibility | Do not move into REST |
+|---|---|---|---|
+| Capability identity, schema, defaults, providers and dependency declarations | [MicroBundleDomain](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleDomain) | Transport the declared identity/manifest without redefining its semantics | Authoritative schema/default policy |
+| Immutable MicroBundle bytes | MicroBundleRepository Core + storage adapters | Expose exact-address retrieval and authorized write operations; preserve identity and integrity errors | Guessing a hash or silently selecting a different version |
+| Artifact inventory / pagination | Repository observer/catalog contract | Expose inventory as inventory, with explicit page/filter semantics | Treating inventory as a semantic dependency resolver |
+| Immutable Experience bytes | Core `IExperienceRepository` + storage adapter | Expose retrieval by complete `(experienceId, version, contentHash)` after host wiring | Owning Experience behavior or composition |
+| Current Experience publication | Core `IExperienceCatalog` + storage adapter | Expose a read-only publication lookup for consumers | Selecting “latest” by listing blobs or mutating publication from public read routes |
+| Dependency closure, materialization policy, arbitration and RuntimeAssembly | FSM_COS / composition integration | Keep transport DTOs and errors suitable for the composition-side caller; coordinate seam placement | Making REST the composition engine |
+| Candidate activation, active Experience retention, user-facing recovery | WebPage / consumer host | Return explicit outcomes so consumers can preserve the current active Experience when a candidate fails | Host UI state and activation policy |
+| Physical persistence | Local/Azure repository adapters | Delegate through Core contracts; preserve cancellation and failure semantics | Azure-specific paths in consumer code |
+| Authentication, authorization, limits and operational policy | REST host/deployment boundary | Enforce and document the chosen policy consistently | Assuming CORS is authorization |
+
+Architecture invariant: **MicroBundleDomain = What; MicroBundleRepository = Where; FSM_COS = How; WebPage = consumer/experience.** REST is a transport boundary, not a second domain or composition layer.
+
+## 2. Current implementation inventory
+
+Evidence inspected:
+- [REST host Program.cs on development](../src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest.Host/Program.cs)
+- [REST client package README](../src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest/README.md)
+- [REST client tests](../../tests/REST/TheSingularityWorkshop.MicroBundleRepository.Rest.Tests/RestMicroBundleRepositoryTests.cs)
+- [Core domain map](DOMAIN_MAP.md)
+- [REST package project/version/dependencies](../src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest/TheSingularityWorkshop.MicroBundleRepository.Rest.csproj)
+
+| Capability | Current evidence on `development` | Release assessment |
+|---|---|---|
+| Exact MicroBundle GET by `(bundleId, version, contentHash)` | Host route and REST client exist; client tests cover successful materialization, 404, PUT and identity mismatch | Partial; add host-level HTTP contract and corruption/error mapping tests |
+| MicroBundle PUT | Host route and client method exist; base64 DTO and Core artifact verify hash | Not production-ready until authentication/authorization, size bounds, collision behavior and failure mappings are proven |
+| MicroBundle inventory | Host `GET /api/microbundles` returns observer inventory | This development route is an unpaginated observation list; the separate draft PR #21 changes the contract to paginated identity discovery. Do not describe that candidate as integrated/released |
+| Experience publication lookup | Core interface and Azure catalog source exist; host does not register the catalog or map a route | Missing from development REST consumer contract |
+| Immutable Experience GET | Core interface and Azure repository source exist; host does not register the repository or map a route | Missing from development REST consumer contract |
+| MicroBundle `(bundleId, version)` → trusted hash | Inventory can show stored addresses; no canonical selection rule is documented | Unresolved domain contract |
+| Error behavior | Basic invalid address and not-found handling exist on MicroBundle GET | Incomplete; storage failures, integrity failures, invalid payloads and service unavailability need stable mappings |
+| Security/limits | Host configures permissive CORS and maps anonymous PUT; no explicit body/payload limit is visible in the checked host source | Release blocker until deliberate policy is implemented and tested |
+| Release validation | Build workflow exists, including package/source-integrated jobs | A workflow definition is not a passing run. Record green results for the exact release commit |
+
+The REST package project currently declares version `0.1.0-alpha.2`, references `FSM_REST 0.1.0-alpha.4`, `FSM_COS 0.1.0-alpha.6`, and `MicroBundleDomain 1.0.1`. These are source declarations only. Before release, verify each dependency exists on NuGet and is API-compatible with the exact commit being packed.
+
+**Boundary warning:** the REST client project currently references FSM_COS and contains `IMicroBundleArtifactMaterializer` / `RestMicroBundleCatalog` composition-facing types. Review whether these belong in a separate composition integration assembly so the transport adapter does not pull composition policy into the REST package. Do not break consumers blindly; document the dependency graph and stage any split with compatibility tests.
+
+## 3. WebPage consumer contract required
+
+WebPage's request is recorded in [WebPage's MicroBundleRepositoryLLM.md](https://github.com/TrentBest/WebPage/blob/development/docs/coordination/MicroBundleRepositoryLLM.md); the reciprocal response is [WebPageLLM.md](coordination/WebPageLLM.md). These are requirements and coordination records, not proof of implemented routes.
+
+### 3.1 Resolve the current publication pointer
+
+Proposed route: `GET /api/experiences/{experienceId}/publication`
+
+- `200 OK`: return the exact published address: `experienceId`, `version`, `contentHash` (and optionally a canonical immutable artifact URI).
+- `404 Not Found`: the Experience has no current publication.
+- `400 Bad Request`: malformed identifier/address.
+- `5xx`: storage/service failure; never disguise it as “not published”.
+- The answer must come from `IExperienceCatalog.GetPublishedAsync`, not “largest version”, blob enumeration, or a mutable source-control URL.
+
+### 3.2 Retrieve immutable Experience bytes
+
+Proposed route: `GET /api/experiences/{experienceId}/{version}/{contentHash}`
+
+- Validate the full address before storage access.
+- Retrieve only the exact immutable artifact through `IExperienceRepository.GetAsync`.
+- Verify the returned identity and SHA-256 before returning success.
+- Return `404` for an absent exact artifact; use a client error for malformed address and a service/integrity error for corruption or storage failure.
+- Keep response DTOs/versioning documented. Bound decoded bytes, encoded payloads, request body and memory consumption.
+
+### 3.3 Resolve every selected MicroBundle deterministically
+
+The existing exact retrieval route requires `(bundleId, version, contentHash)`, while a selection may identify only `(bundleId, version)`. Resolve this before WebPage integration is called complete. Choose and test one of:
+
+1. **Manifest pinning:** every Experience pins each dependency's complete immutable address, including SHA-256; or
+2. **Trusted catalog resolution:** repository catalog returns one canonical address for a bundle/version and explicitly rejects ambiguous versions with multiple hashes.
+
+Do not let WebPage guess hashes, select an arbitrary inventory match, or follow mutable branch URLs. If both models are needed, specify precedence and conflict behavior.
+
+### 3.4 Preserve the active Experience on failure
+
+REST must expose distinguishable outcomes for unpublished/not found, malformed address, integrity mismatch, unavailable storage/service, and authorization failure. The consumer must be able to retrieve and verify a candidate first, compose it through FSM_COS, and activate only after successful composition. A failed candidate must not force the host to discard its current active Experience.
+
+## 4. Release checklist — implementation, proof, documentation
+
+### A. Freeze the public contract
+- [ ] Decide the stable route names, HTTP verbs, DTOs, content types and API compatibility/versioning policy.
+- [ ] Specify all status codes and error response shape for malformed IDs, missing pointer/artifact, hash mismatch/corrupt bytes, ambiguous dependency address, unauthorized writes, storage outage, cancellation and oversized requests.
+- [ ] Decide whether inventory is observer-only or a supported discovery API; keep inventory distinct from semantic dependency resolution.
+- [ ] Decide the canonical `(bundleId, version)` to hash rule (manifest pinning or trusted resolver).
+- [ ] Define publication update concurrency semantics and cache freshness/ETag or equivalent policy if consumers need it.
+
+### B. Implement the missing Experience endpoints
+- [ ] Register `IExperienceCatalog` and `IExperienceRepository` in the host with the intended storage implementation.
+- [ ] Implement publication lookup and immutable Experience GET.
+- [ ] Validate the route address against the returned artifact identity; verify bytes before success.
+- [ ] Keep publication pointer changes separate from immutable artifact storage. Unpublishing must remove the pointer, not silently delete immutable bytes.
+- [ ] Add deterministic error translation; unexpected storage errors must not leak internals or be mapped to false 404 responses.
+- [ ] Keep composition/materialization in the appropriate FSM_COS integration boundary, not in a REST controller.
+
+### C. Secure the host before exposing writes
+- [ ] Decide deployment/network exposure and authentication policy.
+- [ ] Authorize PUT and any publication mutation explicitly; read-only public retrieval, if chosen, must not imply anonymous write access.
+- [ ] Replace unrestricted CORS with an explicit origin/method/header policy where browser access requires CORS. CORS is not authorization.
+- [ ] Enforce request-body, base64-decoded artifact, response-size, concurrency and request-duration limits.
+- [ ] Ensure cancellation reaches storage operations and large payloads do not require avoidable duplicate buffers.
+- [ ] Test hostile inputs, malformed base64, path/route edge cases, oversized payloads, unauthorized writes and storage failures.
+- [ ] Decide whether SHA-256 alone is sufficient for the threat model; if publisher authenticity matters, document signature/provenance and trust-root policy separately.
+
+### D. Test the real HTTP boundary
+- [ ] Host tests: DI/startup, each route, route constraints and JSON contract.
+- [ ] Publication tests: published pointer, no publication, missing immutable artifact and pointer to corrupt/missing bytes.
+- [ ] Integrity tests: mismatched address/hash must never produce a successful response.
+- [ ] Error tests: storage unavailable, timeout/cancellation, malformed DTO, bad base64, oversized body and permission denial.
+- [ ] Inventory tests: filtering, ordering guarantees if any, page size, opaque continuation token round-trip, invalid token, end-of-list and cancellation.
+- [ ] Azure tests: create-only/idempotent write behavior, collision with differing bytes/metadata, listing pagination and cancellation. Keep cloud tests explicitly opt-in; report their status honestly.
+- [ ] REST client tests: escaping, response DTO compatibility, identity validation, non-success status mapping, cancellation propagation.
+- [ ] End-to-end test: publication lookup → immutable Experience retrieval and hash verification → exact MicroBundle address resolution/retrieval → FSM_COS materialization/composition → host activation only on success.
+
+### E. Reconcile the candidate discovery branch
+- [ ] Review [PR #21](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/21) separately from `development`; it is draft and diverged, not an integrated release.
+- [ ] Reconcile the paginated `GET /api/microbundles` proposal with the existing unpaginated observer DTO contract. Decide whether this is a breaking change, a versioned route, or a documented compatible migration.
+- [ ] Verify exact bundle/version filters, pagination token semantics, cancellation and Azure paging with tests executed on the final candidate commit.
+- [ ] Review optional semantic-address metadata and prove it does not silently change immutable identity or hash behavior.
+- [ ] Reconcile candidate Experience routes and dependencies with the WebPage contract above.
+- [ ] Do not merge/rebase wholesale; the candidate was recorded as substantially diverged. Preserve unique tests/docs while selecting a reviewable implementation.
+- [ ] Keep the NuGet publish gate disabled until explicit release approval.
+
+### F. Package, compatibility and release proof
+- [ ] Confirm intended package version and release notes; do not infer publication from the `.csproj` version.
+- [ ] Verify dependency package versions exist and compile against the intended public APIs; run both package-based and source-integrated solutions.
+- [ ] Build the explicit solution in Release and run all tests from a clean checkout.
+- [ ] Run package verification/pack and inspect the produced `.nupkg`: package ID/version, README, XML docs, target framework, dependency graph and included files.
+- [ ] Check API compatibility for any changed route, DTO, interface or package dependency.
+- [ ] Record exact commit SHA and links to green build/test/package-verification runs. A previous commit's CI does not validate the release commit.
+- [ ] Review license, security posture, README, XML documentation, changelog/release notes and package metadata.
+- [ ] Publish only after explicit approval; verify the resulting NuGet package page and perform a clean consumer restore/build/smoke test.
+- [ ] Update this checklist and the domain map with evidence, not intention, after each gate passes.
+
+## 5. Suggested implementation order
+
+1. **Contract first:** settle publication DTO/status semantics and dependency hash resolution with WebPage, MicroBundleDomain and FSM_COS owners.
+2. **Small vertical slice:** add Experience publication GET + immutable Experience GET with host DI and focused HTTP tests.
+3. **Integrity and failure behavior:** corrupt bytes, absent pointer/artifact, storage failure, cancellation and oversized requests.
+4. **Security:** define read/write policy and limits before public exposure.
+5. **Discovery branch reconciliation:** decide whether paginated inventory is compatible and bring its tests onto the chosen integration branch.
+6. **End-to-end consumer proof:** retrieval → verification → composition → activation while preserving current active Experience on failure.
+7. **Package validation:** exact-commit CI, package inspection, dependency/API compatibility, clean consumer test.
+8. **Release decision:** update the checklist to show evidence; obtain explicit approval before publication.
+
+## 6. Release gate
+
+The REST package is releasable only when all required items above are either completed with linked evidence or explicitly declared out of scope with a documented consumer-compatible decision. At present, Experience publication/retrieval, deterministic dependency hash resolution, host-level tests, security limits and exact-release CI are **open**.
+
+Related tracking: [issue #22 — immutable Experience retrieval through REST](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/issues/22), [issue #10 — published Experience browsing](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/issues/10), [issue #9 — first vertical slice](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/issues/9), [issue #16 — inventory/ontology coverage/placement](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/issues/16), and [issue #20 — zeroth Moniker](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/issues/20).
+
+This document is a working checklist, not a release approval and not evidence that any unchecked item has been implemented.
