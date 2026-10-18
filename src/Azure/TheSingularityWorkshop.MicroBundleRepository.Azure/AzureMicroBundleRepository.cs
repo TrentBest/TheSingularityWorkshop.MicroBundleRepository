@@ -148,8 +148,19 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
             var addresses = new List<MicroBundleArtifactAddress>(page.Values.Count);
             foreach (var blob in page.Values)
             {
-                if (TryParseAddress(blob.Name, out var address))
-                    addresses.Add(address);
+                if (!TryParseAddress(blob.Name, out var address))
+                    continue;
+
+                // Azure's prefix filter is not an exact version filter:
+                // "1.0" also prefixes "1.0.1". Enforce the Core contract here.
+                if (request.BundleId is not null && address.BundleId != request.BundleId.Value)
+                    continue;
+
+                if (request.Version is not null &&
+                    !string.Equals(address.Version, request.Version, StringComparison.Ordinal))
+                    continue;
+
+                addresses.Add(address);
             }
 
             return new MicroBundleArtifactListPage(addresses, page.ContinuationToken);
