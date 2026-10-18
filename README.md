@@ -33,6 +33,7 @@ Follow the documented local configuration and build steps below; test the Core c
 
 ## 🟪 05 Documentation and theory
 
+[Artifact delivery at simulation scale](docs/SIMULATION_SCALE.md) · 
 [Projects and boundaries](#projects) · [Azure configuration](#azure-configuration) · [Development](#development)
 
 ---
