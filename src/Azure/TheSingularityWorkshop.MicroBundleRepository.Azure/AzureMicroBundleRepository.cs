@@ -104,8 +104,21 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository
         }
         catch (RequestFailedException ex) when (ex.Status == 412)
         {
-            // Content-addressed writes are immutable. If the exact address already
-            // exists, the repository is already in the requested state.
+            // A precondition failure only proves that a blob exists. It does not
+            // prove that the existing bytes or semantic metadata match this write.
+            // Read through the normal integrity-checking path before treating this
+            // idempotent write as successful.
+            var existing = await GetAsync(artifact.Address, cancellationToken);
+            if (existing is null)
+                throw new InvalidOperationException(
+                    "The artifact write conflicted with an existing blob, but that blob could not be retrieved.");
+
+            if (!existing.Content.Span.SequenceEqual(artifact.Content.Span) ||
+                existing.SemanticAddress != artifact.SemanticAddress)
+            {
+                throw new InvalidOperationException(
+                    "An artifact already exists at this immutable address with different content or semantic metadata.");
+            }
         }
     }
 
