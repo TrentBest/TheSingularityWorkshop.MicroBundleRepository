@@ -55,6 +55,12 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
                 throw new InvalidOperationException(
                     $"No repository address is registered for MicroBundle {bundleId}.");
 
+            // The dictionary key is the dependency lookup key; the address is the
+            // immutable remote identity. Reject disagreement before making a request.
+            if (address.BundleId != bundleId)
+                throw new InvalidOperationException(
+                    $"The repository address registered for MicroBundle {bundleId} identifies MicroBundle {address.BundleId}.");
+
             var artifact = await _repository.GetAsync(address, cancellationToken);
             if (artifact is null)
                 throw new InvalidOperationException(
