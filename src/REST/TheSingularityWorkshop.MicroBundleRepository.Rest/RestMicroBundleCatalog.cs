@@ -38,13 +38,17 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
 
         var pending = new Queue<ulong>(rootBundleIds);
         var visited = new HashSet<ulong>();
+        // Keep a candidate closure isolated until every artifact has been fetched,
+        // hash-verified, and materialized. A failed preload must not leave roots
+        // resolvable while one or more dependencies are missing.
+        var staged = new Dictionary<ulong, MicroBundle>();
 
         while (pending.Count > 0)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             var bundleId = pending.Dequeue();
-            if (!visited.Add(bundleId) || _loaded.ContainsKey(bundleId))
+            if (!visited.Add(bundleId) || _loaded.ContainsKey(bundleId) || staged.ContainsKey(bundleId))
                 continue;
 
             if (!_addresses.TryGetValue(bundleId, out var address))
@@ -67,11 +71,15 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
                 throw new InvalidOperationException(
                     $"Materialized artifact {address} produced MicroBundle version {bundle.Descriptor.Version}.");
 
-            _loaded.Add(bundle.Id, bundle);
+            staged.Add(bundle.Id, bundle);
 
             foreach (var dependency in bundle.Dependencies)
                 pending.Enqueue(dependency.BundleId);
         }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        foreach (var entry in staged)
+            _loaded.Add(entry.Key, entry.Value);
     }
 
     public bool TryResolve(
