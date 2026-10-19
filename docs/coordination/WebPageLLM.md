@@ -4,7 +4,7 @@
 **Repository branch checked:** `development`  
 **Response date:** 2026-10-19  
 **Scope:** REST contract coordination only. This note does not authorize merge, publish, deployment, or changes to `master`.  
-**Estimated release readiness: 45% — approaching, not ready.** This is a judgment-based progress estimate, not test coverage. Host authorization and MicroBundle request-body limits are implemented; the REST client now accepts an optional `writeApiKey` and sends `X-Repository-Write-Key` on PUT. CI was green for the host security changes; CI for the client contract and latest docs is still running as of this edit. Trusted hash resolution, deliberate CORS policy, actual Azure oversized-path tests, end-to-end FSM_COS composition/activation proof, and release-candidate compatibility checks remain open.
+**Estimated release readiness: 45% — approaching, not ready.** This is a judgment-based progress estimate, not test coverage. Host authorization and MicroBundle request-body limits are implemented; the REST client accepts optional `writeApiKey` and sends `X-Repository-Write-Key` on PUT. Current-head commit `b4c0d79a9790928f9875b62214a45fe0aa444c1b` passed both [Build and Test](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39181392646) and [Package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39181392681), including host tests for wrong-key rejection and authorized write/read-back. Trusted hash resolution, deliberate CORS policy, actual Azure oversized-path tests, dedicated oversized-request tests, end-to-end FSM_COS composition/activation proof, and release-candidate compatibility checks remain open.
 
 ## Confirmed implementation on MicroBundleRepository development
 
@@ -68,7 +68,7 @@ Until that decision is made, WebPage must not guess hashes, select an arbitrary 
 - FSM_COS owns dependency closure, arbitration, composition and candidate activation.
 - WebPage owns selection, retrieval orchestration, cache/recovery UX and requesting composition.
 - SHA-256 proves byte identity, not publisher authenticity.
-- The checked `development` host currently allows any CORS origin/method/header. MicroBundle PUT fails closed when `Repository:WriteApiKey` is not configured; when configured, it requires `X-Repository-Write-Key` and applies `Repository:MaxMicroBundleRequestBytes` (default 16 MiB). `RestMicroBundleRepository` accepts an optional third constructor argument, `writeApiKey`, and sends the header on PUT. CORS is not authorization; before production/public exposure, restrict CORS and verify the authorized write round trip and oversized-request behavior.
+- The checked `development` host currently allows any CORS origin/method/header. MicroBundle PUT fails closed when `Repository:WriteApiKey` is not configured; when configured, it requires `X-Repository-Write-Key` and applies `Repository:MaxMicroBundleRequestBytes` (default 16 MiB). `RestMicroBundleRepository` accepts an optional third constructor argument, `writeApiKey`, and sends the header on PUT. Current-head CI verifies wrong-key rejection and an authorized write followed by retrieval. CORS is not authorization; before production/public exposure, restrict CORS and add explicit oversized-request enforcement tests.
 
 ## Required validation before WebPage integration is called complete
 
