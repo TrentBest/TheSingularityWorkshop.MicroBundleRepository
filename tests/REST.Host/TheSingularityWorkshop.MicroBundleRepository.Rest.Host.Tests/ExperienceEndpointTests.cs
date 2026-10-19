@@ -78,6 +78,17 @@ public sealed class ExperienceEndpointTests
     }
 
     [Fact]
+    public async Task Artifact_ReturnsServiceUnavailableWhenStorageIsNotConfigured()
+    {
+        using var factory = new RestHostFactory(null, null);
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync($"/api/experiences/42/{Address.Version}/{Hash}");
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Publication_RejectsInvalidExperienceId()
     {
         using var factory = new RestHostFactory(
