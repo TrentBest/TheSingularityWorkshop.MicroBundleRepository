@@ -83,7 +83,35 @@ public sealed class MicroBundleWriteSecurityTests
         Assert.Contains(contentBase64, responseBody, StringComparison.Ordinal);
     }
 
-    private sealed class RestHostFactory(bool configureKey = false) : WebApplicationFactory<Program>
+    [Fact]
+    public async Task Cors_DoesNotGrantCrossOriginAccessWhenNoOriginsAreConfigured()
+    {
+        using var factory = new RestHostFactory();
+        using var client = factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Options, "/api/microbundles");
+        request.Headers.Add("Origin", "https://untrusted.example");
+        request.Headers.Add("Access-Control-Request-Method", "GET");
+
+        using var response = await client.SendAsync(request);
+
+        Assert.False(response.Headers.Contains("Access-Control-Allow-Origin"));
+    }
+
+    [Fact]
+    public async Task Cors_AllowsConfiguredOriginOnly()
+    {
+        using var factory = new RestHostFactory(allowedCorsOrigin: "https://webpage.example");
+        using var client = factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Options, "/api/microbundles");
+        request.Headers.Add("Origin", "https://webpage.example");
+        request.Headers.Add("Access-Control-Request-Method", "GET");
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal("https://webpage.example", response.Headers.GetValues("Access-Control-Allow-Origin").Single());
+    }
+
+    private sealed class RestHostFactory(bool configureKey = false, string? allowedCorsOrigin = null) : WebApplicationFactory<Program>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -92,7 +120,8 @@ public sealed class MicroBundleWriteSecurityTests
                 var settings = new Dictionary<string, string?>
                 {
                     ["Repository:Mode"] = "Local",
-                    ["Repository:LocalRoot"] = Path.Combine(Path.GetTempPath(), "mbrepo-write-tests")
+                    ["Repository:LocalRoot"] = Path.Combine(Path.GetTempPath(), "mbrepo-write-tests"),
+                    ["Repository:AllowedCorsOrigins:0"] = allowedCorsOrigin
                 };
                 if (configureKey)
                     settings["Repository:WriteApiKey"] = "test-only-write-key";
