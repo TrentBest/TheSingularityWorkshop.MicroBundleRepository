@@ -11,8 +11,9 @@ public sealed class RestMicroBundleRepository : IMicroBundleRepository
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly IRestTransport _transport;
     private readonly Uri _baseUri;
+    private readonly string? _writeApiKey;
 
-    public RestMicroBundleRepository(Uri baseUri, IRestTransport transport)
+    public RestMicroBundleRepository(Uri baseUri, IRestTransport transport, string? writeApiKey = null)
     {
         ArgumentNullException.ThrowIfNull(baseUri);
         ArgumentNullException.ThrowIfNull(transport);
@@ -21,6 +22,7 @@ public sealed class RestMicroBundleRepository : IMicroBundleRepository
 
         _baseUri = EnsureTrailingSlash(baseUri);
         _transport = transport;
+        _writeApiKey = string.IsNullOrWhiteSpace(writeApiKey) ? null : writeApiKey;
     }
 
     public async ValueTask<MicroBundleArtifact?> GetAsync(
@@ -60,6 +62,9 @@ public sealed class RestMicroBundleRepository : IMicroBundleRepository
             new RestRequest(
                 "PUT",
                 CreateArtifactUri(artifact.Address),
+                Headers: _writeApiKey is null
+                    ? null
+                    : new Dictionary<string, string> { ["X-Repository-Write-Key"] = _writeApiKey },
                 ContentType: "application/json",
                 Body: JsonSerializer.Serialize(dto, JsonOptions)),
             cancellationToken);
