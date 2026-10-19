@@ -15,13 +15,13 @@ It currently exposes:
 - `PUT /api/microbundles/{bundleId}/{version}/{contentHash}`: artifact write; this is not appropriate for anonymous public exposure.
 - `/` and `/health`.
 
-The code-level contracts and initial routes now exist on `development`; the host-test commit `efcd2cbad43061e2c8841d46f7e9e898be714192` passed both [Build and Test](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39179142427) and [Package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39179142357). A follow-up test commit `fb8eb2f4ffb6879c3cc1b02343c32220606f2309` added missing-artifact and invalid-ID coverage; its CI is pending. The core contracts are:
+The code-level contracts and initial routes now exist on `development`; the latest host-test setup fix `7d3ef8aa0cce846309ec6ea1748e2695d9d8ad40` passed both [Build and Test](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39179451629) and [Package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39179451619). The core contracts are:
 - [IExperienceCatalog](../src/Core/TheSingularityWorkshop.MicroBundleRepository.Core/IExperienceCatalog.cs): `GetPublishedAsync(ulong experienceId)` returns the current `ExperiencePublication` or null.
 - [ExperiencePublication](../src/Core/TheSingularityWorkshop.MicroBundleRepository.Core/ExperiencePublication.cs): points to an `ExperienceArtifactAddress`.
 - [ExperienceArtifactAddress](../src/Core/TheSingularityWorkshop.MicroBundleRepository.Core/ExperienceArtifactAddress.cs): `(ExperienceId, Version, ContentHash)`.
 - [IExperienceRepository](../src/Core/TheSingularityWorkshop.MicroBundleRepository.Core/IExperienceRepository.cs): retrieves bytes by complete immutable address.
 
-These routes now form an initial REST consumer contract on `development`. The Azure adapter enforces a configurable Experience artifact byte limit before and during buffering (`Repository:MaxExperienceArtifactBytes`, default 10 MiB); MicroBundle request-body limits, expanded host/storage failure coverage, security controls and end-to-end consumer proof remain open. The host contract suite covers publication success/not-published, immutable artifact byte retrieval, malformed-hash rejection before storage access, missing artifact, and invalid Experience ID. The previous host-test commit passed CI; the latest extension's CI is pending. I have not treated a draft/diverged feature branch as a released or integrated API.
+These routes now form an initial REST consumer contract on `development`. The Azure adapter enforces a configurable Experience artifact byte limit before and during buffering (`Repository:MaxExperienceArtifactBytes`, default 10 MiB); MicroBundle request-body limits, expanded host/storage failure coverage, security controls and end-to-end consumer proof remain open. The host contract suite covers publication success/not-published, immutable artifact byte retrieval, malformed-hash rejection before storage access, missing artifact, invalid Experience ID, and missing-storage `503`. The latest host-test suite passes both CI workflows. I have not treated a draft/diverged feature branch as a released or integrated API.
 
 ## Proposed consumer-facing contract for discussion
 
@@ -76,7 +76,7 @@ Until that decision is made, WebPage must not guess hashes, select an arbitrary 
 - [ ] Expand host tests: hash mismatch/corrupt bytes, storage unavailable, cancellation and payload limits.
 - [ ] A documented, tested MicroBundle version-to-hash rule (manifest pinning or trusted catalog).
 - [ ] No anonymous public mutation; explicit authorization and bounded payloads.
-- [x] Host-test commit `efcd2cbad43061e2c8841d46f7e9e898be714192` passed [Build and Test](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39179142427) and [Package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39179142357). [ ] Verify current-head CI for follow-up test commit `fb8eb2f4ffb6879c3cc1b02343c32220606f2309` and then repeat on the release candidate. These runs do not prove end-to-end consumer flow.
+- [x] Latest host-test setup fix `7d3ef8aa0cce846309ec6ea1748e2695d9d8ad40` passed [Build and Test](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39179451629) and [Package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39179451619). [ ] Repeat on the eventual release candidate. These runs do not prove end-to-end consumer flow.
 - [ ] End-to-end proof: retrieve publication → retrieve/verify Experience bytes → resolve and retrieve exact MicroBundle bytes → materialize/compose through FSM_COS → activate candidate only after successful composition.
 
 ## Implementation update (2026-10-18)
