@@ -58,19 +58,36 @@ public sealed class RestMicroBundleCatalogCancellationTests
         var gate = gateField!.GetValue(catalog);
         Assert.NotNull(gate);
 
-        Monitor.Enter(gate!);
-        Task preload;
+        using var lockAcquired = new ManualResetEventSlim();
+        using var releaseLock = new ManualResetEventSlim();
+        var lockHolder = Task.Run(() =>
+        {
+            Monitor.Enter(gate!);
+            try
+            {
+                lockAcquired.Set();
+                if (!releaseLock.Wait(TimeSpan.FromSeconds(5)))
+                    throw new TimeoutException("The test did not release the commit lock in time.");
+            }
+            finally
+            {
+                Monitor.Exit(gate!);
+            }
+        });
+        Assert.True(lockAcquired.Wait(TimeSpan.FromSeconds(5)), "The test lock was not acquired.");
+
+        var preload = Task.Run(() => catalog.PreloadClosureAsync(new[] { 43UL }, cancellation.Token));
         try
         {
-            preload = Task.Run(() => catalog.PreloadClosureAsync(new[] { 43UL }, cancellation.Token));
             await materialized.Task.WaitAsync(TimeSpan.FromSeconds(5));
             cancellation.Cancel();
         }
         finally
         {
-            Monitor.Exit(gate!);
+            releaseLock.Set();
         }
 
+        await lockHolder;
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => preload);
         Assert.False(catalog.TryResolve(43, out _));
         Assert.False(catalog.TryResolve(43, "1.0.0", out _));
