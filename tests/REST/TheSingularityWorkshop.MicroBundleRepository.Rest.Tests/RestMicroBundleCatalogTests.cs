@@ -46,6 +46,45 @@ public sealed class RestMicroBundleCatalogTests
         Assert.False(catalog.TryResolve(1, "2.0.0", out _));
     }
 
+    [Fact]
+    public async Task PreloadClosureAsync_does_not_publish_partial_closure_when_dependency_is_missing()
+    {
+        var rootContent = new byte[] { 11 };
+        var dependencyContent = new byte[] { 22 };
+        var rootAddress = Address(1, rootContent);
+        var dependencyAddress = Address(2, dependencyContent);
+
+        var artifacts = new Dictionary<string, MicroBundleArtifact>
+        {
+            [rootAddress.ToString()] = new MicroBundleArtifact(rootAddress, rootContent)
+        };
+        var addresses = new Dictionary<ulong, MicroBundleArtifactAddress>
+        {
+            [1] = rootAddress
+        };
+        var repository = new RestMicroBundleRepository(
+            new Uri("https://repository.test"),
+            new RepositoryTransport(artifacts));
+        var catalog = new RestMicroBundleCatalog(repository, addresses, new Materializer());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => catalog.PreloadClosureAsync(new[] { 1UL }));
+
+        Assert.False(catalog.TryResolve(1, out _));
+        Assert.False(catalog.TryResolve(2, out _));
+
+        // Repair the caller-provided address map and repository, then retry.
+        // The first failed attempt must not have cached the root as loaded.
+        addresses[2] = dependencyAddress;
+        artifacts[dependencyAddress.ToString()] =
+            new MicroBundleArtifact(dependencyAddress, dependencyContent);
+
+        await catalog.PreloadClosureAsync(new[] { 1UL });
+
+        Assert.True(catalog.TryResolve(1, out _));
+        Assert.True(catalog.TryResolve(2, out _));
+    }
+
     private static MicroBundleArtifactAddress Address(ulong id, byte[] content) =>
         new(id, "1.0.0", Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant());
 
