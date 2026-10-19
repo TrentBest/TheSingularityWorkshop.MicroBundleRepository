@@ -102,6 +102,32 @@ public sealed class ExperienceEndpointTests
     }
 
     [Fact]
+    public async Task Artifact_ReturnsPayloadTooLargeWhenStorageRejectsOversizedArtifact()
+    {
+        using var factory = new RestHostFactory(
+            new FakeCatalog(null),
+            new FakeExperienceRepository(new ExperienceArtifactTooLargeException(16)));
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync($"/api/experiences/42/{Address.Version}/{Hash}");
+
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Artifact_ReturnsServerErrorWhenStoredArtifactFailsIntegrityValidation()
+    {
+        using var factory = new RestHostFactory(
+            new FakeCatalog(null),
+            new FakeExperienceRepository(new ArgumentException("Artifact hash mismatch.")));
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync($"/api/experiences/42/{Address.Version}/{Hash}");
+
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Artifact_RejectsMalformedContentHashBeforeStorageAccess()
     {
         var repository = new FakeExperienceRepository(null);
@@ -157,7 +183,7 @@ public sealed class ExperienceEndpointTests
             ValueTask.CompletedTask;
     }
 
-    private sealed class FakeExperienceRepository(ExperienceArtifact? artifact) : IExperienceRepository
+    private sealed class FakeExperienceRepository(object? result) : IExperienceRepository
     {
         public bool WasRead { get; private set; }
 
@@ -166,6 +192,9 @@ public sealed class ExperienceEndpointTests
             CancellationToken cancellationToken = default)
         {
             WasRead = true;
+            if (result is Exception exception)
+                return ValueTask.FromException<ExperienceArtifact?>(exception);
+            var artifact = result as ExperienceArtifact;
             return ValueTask.FromResult(
                 artifact is not null && artifact.Address == address ? artifact : null);
         }
