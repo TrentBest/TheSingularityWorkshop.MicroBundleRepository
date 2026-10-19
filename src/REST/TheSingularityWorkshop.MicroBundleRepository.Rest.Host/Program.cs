@@ -81,6 +81,7 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+app.UseRouting();
 app.UseCors("RepositoryCors");
 
 // Writes are disabled unless the deployment explicitly configures a shared API key.
