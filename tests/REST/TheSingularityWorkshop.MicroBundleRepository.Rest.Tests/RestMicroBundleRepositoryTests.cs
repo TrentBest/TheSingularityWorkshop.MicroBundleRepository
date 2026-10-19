@@ -74,13 +74,16 @@ public sealed class RestMicroBundleRepositoryTests
             Assert.Equal(
                 $"https://repository.test/api/microbundles/9/2.0.0/{hash}",
                 request.Uri.ToString());
+            Assert.NotNull(request.Headers);
+            Assert.Equal("test-write-key", request.Headers!["X-Repository-Write-Key"]);
             Assert.Contains(Convert.ToBase64String(content), request.Body, StringComparison.Ordinal);
             return new RestResponse(204, "No Content", new Dictionary<string, string>(), string.Empty);
         });
 
         var repository = new RestMicroBundleRepository(
             new Uri("https://repository.test"),
-            transport);
+            transport,
+            writeApiKey: "test-write-key");
 
         await repository.PutAsync(artifact);
     }
