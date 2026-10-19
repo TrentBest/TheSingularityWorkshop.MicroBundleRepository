@@ -60,12 +60,24 @@ else
         services.GetRequiredService<AzureExperienceCatalog>());
 }
 
+// Cross-origin browser access is opt-in. Configure Repository:AllowedCorsOrigins
+// with the exact trusted origins that host the consumer (for example, WebPage).
+// An empty list intentionally grants no cross-origin browser access.
+var allowedCorsOrigins = builder.Configuration
+    .GetSection("Repository:AllowedCorsOrigins")
+    .Get<string[]>() ?? Array.Empty<string>();
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy.AllowAnyOrigin()
-            .AllowAnyHeader()
-            .AllowAnyMethod());
+    {
+        if (allowedCorsOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedCorsOrigins)
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        }
+    });
 });
 
 var app = builder.Build();
