@@ -39,7 +39,8 @@ public sealed class RestMicroBundleCatalogCancellationTests
         var bytes = new byte[] { 4, 5, 6 };
         var address = Address(43, bytes);
         using var cancellation = new CancellationTokenSource();
-        var materialized = new TaskCompletionSource<Thread>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var materializationStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var materializerReturningThread = new TaskCompletionSource<Thread>(TaskCreationOptions.RunContinuationsAsynchronously);
         var allowMaterializerReturn = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var repository = new RestMicroBundleRepository(
             new Uri("https://repository.test"),
@@ -47,7 +48,7 @@ public sealed class RestMicroBundleCatalogCancellationTests
         var catalog = new RestMicroBundleCatalog(
             repository,
             new Dictionary<ulong, MicroBundleArtifactAddress> { [43] = address },
-            new Materializer(materialized, allowMaterializerReturn));
+            new Materializer(materializationStarted, allowMaterializerReturn, materializerReturningThread));
 
         // Pause materialization before it returns, then acquire the catalog gate.
         // This lets the preload pass its initial loaded check before the gate is held.
@@ -64,7 +65,7 @@ public sealed class RestMicroBundleCatalogCancellationTests
 
         try
         {
-            await materialized.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await materializationStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
             var lockHolder = Task.Run(() =>
             {
                 Monitor.Enter(gate!);
@@ -86,7 +87,7 @@ public sealed class RestMicroBundleCatalogCancellationTests
             // Observe the actual thread that returned from materialization entering a
             // monitor wait. This replaces a blind delay with evidence that preload has
             // advanced past materialization and is blocked at the held commit gate.
-            var materializerThread = await materialized.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var materializerThread = await materializerReturningThread.Task.WaitAsync(TimeSpan.FromSeconds(5));
             Assert.True(
                 SpinWait.SpinUntil(
                     () => (materializerThread.ThreadState & ThreadState.WaitSleepJoin) != 0,
