@@ -39,7 +39,7 @@ public sealed class RestMicroBundleCatalogCancellationTests
         var bytes = new byte[] { 4, 5, 6 };
         var address = Address(43, bytes);
         using var cancellation = new CancellationTokenSource();
-        var materialized = new TaskCompletionSource<Task>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var materialized = new TaskCompletionSource<Thread>(TaskCreationOptions.RunContinuationsAsynchronously);
         var allowMaterializerReturn = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var repository = new RestMicroBundleRepository(
             new Uri("https://repository.test"),
