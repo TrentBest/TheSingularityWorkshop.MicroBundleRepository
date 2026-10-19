@@ -71,7 +71,7 @@ Proposed route: `GET /api/experiences/{experienceId}/{version}/{contentHash}`
 
 ### 3.3 Resolve every selected MicroBundle deterministically
 
-The existing exact retrieval route requires `(bundleId, version, contentHash)`, while a selection may identify only `(bundleId, version)`. Resolve this before WebPage integration is called complete. Choose and test one of:
+The existing exact retrieval route requires `(bundleId, version, contentHash)`, while a selection may identify only `(bundleId, version)`. The current `RestMicroBundleCatalog` receives a caller-supplied `IReadOnlyDictionary<ulong, MicroBundleArtifactAddress>` and recursively follows dependency bundle IDs through that map; it does not resolve addresses from inventory or prove that each dependency's requested version/hash matches a manifest pin. Thus deterministic behavior currently depends on the caller providing a complete, correct address map for the whole dependency closure. Resolve and test this before WebPage integration is called complete. Choose and test one of:
 
 1. **Manifest pinning:** every Experience pins each dependency's complete immutable address, including SHA-256; or
 2. **Trusted catalog resolution:** repository catalog returns one canonical address for a bundle/version and explicitly rejects ambiguous versions with multiple hashes.
