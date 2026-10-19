@@ -90,9 +90,12 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
                 pending.Enqueue(dependency.BundleId);
         }
 
-        cancellationToken.ThrowIfCancellationRequested();
         lock (_loadedGate)
         {
+            // Cancellation may occur while this preload waits for the commit lock.
+            // Observe it after acquiring the lock, before touching shared state.
+            cancellationToken.ThrowIfCancellationRequested();
+
             // Validate the whole commit before mutating shared state. This keeps
             // concurrent preload operations from exposing a partially committed closure.
             foreach (var entry in staged)
