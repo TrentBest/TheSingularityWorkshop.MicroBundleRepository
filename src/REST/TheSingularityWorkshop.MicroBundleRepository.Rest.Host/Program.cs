@@ -62,27 +62,25 @@ else
 
 // Cross-origin browser access is opt-in. Configure Repository:AllowedCorsOrigins
 // with the exact trusted origins that host the consumer (for example, WebPage).
-// An empty list intentionally grants no cross-origin browser access.
-var allowedCorsOrigins = builder.Configuration
+// Read the final application configuration after Build so host/test-host overrides
+// are included. An empty list intentionally grants no cross-origin browser access.
+builder.Services.AddCors();
+
+var app = builder.Build();
+var allowedCorsOrigins = app.Configuration
     .GetSection("Repository:AllowedCorsOrigins")
     .Get<string[]>() ?? Array.Empty<string>();
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("RepositoryCors", policy =>
-    {
-        if (allowedCorsOrigins.Length > 0)
-        {
-            policy.WithOrigins(allowedCorsOrigins)
-                .AllowAnyHeader()
-                .AllowAnyMethod();
-        }
-    });
-});
-
-var app = builder.Build();
 app.UseRouting();
-app.UseCors("RepositoryCors");
+app.UseCors(policy =>
+{
+    if (allowedCorsOrigins.Length > 0)
+    {
+        policy.WithOrigins(allowedCorsOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    }
+});
 
 // Writes are disabled unless the deployment explicitly configures a shared API key.
 // This middleware runs before minimal-API body binding, so unauthenticated callers
