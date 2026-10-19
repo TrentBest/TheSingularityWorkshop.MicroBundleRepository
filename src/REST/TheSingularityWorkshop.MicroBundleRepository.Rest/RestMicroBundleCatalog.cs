@@ -15,6 +15,7 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
     private readonly IReadOnlyDictionary<ulong, MicroBundleArtifactAddress> _addresses;
     private readonly IMicroBundleArtifactMaterializer _materializer;
     private readonly Dictionary<ulong, MicroBundle> _loaded = new();
+    private readonly object _loadedGate = new();
 
     public RestMicroBundleCatalog(
         RestMicroBundleRepository repository,
@@ -48,8 +49,14 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
             cancellationToken.ThrowIfCancellationRequested();
 
             var bundleId = pending.Dequeue();
-            if (!visited.Add(bundleId) || _loaded.ContainsKey(bundleId) || staged.ContainsKey(bundleId))
+            if (!visited.Add(bundleId) || staged.ContainsKey(bundleId))
                 continue;
+
+            lock (_loadedGate)
+            {
+                if (_loaded.ContainsKey(bundleId))
+                    continue;
+            }
 
             if (!_addresses.TryGetValue(bundleId, out var address))
                 throw new InvalidOperationException(
@@ -84,8 +91,20 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
         }
 
         cancellationToken.ThrowIfCancellationRequested();
-        foreach (var entry in staged)
-            _loaded.Add(entry.Key, entry.Value);
+        lock (_loadedGate)
+        {
+            // Validate the whole commit before mutating shared state. This keeps
+            // concurrent preload operations from exposing a partially committed closure.
+            foreach (var entry in staged)
+            {
+                if (_loaded.ContainsKey(entry.Key))
+                    throw new InvalidOperationException(
+                        $"MicroBundle {entry.Key} was loaded concurrently while its dependency closure was being preloaded.");
+            }
+
+            foreach (var entry in staged)
+                _loaded.Add(entry.Key, entry.Value);
+        }
     }
 
     public bool TryResolve(
@@ -93,14 +112,20 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
         string version,
         out MicroBundle? bundle)
     {
-        if (_loaded.TryGetValue(bundleId, out bundle) &&
-            string.Equals(bundle.Descriptor.Version, version, StringComparison.Ordinal))
-            return true;
+        lock (_loadedGate)
+        {
+            if (_loaded.TryGetValue(bundleId, out bundle) &&
+                string.Equals(bundle.Descriptor.Version, version, StringComparison.Ordinal))
+                return true;
 
-        bundle = null;
-        return false;
+            bundle = null;
+            return false;
+        }
     }
 
-    public bool TryResolve(ulong bundleId, out IMicroBundle? bundle) =>
-        _loaded.TryGetValue(bundleId, out bundle);
+    public bool TryResolve(ulong bundleId, out IMicroBundle? bundle)
+    {
+        lock (_loadedGate)
+            return _loaded.TryGetValue(bundleId, out bundle);
+    }
 }
