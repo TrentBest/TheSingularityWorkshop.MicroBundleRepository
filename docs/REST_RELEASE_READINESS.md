@@ -198,3 +198,14 @@ The next contract blocker is tracked in [issue #24 — deterministic immutable M
 These tests establish the current catalog's fail-closed conflict behavior; they do not yet establish a retry/merge policy for concurrent preloads. The immutable dependency-address contract, live Azure verification, deployment configuration, end-to-end composition/activation, and final package compatibility remain release blockers.
 
 **Readiness remains 60% — not release-ready.** No package was published; the publish gate remains unchanged.
+
+
+## Commit-lock cancellation checkpoint (2026-10-19, 15:12Z)
+
+- Commit [205e8d43](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/commit/205e8d436179ab0aa0c126be221f521e75f7a12d) rechecks cancellation after acquiring the catalog commit lock and before validating or mutating shared catalog state. This closes the window where cancellation could arrive while a preload waited for the lock.
+- Current-head [Build and Test](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39275706285) and [Package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39275706298) both passed; publishing was skipped.
+- The preceding concurrent-preload checklist update also passed [Build and Test](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39275621612) and [Package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39275621695).
+
+This confirms the cancellation guard compiles and passes the repository workflows. The cancellation regression currently exercises cancellation before commit; a separate test that deterministically cancels *while waiting for the commit lock* would make the newly closed timing window explicit. Do not overstate the existing test as proving that precise interleaving.
+
+**Readiness remains 60% — not release-ready.** The immutable dependency-address contract, live Azure verification, deployment configuration, end-to-end composition/activation, and final package compatibility remain open. No package was published; the publish gate remains unchanged.
