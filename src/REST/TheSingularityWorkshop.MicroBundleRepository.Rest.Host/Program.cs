@@ -69,7 +69,7 @@ var allowedCorsOrigins = builder.Configuration
 
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy("RepositoryCors", policy =>
     {
         if (allowedCorsOrigins.Length > 0)
         {
@@ -81,7 +81,7 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
-app.UseCors();
+app.UseCors("RepositoryCors");
 
 // Writes are disabled unless the deployment explicitly configures a shared API key.
 // This middleware runs before minimal-API body binding, so unauthenticated callers
