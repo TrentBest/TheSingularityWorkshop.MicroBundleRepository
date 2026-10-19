@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using TheSingularityWorkshop.MicroBundleRepository.Azure;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 using Xunit;
 
