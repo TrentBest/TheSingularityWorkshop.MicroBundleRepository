@@ -122,6 +122,20 @@ app.Use(async (context, next) =>
             return;
         }
 
+        // Reject declared oversized bodies before any endpoint JSON/base64 binding.
+        // The server feature below also limits streaming/chunked bodies whose length
+        // is not known from the request headers.
+        if (context.Request.ContentLength is long contentLength &&
+            contentLength > maxRequestBytes)
+        {
+            context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
+            await context.Response.WriteAsJsonAsync(new
+            {
+                error = "The MicroBundle request exceeds the configured size limit."
+            });
+            return;
+        }
+
         var bodySizeFeature = context.Features.Get<IHttpMaxRequestBodySizeFeature>();
         if (bodySizeFeature is { IsReadOnly: false })
             bodySizeFeature.MaxRequestBodySize = maxRequestBytes;
