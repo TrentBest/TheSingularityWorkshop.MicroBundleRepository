@@ -54,6 +54,21 @@ public sealed class MicroBundleWriteSecurityTests
     }
 
     [Fact]
+    public async Task Put_RejectsDeclaredOversizedBodyBeforeJsonBinding()
+    {
+        using var factory = new RestHostFactory(configureKey: true, maxRequestBytes: 64);
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Repository-Write-Key", "test-only-write-key");
+
+        using var content = new StringContent(new string('x', 1024), Encoding.UTF8, "application/json");
+        using var response = await client.PutAsync(
+            "/api/microbundles/42/1.0.0/" + new string('a', 64),
+            content);
+
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Put_AcceptsConfiguredWriteKeyAndStoresVerifiedArtifact()
     {
         using var factory = new RestHostFactory(configureKey: true);
@@ -110,7 +125,7 @@ public sealed class MicroBundleWriteSecurityTests
         Assert.Equal("https://webpage.example", origins!.Single());
     }
 
-    private sealed class RestHostFactory(bool configureKey = false, string? allowedCorsOrigin = null) : WebApplicationFactory<Program>
+    private sealed class RestHostFactory(bool configureKey = false, string? allowedCorsOrigin = null, long? maxRequestBytes = null) : WebApplicationFactory<Program>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -120,7 +135,8 @@ public sealed class MicroBundleWriteSecurityTests
                 {
                     ["Repository:Mode"] = "Local",
                     ["Repository:LocalRoot"] = Path.Combine(Path.GetTempPath(), "mbrepo-write-tests"),
-                    ["Repository:AllowedCorsOrigins:0"] = allowedCorsOrigin
+                    ["Repository:AllowedCorsOrigins:0"] = allowedCorsOrigin,
+                ["Repository:MaxMicroBundleRequestBytes"] = maxRequestBytes?.ToString(System.Globalization.CultureInfo.InvariantCulture)
                 };
                 if (configureKey)
                     settings["Repository:WriteApiKey"] = "test-only-write-key";
