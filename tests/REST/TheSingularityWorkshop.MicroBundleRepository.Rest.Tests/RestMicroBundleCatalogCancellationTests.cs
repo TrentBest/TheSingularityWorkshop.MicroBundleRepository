@@ -39,7 +39,7 @@ public sealed class RestMicroBundleCatalogCancellationTests
         var bytes = new byte[] { 4, 5, 6 };
         var address = Address(43, bytes);
         using var cancellation = new CancellationTokenSource();
-        var materialized = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var materialized = new TaskCompletionSource<Task>(TaskCreationOptions.RunContinuationsAsynchronously);
         var allowMaterializerReturn = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var repository = new RestMicroBundleRepository(
             new Uri("https://repository.test"),
@@ -83,9 +83,15 @@ public sealed class RestMicroBundleCatalogCancellationTests
             Assert.True(lockAcquired.Wait(TimeSpan.FromSeconds(5)), "The test lock was not acquired.");
             allowMaterializerReturn.TrySetResult();
 
-            // The materializer has returned and the preload is now progressing toward
-            // the commit gate held by the lock holder. Cancellation must be checked at commit.
-            await Task.Delay(100);
+            // Observe the actual thread that returned from materialization entering a
+            // monitor wait. This replaces a blind delay with evidence that preload has
+            // advanced past materialization and is blocked at the held commit gate.
+            var materializerThread = await materialized.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.True(
+                SpinWait.SpinUntil(
+                    () => (materializerThread.ThreadState & ThreadState.WaitSleepJoin) != 0,
+                    TimeSpan.FromSeconds(5)),
+                "The preload thread did not enter a wait while the commit lock was held.");
             cancellation.Cancel();
             releaseLock.Set();
             await lockHolder;
@@ -110,7 +116,7 @@ public sealed class RestMicroBundleCatalogCancellationTests
     {
         public IMicroBundle Materialize(MicroBundleArtifact artifact)
         {
-            materialized?.TrySetResult();
+            materialized?.TrySetResult(Thread.CurrentThread);
             allowReturn?.Task.GetAwaiter().GetResult();
             return new TestBundle(artifact.Address.BundleId, artifact.Address.Version);
         }
