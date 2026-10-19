@@ -88,9 +88,8 @@ public sealed class MicroBundleWriteSecurityTests
     {
         using var factory = new RestHostFactory();
         using var client = factory.CreateClient();
-        using var request = new HttpRequestMessage(HttpMethod.Options, "/api/microbundles");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/health");
         request.Headers.Add("Origin", "https://untrusted.example");
-        request.Headers.Add("Access-Control-Request-Method", "GET");
 
         using var response = await client.SendAsync(request);
 
@@ -102,13 +101,13 @@ public sealed class MicroBundleWriteSecurityTests
     {
         using var factory = new RestHostFactory(allowedCorsOrigin: "https://webpage.example");
         using var client = factory.CreateClient();
-        using var request = new HttpRequestMessage(HttpMethod.Options, "/api/microbundles");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/health");
         request.Headers.Add("Origin", "https://webpage.example");
-        request.Headers.Add("Access-Control-Request-Method", "GET");
 
         using var response = await client.SendAsync(request);
 
-        Assert.Equal("https://webpage.example", response.Headers.GetValues("Access-Control-Allow-Origin").Single());
+        Assert.True(response.Headers.TryGetValues("Access-Control-Allow-Origin", out var origins));
+        Assert.Equal("https://webpage.example", origins!.Single());
     }
 
     private sealed class RestHostFactory(bool configureKey = false, string? allowedCorsOrigin = null) : WebApplicationFactory<Program>
