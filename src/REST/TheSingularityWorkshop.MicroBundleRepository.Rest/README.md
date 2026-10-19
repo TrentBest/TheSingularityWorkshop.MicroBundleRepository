@@ -17,7 +17,7 @@ GET /api/experiences/{experienceId}/{version}/{sha256}
 
 The MVP wire representation is JSON with base64 artifact bytes. The repository remains content-addressed and verifies the SHA-256 when materializing MicroBundleArtifact.
 
-MicroBundle writes are disabled by default at the host unless `Repository:WriteApiKey` is configured. When configured, the REST host requires `X-Repository-Write-Key`; pass the same secret as the optional third constructor argument `writeApiKey` to `RestMicroBundleRepository`. Keep this value in deployment secret configuration, never source control. GET requests do not send the write key. The host bounds PUT request bodies with `Repository:MaxMicroBundleRequestBytes` (default 16 MiB).
+MicroBundle writes are disabled by default at the host unless `Repository:WriteApiKey` is configured. When configured, the REST host requires `X-Repository-Write-Key`; pass the same secret as the optional third constructor argument `writeApiKey` to `RestMicroBundleRepository`. Keep this value in deployment secret configuration, never source control. GET requests do not send the write key. The host bounds PUT request bodies with `Repository:MaxMicroBundleRequestBytes` (default 16 MiB). Cross-origin browser access is denied by default. Configure `Repository:AllowedCorsOrigins` as an explicit array of trusted origins (for example, `https://your-webpage.example`) when a browser consumer needs cross-origin access; do not use a wildcard in production. CORS is separate from write authorization.
 
 A later binary endpoint can replace the wire encoding without changing IMicroBundleRepository.
 
