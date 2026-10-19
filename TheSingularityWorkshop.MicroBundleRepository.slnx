@@ -8,4 +8,5 @@
   <Project Path="tests/Core/TheSingularityWorkshop.MicroBundleRepository.Core.Tests/TheSingularityWorkshop.MicroBundleRepository.Core.Tests.csproj" />
   <Project Path="tests/Azure/TheSingularityWorkshop.MicroBundleRepository.Azure.Tests/TheSingularityWorkshop.MicroBundleRepository.Azure.Tests.csproj" />
   <Project Path="tests/REST/TheSingularityWorkshop.MicroBundleRepository.Rest.Tests/TheSingularityWorkshop.MicroBundleRepository.Rest.Tests.csproj" />
+  <Project Path="tests/REST.Host/TheSingularityWorkshop.MicroBundleRepository.Rest.Host.Tests/TheSingularityWorkshop.MicroBundleRepository.Rest.Host.Tests.csproj" />
 </Solution>
