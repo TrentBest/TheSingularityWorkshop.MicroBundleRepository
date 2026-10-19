@@ -2,7 +2,7 @@
 
 > This is the release checklist for `TheSingularityWorkshop.MicroBundleRepository.Rest` and the consumer-facing REST contract it implements. It records the `development` branch as inspected on 2026-10-19. A source-declared version is not evidence that a package was published, and a route recommendation is not evidence that the route exists.
 
-**Current disposition: NOT RELEASE-READY.** The development host maps Experience publication lookup and immutable Experience GET routes backed by Azure storage. Host-level contract tests remain absent. The current `development` head, `ac964c3929f353bae36eef4231882b4d0f513aba`, has successful Build and Test and Package verification workflow runs ([build](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39178765463), [package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39178765430)); these runs do not replace the missing host contract tests or end-to-end consumer proof. Dependency resolution from `(bundleId, version)` to a trusted immutable hash is unresolved; write authorization, MicroBundle request-body limits, host-level tests, trusted dependency resolution, and end-to-end release evidence remain outstanding. Azure Experience reads enforce a configurable byte limit before and during buffering, but actual oversized read/write paths still need adapter/host tests.
+**Current disposition: NOT RELEASE-READY.** The development host maps Experience publication lookup and immutable Experience GET routes backed by Azure storage. Initial host-level HTTP contract tests have now been added under `tests/REST.Host/` for publication success/not-published, immutable artifact retrieval, and malformed-hash rejection. Their CI result is pending at the time of this edit. The earlier implementation baseline `ac964c3929f353bae36eef4231882b4d0f513aba` had successful Build and Test and Package verification workflow runs ([build](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39178765463), [package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39178765430)); these baseline runs do not prove the new tests pass or replace end-to-end consumer proof. Dependency resolution from `(bundleId, version)` to a trusted immutable hash is unresolved; write authorization, MicroBundle request-body limits, host-level tests, trusted dependency resolution, and end-to-end release evidence remain outstanding. Azure Experience reads enforce a configurable byte limit before and during buffering, but actual oversized read/write paths still need adapter/host tests.
 
 ## 1. Domain map: ownership and boundaries
 
@@ -34,8 +34,8 @@ Evidence inspected:
 | Exact MicroBundle GET by `(bundleId, version, contentHash)` | Host route and REST client exist; client tests cover successful materialization, 404, PUT and identity mismatch | Partial; add host-level HTTP contract and corruption/error mapping tests |
 | MicroBundle PUT | Host route and client method exist; base64 DTO and Core artifact verify hash | Not production-ready until authentication/authorization, size bounds, collision behavior and failure mappings are proven |
 | MicroBundle inventory | Host `GET /api/microbundles` returns observer inventory | This development route is an unpaginated observation list; the separate draft PR #21 changes the contract to paginated identity discovery. Do not describe that candidate as integrated/released |
-| Experience publication lookup | Development host maps `GET /api/experiences/{experienceId}/publication`; Azure catalog is registered in Azure mode | Implemented in source; host-level contract test and end-to-end evidence missing; local mode returns 503 |
-| Immutable Experience GET | Development host route plus `RestExperienceClient`; client unit tests cover successful retrieval and client-side hash rejection | Implemented in source; host-level contract tests missing; Azure adapter now rejects known oversized blobs before buffering and enforces a byte cap while streaming; a test asserts the 10 MiB default, but actual oversized-read/write behavior is not yet covered by adapter/host tests or CI |
+| Experience publication lookup | Development host maps `GET /api/experiences/{experienceId}/publication`; Azure catalog is registered in Azure mode; new host test covers published and unpublished outcomes | Implemented in source; new test awaits CI; end-to-end evidence missing; local mode returns 503 |
+| Immutable Experience GET | Development host route plus `RestExperienceClient`; new host test covers exact byte retrieval and malformed-hash rejection | Implemented in source; new tests await CI; Azure adapter rejects known oversized blobs before buffering and enforces a byte cap while streaming; a test asserts the 10 MiB default, but actual oversized-read/write behavior remains untested |
 | MicroBundle `(bundleId, version)` → trusted hash | Inventory can show stored addresses; no canonical selection rule is documented | Unresolved domain contract |
 | Error behavior | Basic invalid address and not-found handling exist on MicroBundle GET | Incomplete; storage failures, integrity failures, invalid payloads and service unavailability need stable mappings |
 | Security/limits | Host configures permissive CORS and maps anonymous PUT; no explicit body/payload limit is visible in the checked host source | Release blocker until deliberate policy is implemented and tested |
@@ -95,7 +95,8 @@ REST must expose distinguishable outcomes for unpublished/not found, malformed a
 - [x] Register `IExperienceCatalog` and `IExperienceRepository` in Azure mode; local mode explicitly reports 503 because no local Experience adapter exists.
 - [x] Add publication lookup and immutable Experience GET routes on `development`.
 - [x] Validate address shape and verify bytes through `ExperienceArtifact` before success.
-- [ ] Add host-level contract tests and run them on the exact implementation commit.
+- [x] Add initial host-level contract tests for publication lookup, unpublished response, immutable artifact bytes, and malformed hash.
+- [ ] Confirm those tests pass in CI on the final implementation commit and expand coverage for storage failures, corruption, cancellation and limits.
 - [x] Enforce a configurable Azure Experience read/write byte limit before and during buffering (`Repository:MaxExperienceArtifactBytes`, default 10 MiB); host-level mapping and tests still need verification. The host's response check remains as a secondary guard.
 - [ ] Keep publication pointer changes separate from immutable artifact storage. Unpublishing must remove the pointer, not silently delete immutable bytes.
 - [ ] Add deterministic error translation; unexpected storage errors must not leak internals or be mapped to false 404 responses.
@@ -111,7 +112,8 @@ REST must expose distinguishable outcomes for unpublished/not found, malformed a
 - [ ] Decide whether SHA-256 alone is sufficient for the threat model; if publisher authenticity matters, document signature/provenance and trust-root policy separately.
 
 ### D. Test the real HTTP boundary
-- [ ] Host tests: DI/startup, each route, route constraints and JSON contract.
+- [x] Initial HTTP host tests: publication success/not-published, immutable artifact response bytes, malformed hash rejected before storage access.
+- [ ] Expand host tests to DI/startup failure, all routes, route constraints, JSON contract, storage failure, corruption, cancellation and limits.
 - [ ] Publication tests: published pointer, no publication, missing immutable artifact and pointer to corrupt/missing bytes.
 - [ ] Integrity tests: mismatched address/hash must never produce a successful response.
 - [ ] Error tests: storage unavailable, timeout/cancellation, malformed DTO, bad base64, oversized body and permission denial.
@@ -136,7 +138,7 @@ REST must expose distinguishable outcomes for unpublished/not found, malformed a
 - [ ] Build the explicit solution in Release and run all tests from a clean checkout.
 - [ ] Run package verification/pack and inspect the produced `.nupkg`: package ID/version, README, XML docs, target framework, dependency graph and included files.
 - [ ] Check API compatibility for any changed route, DTO, interface or package dependency.
-- [x] Record current development-head CI evidence: `ac964c3929f353bae36eef4231882b4d0f513aba` — [Build and Test](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39178765463) and [Package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39178765430) both succeeded. [ ] Repeat and record this evidence for the eventual release candidate after host-contract and end-to-end tests land.
+- [x] Record baseline CI evidence: `ac964c3929f353bae36eef4231882b4d0f513aba` — [Build and Test](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39178765463) and [Package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39178765430) succeeded. [ ] Verify current-head workflows after the newly added host tests and repeat for the eventual release candidate after end-to-end tests land.
 - [ ] Review license, security posture, README, XML documentation, changelog/release notes and package metadata.
 - [ ] Publish only after explicit approval; verify the resulting NuGet package page and perform a clean consumer restore/build/smoke test.
 - [ ] Update this checklist and the domain map with evidence, not intention, after each gate passes.
