@@ -278,3 +278,5 @@ static bool IsValidExperienceAddress(string version, string contentHash)
 }
 
 app.Run();
+
+public partial class Program { }
