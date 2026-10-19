@@ -85,6 +85,30 @@ public sealed class RestMicroBundleCatalogTests
         Assert.True(catalog.TryResolve(2, out _));
     }
 
+    [Fact]
+    public async Task PreloadClosureAsync_rejects_address_registered_under_wrong_bundle_id()
+    {
+        var content = new byte[] { 7 };
+        var wrongAddress = Address(2, content);
+        var repository = new RestMicroBundleRepository(
+            new Uri("https://repository.test"),
+            new RepositoryTransport(new Dictionary<string, MicroBundleArtifact>
+            {
+                [wrongAddress.ToString()] = new MicroBundleArtifact(wrongAddress, content)
+            }));
+        var catalog = new RestMicroBundleCatalog(
+            repository,
+            new Dictionary<ulong, MicroBundleArtifactAddress> { [1] = wrongAddress },
+            new Materializer());
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => catalog.PreloadClosureAsync(new[] { 1UL }));
+
+        Assert.Contains("registered for MicroBundle 1 identifies MicroBundle 2", error.Message);
+        Assert.False(catalog.TryResolve(1, out _));
+        Assert.False(catalog.TryResolve(2, out _));
+    }
+
     private static MicroBundleArtifactAddress Address(ulong id, byte[] content) =>
         new(id, "1.0.0", Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant());
 
