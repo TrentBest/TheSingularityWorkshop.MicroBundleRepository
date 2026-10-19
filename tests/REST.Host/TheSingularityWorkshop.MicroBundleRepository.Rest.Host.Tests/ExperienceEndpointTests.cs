@@ -65,6 +65,32 @@ public sealed class ExperienceEndpointTests
     }
 
     [Fact]
+    public async Task Artifact_ReturnsNotFoundWhenImmutableAddressIsAbsent()
+    {
+        var repository = new FakeExperienceRepository(null);
+        using var factory = new RestHostFactory(new FakeCatalog(null), repository);
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync($"/api/experiences/42/{Address.Version}/{Hash}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.True(repository.WasRead);
+    }
+
+    [Fact]
+    public async Task Publication_RejectsInvalidExperienceId()
+    {
+        using var factory = new RestHostFactory(
+            new FakeCatalog(null),
+            new FakeExperienceRepository(null));
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/experiences/0/publication");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Artifact_RejectsMalformedContentHashBeforeStorageAccess()
     {
         var repository = new FakeExperienceRepository(null);
