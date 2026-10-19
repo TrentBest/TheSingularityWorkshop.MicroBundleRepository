@@ -186,3 +186,15 @@ The next contract blocker is tracked in [issue #24 — deterministic immutable M
 - This adds regression evidence for cancellation atomicity. It does not resolve the immutable dependency address contract or replace the end-to-end composition/activation proof.
 
 **Readiness: 60% — not release-ready.** The publish gate remains unchanged.
+
+
+## Concurrent preload checkpoint (2026-10-19, 15:09Z)
+
+- Commit [d056631a](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/commit/d056631a23f1ffeacaf06efc3786cf9be5137af1) protects catalog resolution and closure commit with a shared lock. It validates all staged IDs for conflicts before inserting any staged entry.
+- Commit [ecbffebb](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/commit/ecbffebbc4524b6ebf4c243bfbae9962b9be0d84) adds a deterministic concurrent-preload regression test: two loads synchronize at the root request, exactly one commits, the conflicting load fails, and both root and dependency remain resolvable from the winning closure.
+- Both current-head workflows passed on the regression-test commit: [Build and Test](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39275320275) and [Package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39275320137). Publishing was skipped.
+- The preceding checklist documentation update also passed: [Build and Test](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39274673900) and [Package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39274673824).
+
+These tests establish the current catalog's fail-closed conflict behavior; they do not yet establish a retry/merge policy for concurrent preloads. The immutable dependency-address contract, live Azure verification, deployment configuration, end-to-end composition/activation, and final package compatibility remain release blockers.
+
+**Readiness remains 60% — not release-ready.** No package was published; the publish gate remains unchanged.
