@@ -105,8 +105,8 @@ REST must expose distinguishable outcomes for unpublished/not found, malformed a
 ### C. Secure the host before exposing writes
 - [ ] Decide deployment/network exposure and authentication policy.
 - [ ] Authorize PUT and any publication mutation explicitly; read-only public retrieval, if chosen, must not imply anonymous write access.
-- [ ] Replace unrestricted CORS with an explicit origin/method/header policy where browser access requires CORS. CORS is not authorization.
-- [ ] Enforce request-body, base64-decoded artifact, response-size, concurrency and request-duration limits.
+- [x] Replace unrestricted CORS with an explicit, opt-in origin/method/header policy where browser access requires CORS. Empty `Repository:AllowedCorsOrigins` grants no cross-origin browser access; the allow-list is read from final host configuration. Verified by host tests on commit `0c73f9dd` and successful [Build and Test](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39185338890) and [Package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39185338921). CORS is not authorization.
+- [ ] Enforce and test request-body, base64-decoded artifact, response-size, concurrency and request-duration limits. The host sets `IHttpMaxRequestBodySizeFeature` for authorized PUT requests, but oversized HTTP request behavior still needs a regression test.
 - [ ] Ensure cancellation reaches storage operations and large payloads do not require avoidable duplicate buffers.
 - [ ] Test hostile inputs, malformed base64, path/route edge cases, oversized payloads, unauthorized writes and storage failures.
 - [ ] Decide whether SHA-256 alone is sufficient for the threat model; if publisher authenticity matters, document signature/provenance and trust-root policy separately.
