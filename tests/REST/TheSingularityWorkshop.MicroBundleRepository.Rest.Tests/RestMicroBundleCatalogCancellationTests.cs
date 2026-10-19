@@ -113,12 +113,14 @@ public sealed class RestMicroBundleCatalogCancellationTests
 
     private sealed class Materializer(
         TaskCompletionSource? materialized = null,
-        TaskCompletionSource? allowReturn = null) : IMicroBundleArtifactMaterializer
+        TaskCompletionSource? allowReturn = null,
+        TaskCompletionSource<Thread>? materializerReturningThread = null) : IMicroBundleArtifactMaterializer
     {
         public IMicroBundle Materialize(MicroBundleArtifact artifact)
         {
-            materialized?.TrySetResult(Thread.CurrentThread);
+            materialized?.TrySetResult();
             allowReturn?.Task.GetAwaiter().GetResult();
+            materializerReturningThread?.TrySetResult(Thread.CurrentThread);
             return new TestBundle(artifact.Address.BundleId, artifact.Address.Version);
         }
     }
