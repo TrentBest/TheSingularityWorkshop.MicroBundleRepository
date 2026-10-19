@@ -2,7 +2,7 @@
 
 **Audience:** WebPage workstream / maintainers of `TrentBest/WebPage`  
 **Repository branch checked:** `development`  
-**Response date:** 2026-10-18  
+**Response date:** 2026-10-19  
 **Scope:** REST contract coordination only. This note does not authorize merge, publish, deployment, or changes to `master`.
 
 ## Confirmed implementation on MicroBundleRepository development
@@ -15,7 +15,7 @@ It currently exposes:
 - `PUT /api/microbundles/{bundleId}/{version}/{contentHash}`: artifact write; this is not appropriate for anonymous public exposure.
 - `/` and `/health`.
 
-The code-level contracts and initial routes now exist on `development`; host-level contract tests and exact-commit CI evidence are still open. The core contracts are:
+The code-level contracts and initial routes now exist on `development`; the current development head has green build/test and package-verification runs, but host-level contract tests remain open. The core contracts are:
 - [IExperienceCatalog](../src/Core/TheSingularityWorkshop.MicroBundleRepository.Core/IExperienceCatalog.cs): `GetPublishedAsync(ulong experienceId)` returns the current `ExperiencePublication` or null.
 - [ExperiencePublication](../src/Core/TheSingularityWorkshop.MicroBundleRepository.Core/ExperiencePublication.cs): points to an `ExperienceArtifactAddress`.
 - [ExperienceArtifactAddress](../src/Core/TheSingularityWorkshop.MicroBundleRepository.Core/ExperienceArtifactAddress.cs): `(ExperienceId, Version, ContentHash)`.
@@ -75,12 +75,12 @@ Until that decision is made, WebPage must not guess hashes, select an arbitrary 
 - [ ] Tests: published pointer success/not-found; immutable artifact success/not-found; malformed address; hash mismatch/corrupt bytes; storage unavailable.
 - [ ] A documented, tested MicroBundle version-to-hash rule (manifest pinning or trusted catalog).
 - [ ] No anonymous public mutation; explicit authorization and bounded payloads.
-- [ ] Development CI run tied to the exact commit containing the route/tests (no workflow run or status was surfaced for the latest implementation commit when checked).
+- [x] Current `development` head `ac964c3929f353bae36eef4231882b4d0f513aba` has successful [Build and Test](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39178765463) and [Package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39178765430) runs. [ ] Repeat CI after host-contract tests land; current green runs do not prove the HTTP routes or end-to-end consumer flow.
 - [ ] End-to-end proof: retrieve publication → retrieve/verify Experience bytes → resolve and retrieve exact MicroBundle bytes → materialize/compose through FSM_COS → activate candidate only after successful composition.
 
 ## Implementation update (2026-10-18)
 
-Development now contains `GET /api/experiences/{experienceId}/publication` and `GET /api/experiences/{experienceId}/{version}/{contentHash}`. The host wires `AzureExperienceCatalog` and `AzureExperienceRepository` in Azure mode using a separate `experiences` container (configurable with `Repository:ExperienceContainerName`). Local mode returns explicit `503` because there is not yet a local Experience storage adapter. The REST package also has `RestExperienceClient` to read the pointer and retrieve/hash-verify immutable bytes. Client tests cover publication success, unpublished response, artifact retrieval, and corrupt-byte rejection; execution remains unconfirmed. The Azure adapter now rejects a declared oversized blob before buffering and enforces the configured cap during streaming; the host retains a secondary response-size check. This source change is not yet covered by adapter/host tests or green CI. Host-level tests and green CI for the implementation commit remain outstanding.
+Development contains `GET /api/experiences/{experienceId}/publication` and `GET /api/experiences/{experienceId}/{version}/{contentHash}`. The host wires `AzureExperienceCatalog` and `AzureExperienceRepository` in Azure mode using a separate `experiences` container (configurable with `Repository:ExperienceContainerName`). Local mode returns explicit `503` because there is not yet a local Experience storage adapter. The REST package also has `RestExperienceClient` to read the pointer and retrieve/hash-verify immutable bytes. Client tests cover publication success, unpublished response, artifact retrieval, and corrupt-byte rejection. The Azure adapter rejects a declared oversized blob before buffering and enforces the configured cap during streaming; the host retains a secondary response-size check. The current `development` head `ac964c3929f353bae36eef4231882b4d0f513aba` has successful [Build and Test](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39178765463) and [Package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39178765430) runs. Actual oversized-path adapter tests and host-level HTTP contract tests are still absent, as is end-to-end consumer proof.
 
 The unresolved MicroBundle `(bundleId, version)` to hash rule remains open: inventory is not a trusted resolver. WebPage should continue to preserve the currently active Experience unless retrieval, integrity validation and FSM_COS composition all succeed.
 
@@ -92,4 +92,4 @@ The repository now tracks the broader package gate in [REST_RELEASE_READINESS.md
 
 The WebPage request is recorded at [WebPage's MicroBundleRepositoryLLM.md](https://github.com/TrentBest/WebPage/blob/development/docs/coordination/MicroBundleRepositoryLLM.md), commit `ae302eef` per the handoff supplied by WebPage. Relevant repository work remains tracked in [issue #22](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/issues/22), [issue #10](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/issues/10), and [issue #9](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/issues/9).
 
-This reciprocal note now records the implemented development routes and the bounded Azure Experience read behavior. The package remains not release-ready: host-level tests, security controls, MicroBundle request-body limits, trusted dependency hash resolution, end-to-end composition proof, and exact-commit CI remain open. No merge, package publish, or deployment was performed.
+This reciprocal note now records the implemented development routes and the bounded Azure Experience read behavior. The package remains not release-ready: host-level tests, security controls, MicroBundle request-body limits, trusted dependency hash resolution, end-to-end composition proof, and host-contract and end-to-end tests remain open. CI is green for the current development head, but the package remains not release-ready. No merge, package publish, or deployment was performed.
