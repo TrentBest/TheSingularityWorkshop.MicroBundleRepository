@@ -58,6 +58,38 @@ public sealed class AzureExperienceRepositoryLiveTests
         Assert.NotEqual(v1.Address.ContentHash, v2.Address.ContentHash);
     }
 
+    [Fact]
+    public async Task AzureBlob_GetRejectsArtifactLargerThanConfiguredReadLimit()
+    {
+        var storageAccountUri = Environment.GetEnvironmentVariable("EXPERIENCE_STORAGE_ACCOUNT_URI");
+        if (string.IsNullOrWhiteSpace(storageAccountUri))
+            return;
+
+        var containerName = Environment.GetEnvironmentVariable("EXPERIENCE_CONTAINER_NAME") ?? "experiences";
+        var storageUri = new Uri(storageAccountUri);
+        var writer = new AzureExperienceRepository(new AzureExperienceRepositoryOptions
+        {
+            StorageAccountUri = storageUri,
+            ContainerName = containerName
+        });
+        await writer.InitializeAsync();
+
+        var artifact = CreateArtifact(
+            version: "0.3.0-size-limit-smoke",
+            payload: new string('x', 128));
+        await writer.PutAsync(artifact);
+
+        var limitedReader = new AzureExperienceRepository(new AzureExperienceRepositoryOptions
+        {
+            StorageAccountUri = storageUri,
+            ContainerName = containerName,
+            MaxArtifactBytes = 16
+        });
+
+        await Assert.ThrowsAsync<ExperienceArtifactTooLargeException>(
+            async () => await limitedReader.GetAsync(artifact.Address));
+    }
+
     private static ExperienceArtifact CreateArtifact(string version, string payload)
     {
         var content = Encoding.UTF8.GetBytes(payload);
