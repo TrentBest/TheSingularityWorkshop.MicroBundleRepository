@@ -40,17 +40,17 @@ public sealed class RestMicroBundleCatalogCancellationTests
         var address = Address(43, bytes);
         using var cancellation = new CancellationTokenSource();
         var materialized = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var allowMaterializerReturn = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var repository = new RestMicroBundleRepository(
             new Uri("https://repository.test"),
             new ImmediateTransport(address, bytes));
         var catalog = new RestMicroBundleCatalog(
             repository,
             new Dictionary<ulong, MicroBundleArtifactAddress> { [43] = address },
-            new Materializer(materialized));
+            new Materializer(materialized, allowMaterializerReturn));
 
-        // Hold the real commit monitor so the preload cannot commit. This focused
-        // regression intentionally targets the private synchronization boundary;
-        // it will fail if cancellation is no longer rechecked after lock acquisition.
+        // Pause materialization before it returns, then acquire the catalog gate.
+        // This lets the preload pass its initial loaded check before the gate is held.
         var gateField = typeof(RestMicroBundleCatalog).GetField(
             "_loadedGate",
             BindingFlags.Instance | BindingFlags.NonPublic);
@@ -60,34 +60,42 @@ public sealed class RestMicroBundleCatalogCancellationTests
 
         using var lockAcquired = new ManualResetEventSlim();
         using var releaseLock = new ManualResetEventSlim();
-        var lockHolder = Task.Run(() =>
-        {
-            Monitor.Enter(gate!);
-            try
-            {
-                lockAcquired.Set();
-                if (!releaseLock.Wait(TimeSpan.FromSeconds(5)))
-                    throw new TimeoutException("The test did not release the commit lock in time.");
-            }
-            finally
-            {
-                Monitor.Exit(gate!);
-            }
-        });
-        Assert.True(lockAcquired.Wait(TimeSpan.FromSeconds(5)), "The test lock was not acquired.");
-
         var preload = Task.Run(() => catalog.PreloadClosureAsync(new[] { 43UL }, cancellation.Token));
+
         try
         {
             await materialized.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var lockHolder = Task.Run(() =>
+            {
+                Monitor.Enter(gate!);
+                try
+                {
+                    lockAcquired.Set();
+                    if (!releaseLock.Wait(TimeSpan.FromSeconds(5)))
+                        throw new TimeoutException("The test did not release the commit lock in time.");
+                }
+                finally
+                {
+                    Monitor.Exit(gate!);
+                }
+            });
+
+            Assert.True(lockAcquired.Wait(TimeSpan.FromSeconds(5)), "The test lock was not acquired.");
+            allowMaterializerReturn.TrySetResult();
+
+            // The materializer has returned and the preload is now progressing toward
+            // the commit gate held by the lock holder. Cancellation must be checked at commit.
+            await Task.Delay(100);
             cancellation.Cancel();
+            releaseLock.Set();
+            await lockHolder;
         }
         finally
         {
+            allowMaterializerReturn.TrySetResult();
             releaseLock.Set();
         }
 
-        await lockHolder;
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => preload);
         Assert.False(catalog.TryResolve(43, out _));
         Assert.False(catalog.TryResolve(43, "1.0.0", out _));
@@ -96,11 +104,14 @@ public sealed class RestMicroBundleCatalogCancellationTests
     private static MicroBundleArtifactAddress Address(ulong id, byte[] bytes) =>
         new(id, "1.0.0", Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant());
 
-    private sealed class Materializer(TaskCompletionSource? materialized = null) : IMicroBundleArtifactMaterializer
+    private sealed class Materializer(
+        TaskCompletionSource? materialized = null,
+        TaskCompletionSource? allowReturn = null) : IMicroBundleArtifactMaterializer
     {
         public IMicroBundle Materialize(MicroBundleArtifact artifact)
         {
             materialized?.TrySetResult();
+            allowReturn?.Task.GetAwaiter().GetResult();
             return new TestBundle(artifact.Address.BundleId, artifact.Address.Version);
         }
     }
