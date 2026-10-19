@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.AspNetCore.Http.Features;
 using TheSingularityWorkshop.MicroBundleRepository.Azure;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 using TheSingularityWorkshop.MicroBundleRepository.Local;
@@ -67,6 +70,62 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 app.UseCors();
+
+// Writes are disabled unless the deployment explicitly configures a shared API key.
+// This middleware runs before minimal-API body binding, so unauthenticated callers
+// cannot force JSON/base64 request-body buffering on the write endpoint.
+app.Use(async (context, next) =>
+{
+    if (HttpMethods.IsPut(context.Request.Method) &&
+        context.Request.Path.StartsWithSegments("/api/microbundles"))
+    {
+        var configuredKey = context.RequestServices
+            .GetRequiredService<IConfiguration>()["Repository:WriteApiKey"];
+
+        if (string.IsNullOrWhiteSpace(configuredKey))
+        {
+            context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            await context.Response.WriteAsJsonAsync(new
+            {
+                error = "MicroBundle writes are disabled because write authorization is not configured."
+            });
+            return;
+        }
+
+        if (!context.Request.Headers.TryGetValue("X-Repository-Write-Key", out var suppliedKey) ||
+            !KeysMatch(configuredKey, suppliedKey.ToString()))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            await context.Response.WriteAsJsonAsync(new { error = "A valid write authorization key is required." });
+            return;
+        }
+
+        var maxRequestBytes = context.RequestServices
+            .GetRequiredService<IConfiguration>()
+            .GetValue<long?>("Repository:MaxMicroBundleRequestBytes") ?? 16 * 1024 * 1024;
+
+        if (maxRequestBytes <= 0)
+        {
+            context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            await context.Response.WriteAsJsonAsync(new { error = "The MicroBundle request-size limit is invalid." });
+            return;
+        }
+
+        var bodySizeFeature = context.Features.Get<IHttpMaxRequestBodySizeFeature>();
+        if (bodySizeFeature is { IsReadOnly: false })
+            bodySizeFeature.MaxRequestBodySize = maxRequestBytes;
+    }
+
+    await next();
+});
+
+static bool KeysMatch(string expected, string supplied)
+{
+    var expectedBytes = Encoding.UTF8.GetBytes(expected);
+    var suppliedBytes = Encoding.UTF8.GetBytes(supplied);
+    return expectedBytes.Length == suppliedBytes.Length &&
+        CryptographicOperations.FixedTimeEquals(expectedBytes, suppliedBytes);
+}
 
 app.MapGet("/", (IConfiguration configuration) => new
 {
