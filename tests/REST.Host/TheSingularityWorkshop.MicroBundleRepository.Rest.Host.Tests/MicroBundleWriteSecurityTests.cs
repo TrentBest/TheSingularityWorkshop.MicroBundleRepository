@@ -1,4 +1,6 @@
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -34,6 +36,51 @@ public sealed class MicroBundleWriteSecurityTests
                 + new string('a', 64) + "\",\"contentBase64\":\"\"}"));
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+
+    [Fact]
+    public async Task Put_RejectsIncorrectWriteKey()
+    {
+        using var factory = new RestHostFactory(configureKey: true);
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Repository-Write-Key", "incorrect-key");
+
+        using var response = await client.PutAsync(
+            "/api/microbundles/42/1.0.0/" + new string('a', 64),
+            new StringContent("{}"));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Put_AcceptsConfiguredWriteKeyAndStoresVerifiedArtifact()
+    {
+        using var factory = new RestHostFactory(configureKey: true);
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Repository-Write-Key", "test-only-write-key");
+
+        var bytes = Encoding.UTF8.GetBytes("authorized write integration test");
+        var hash = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+        var contentBase64 = Convert.ToBase64String(bytes);
+        var body = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            bundleId = 42,
+            version = "1.0.0",
+            contentHash = hash,
+            contentBase64
+        });
+
+        using var response = await client.PutAsync(
+            $"/api/microbundles/42/1.0.0/{hash}",
+            new StringContent(body, Encoding.UTF8, "application/json"));
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var getResponse = await client.GetAsync($"/api/microbundles/42/1.0.0/{hash}");
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+        var responseBody = await getResponse.Content.ReadAsStringAsync();
+        Assert.Contains(contentBase64, responseBody, StringComparison.Ordinal);
     }
 
     private sealed class RestHostFactory(bool configureKey = false) : WebApplicationFactory<Program>
