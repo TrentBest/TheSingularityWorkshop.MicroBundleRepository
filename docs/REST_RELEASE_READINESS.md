@@ -1,8 +1,8 @@
 # REST package — domain map and release readiness
 
-> This is the release checklist for `TheSingularityWorkshop.MicroBundleRepository.Rest` and the consumer-facing REST contract it implements. It records the current `development` branch as inspected on 2026-10-18. A source-declared version is not evidence that a package was published, and a route recommendation is not evidence that the route exists.
+> This is the release checklist for `TheSingularityWorkshop.MicroBundleRepository.Rest` and the consumer-facing REST contract it implements. It records the `development` branch as inspected on 2026-10-19. A source-declared version is not evidence that a package was published, and a route recommendation is not evidence that the route exists.
 
-**Current disposition: NOT RELEASE-READY.** The development host now maps Experience publication lookup and immutable Experience GET routes backed by Azure storage. Those routes have not yet been covered by host-level contract tests or validated by a green CI run on the implementation commit. Dependency resolution from `(bundleId, version)` to a trusted immutable hash is unresolved; write authorization, MicroBundle request-body limits, host-level tests, trusted dependency resolution, and release evidence remain outstanding. Azure Experience reads now enforce a configurable byte limit before and during buffering; a unit assertion now locks the default limit at 10 MiB, but read-path enforcement and CI still need verification.
+**Current disposition: NOT RELEASE-READY.** The development host maps Experience publication lookup and immutable Experience GET routes backed by Azure storage. Host-level contract tests remain absent. The current `development` head, `ac964c3929f353bae36eef4231882b4d0f513aba`, has successful Build and Test and Package verification workflow runs ([build](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39178765463), [package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39178765430)); these runs do not replace the missing host contract tests or end-to-end consumer proof. Dependency resolution from `(bundleId, version)` to a trusted immutable hash is unresolved; write authorization, MicroBundle request-body limits, host-level tests, trusted dependency resolution, and end-to-end release evidence remain outstanding. Azure Experience reads enforce a configurable byte limit before and during buffering, but actual oversized read/write paths still need adapter/host tests.
 
 ## 1. Domain map: ownership and boundaries
 
@@ -39,7 +39,7 @@ Evidence inspected:
 | MicroBundle `(bundleId, version)` → trusted hash | Inventory can show stored addresses; no canonical selection rule is documented | Unresolved domain contract |
 | Error behavior | Basic invalid address and not-found handling exist on MicroBundle GET | Incomplete; storage failures, integrity failures, invalid payloads and service unavailability need stable mappings |
 | Security/limits | Host configures permissive CORS and maps anonymous PUT; no explicit body/payload limit is visible in the checked host source | Release blocker until deliberate policy is implemented and tested |
-| Release validation | Build workflow exists, including package/source-integrated jobs | A workflow definition is not a passing run. Record green results for the exact release commit |
+| Release validation | Build and Test plus Package verification are green on current development head `ac964c3929f353bae36eef4231882b4d0f513aba` | Evidence: [Build and Test](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39178765463) and [Package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39178765430). Release commit still needs host-contract and end-to-end tests |
 
 The REST package project currently declares version `0.1.0-alpha.2`, references `FSM_REST 0.1.0-alpha.4`, `FSM_COS 0.1.0-alpha.6`, and `MicroBundleDomain 1.0.1`. These are source declarations only. Before release, verify each dependency exists on NuGet and is API-compatible with the exact commit being packed.
 
@@ -136,7 +136,7 @@ REST must expose distinguishable outcomes for unpublished/not found, malformed a
 - [ ] Build the explicit solution in Release and run all tests from a clean checkout.
 - [ ] Run package verification/pack and inspect the produced `.nupkg`: package ID/version, README, XML docs, target framework, dependency graph and included files.
 - [ ] Check API compatibility for any changed route, DTO, interface or package dependency.
-- [ ] Record exact commit SHA and links to green build/test/package-verification runs. A previous commit's CI does not validate the release commit.
+- [x] Record current development-head CI evidence: `ac964c3929f353bae36eef4231882b4d0f513aba` — [Build and Test](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39178765463) and [Package verification](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/39178765430) both succeeded. [ ] Repeat and record this evidence for the eventual release candidate after host-contract and end-to-end tests land.
 - [ ] Review license, security posture, README, XML documentation, changelog/release notes and package metadata.
 - [ ] Publish only after explicit approval; verify the resulting NuGet package page and perform a clean consumer restore/build/smoke test.
 - [ ] Update this checklist and the domain map with evidence, not intention, after each gate passes.
