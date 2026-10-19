@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.Json;
 using TheSingularityWorkshop.FSM_COS;
@@ -15,10 +16,7 @@ public sealed class RestMicroBundleCatalogCancellationTests
     public async Task PreloadClosureAsync_does_not_publish_staged_bundle_when_cancelled_before_commit()
     {
         var bytes = new byte[] { 1, 2, 3 };
-        var address = new MicroBundleArtifactAddress(
-            42,
-            "1.0.0",
-            Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant());
+        var address = Address(42, bytes);
         using var cancellation = new CancellationTokenSource();
         var repository = new RestMicroBundleRepository(
             new Uri("https://repository.test"),
@@ -35,10 +33,59 @@ public sealed class RestMicroBundleCatalogCancellationTests
         Assert.False(catalog.TryResolve(42, "1.0.0", out _));
     }
 
-    private sealed class Materializer : IMicroBundleArtifactMaterializer
+    [Fact]
+    public async Task PreloadClosureAsync_observes_cancellation_while_waiting_for_commit_lock()
     {
-        public IMicroBundle Materialize(MicroBundleArtifact artifact) =>
-            new TestBundle(artifact.Address.BundleId, artifact.Address.Version);
+        var bytes = new byte[] { 4, 5, 6 };
+        var address = Address(43, bytes);
+        using var cancellation = new CancellationTokenSource();
+        var materialized = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var repository = new RestMicroBundleRepository(
+            new Uri("https://repository.test"),
+            new ImmediateTransport(address, bytes));
+        var catalog = new RestMicroBundleCatalog(
+            repository,
+            new Dictionary<ulong, MicroBundleArtifactAddress> { [43] = address },
+            new Materializer(materialized));
+
+        // Hold the real commit monitor so the preload cannot commit. This focused
+        // regression intentionally targets the private synchronization boundary;
+        // it will fail if cancellation is no longer rechecked after lock acquisition.
+        var gateField = typeof(RestMicroBundleCatalog).GetField(
+            "_loadedGate",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(gateField);
+        var gate = gateField!.GetValue(catalog);
+        Assert.NotNull(gate);
+
+        Monitor.Enter(gate!);
+        Task preload;
+        try
+        {
+            preload = Task.Run(() => catalog.PreloadClosureAsync(new[] { 43UL }, cancellation.Token));
+            await materialized.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            cancellation.Cancel();
+        }
+        finally
+        {
+            Monitor.Exit(gate!);
+        }
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => preload);
+        Assert.False(catalog.TryResolve(43, out _));
+        Assert.False(catalog.TryResolve(43, "1.0.0", out _));
+    }
+
+    private static MicroBundleArtifactAddress Address(ulong id, byte[] bytes) =>
+        new(id, "1.0.0", Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant());
+
+    private sealed class Materializer(TaskCompletionSource? materialized = null) : IMicroBundleArtifactMaterializer
+    {
+        public IMicroBundle Materialize(MicroBundleArtifact artifact)
+        {
+            materialized?.TrySetResult();
+            return new TestBundle(artifact.Address.BundleId, artifact.Address.Version);
+        }
     }
 
     private sealed class TestBundle(ulong id, string version) : IMicroBundle
@@ -52,6 +99,30 @@ public sealed class RestMicroBundleCatalogCancellationTests
         public bool Arbitrate(IMicroBundleArbitrationContext context, int roundIndex) => false;
     }
 
+    private static RestResponse CreateResponse(MicroBundleArtifactAddress address, byte[] bytes)
+    {
+        var dto = new MicroBundleArtifactDto(
+            address.BundleId,
+            address.Version,
+            address.ContentHash,
+            Convert.ToBase64String(bytes));
+        return new RestResponse(
+            200,
+            "OK",
+            new Dictionary<string, string>(),
+            JsonSerializer.Serialize(dto, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+    }
+
+    private sealed class ImmediateTransport(
+        MicroBundleArtifactAddress address,
+        byte[] bytes) : IRestTransport
+    {
+        public Task<RestResponse> SendAsync(
+            RestRequest request,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(CreateResponse(address, bytes));
+    }
+
     private sealed class CancellingTransport(
         MicroBundleArtifactAddress address,
         byte[] bytes,
@@ -61,21 +132,10 @@ public sealed class RestMicroBundleCatalogCancellationTests
             RestRequest request,
             CancellationToken cancellationToken = default)
         {
-            var dto = new MicroBundleArtifactDto(
-                address.BundleId,
-                address.Version,
-                address.ContentHash,
-                Convert.ToBase64String(bytes));
-            var response = new RestResponse(
-                200,
-                "OK",
-                new Dictionary<string, string>(),
-                JsonSerializer.Serialize(dto, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
-
             // Simulate cancellation after the final artifact has been returned but
             // before the catalog's atomic commit point.
             cancellation.Cancel();
-            return Task.FromResult(response);
+            return Task.FromResult(CreateResponse(address, bytes));
         }
     }
 }
