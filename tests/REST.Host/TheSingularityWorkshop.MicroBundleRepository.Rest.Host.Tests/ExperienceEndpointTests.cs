@@ -29,7 +29,7 @@ public sealed class ExperienceEndpointTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal(42, json.RootElement.GetProperty("experienceId").GetUInt64());
+        Assert.Equal(42UL, json.RootElement.GetProperty("experienceId").GetUInt64());
         Assert.Equal("1.2.3", json.RootElement.GetProperty("version").GetString());
         Assert.Equal(Hash, json.RootElement.GetProperty("contentHash").GetString());
     }
