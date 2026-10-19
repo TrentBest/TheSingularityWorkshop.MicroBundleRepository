@@ -7,7 +7,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
-using TheSingularityWorkshop.MicroBundleRepository.Rest.Host;
 using Xunit;
 
 namespace TheSingularityWorkshop.MicroBundleRepository.Rest.Host.Tests;
