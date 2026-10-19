@@ -115,8 +115,8 @@ public sealed class ExperienceEndpointTests
     }
 
     private sealed class RestHostFactory(
-        IExperienceCatalog catalog,
-        IExperienceRepository repository) : WebApplicationFactory<Program>
+        IExperienceCatalog? catalog,
+        IExperienceRepository? repository) : WebApplicationFactory<Program>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -131,8 +131,10 @@ public sealed class ExperienceEndpointTests
             {
                 services.RemoveAll<IExperienceCatalog>();
                 services.RemoveAll<IExperienceRepository>();
-                services.AddSingleton(catalog);
-                services.AddSingleton(repository);
+                if (catalog is not null)
+                    services.AddSingleton(catalog);
+                if (repository is not null)
+                    services.AddSingleton(repository);
             });
         }
     }
