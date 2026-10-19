@@ -4,7 +4,7 @@
 **Repository branch checked:** `development`  
 **Response date:** 2026-10-19  
 **Scope:** REST contract coordination only. This note does not authorize merge, publish, deployment, or changes to `master`.  
-**Estimated release readiness: 45% — approaching, not ready.** This is a judgment-based progress estimate, not test coverage. Current-head Build and Test and Package verification are green; security enforcement, trusted hash resolution, actual Azure oversized-path tests, end-to-end FSM_COS composition/activation proof, and release-candidate compatibility checks remain open.
+**Estimated release readiness: 45% — approaching, not ready.** This is a judgment-based progress estimate, not test coverage. Host authorization and MicroBundle request-body limits are implemented; the REST client now accepts an optional `writeApiKey` and sends `X-Repository-Write-Key` on PUT. CI was green for the host security changes; CI for the client contract and latest docs is still running as of this edit. Trusted hash resolution, deliberate CORS policy, actual Azure oversized-path tests, end-to-end FSM_COS composition/activation proof, and release-candidate compatibility checks remain open.
 
 ## Confirmed implementation on MicroBundleRepository development
 
@@ -68,7 +68,7 @@ Until that decision is made, WebPage must not guess hashes, select an arbitrary 
 - FSM_COS owns dependency closure, arbitration, composition and candidate activation.
 - WebPage owns selection, retrieval orchestration, cache/recovery UX and requesting composition.
 - SHA-256 proves byte identity, not publisher authenticity.
-- The checked `development` host currently allows any CORS origin/method/header and exposes a `PUT` route. CORS is not authorization. Before production/public exposure, decide network/auth policy, restrict mutation, and set request/body/response limits. This note does not assert those controls are already implemented.
+- The checked `development` host currently allows any CORS origin/method/header. MicroBundle PUT fails closed when `Repository:WriteApiKey` is not configured; when configured, it requires `X-Repository-Write-Key` and applies `Repository:MaxMicroBundleRequestBytes` (default 16 MiB). `RestMicroBundleRepository` accepts an optional third constructor argument, `writeApiKey`, and sends the header on PUT. CORS is not authorization; before production/public exposure, restrict CORS and verify the authorized write round trip and oversized-request behavior.
 
 ## Required validation before WebPage integration is called complete
 
