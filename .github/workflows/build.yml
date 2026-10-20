@@ -31,3 +31,63 @@ jobs:
 
       - name: Test
         run: dotnet test TheSingularityWorkshop.MicroBundleRepository.slnx --configuration Release --no-build --collect:"XPlat Code Coverage"
+
+  source-integration:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout MicroBundleRepository
+        uses: actions/checkout@v7
+        with:
+          path: TheSingularityWorkshop.MicroBundleRepository
+
+      - name: Checkout FSM_REST source
+        uses: actions/checkout@v7
+        with:
+          repository: TrentBest/TheSingularityWorkshop.FSM_REST
+          ref: development
+          path: TheSingularityWorkshop.FSM_REST
+
+      - name: Checkout FSM_COS source
+        uses: actions/checkout@v7
+        with:
+          repository: TrentBest/TheSingularityWorkshop.FSM_COS
+          ref: development
+          path: TheSingularityWorkshop.FSM_COS
+
+      - name: Checkout FSM_API source
+        uses: actions/checkout@v7
+        with:
+          repository: TrentBest/FSM_API
+          ref: development
+          path: FSM_API
+
+      - name: Checkout FSM_UserIO source
+        uses: actions/checkout@v7
+        with:
+          repository: TrentBest/FSM_UserIO
+          ref: development
+          path: FSM_UserIO
+
+      - name: Checkout MicroBundleDomain source
+        uses: actions/checkout@v7
+        with:
+          repository: TrentBest/TheSingularityWorkshop.MicroBundleDomain
+          ref: development
+          path: TheSingularityWorkshop.MicroBundleDomain
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore source-integrated solution
+        working-directory: TheSingularityWorkshop.MicroBundleRepository
+        run: dotnet restore TheSingularityWorkshop.MicroBundleRepository.slnx -p:WorkshopUseRepositorySources=true
+
+      - name: Build source-integrated solution
+        working-directory: TheSingularityWorkshop.MicroBundleRepository
+        run: dotnet build TheSingularityWorkshop.MicroBundleRepository.slnx --configuration Release --no-restore -p:WorkshopUseRepositorySources=true
+
+      - name: Test source-integrated solution
+        working-directory: TheSingularityWorkshop.MicroBundleRepository
+        run: dotnet test TheSingularityWorkshop.MicroBundleRepository.slnx --configuration Release --no-build -p:WorkshopUseRepositorySources=true
