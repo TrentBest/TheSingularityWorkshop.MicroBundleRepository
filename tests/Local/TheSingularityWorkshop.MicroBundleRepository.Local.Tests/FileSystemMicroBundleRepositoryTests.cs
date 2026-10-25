@@ -85,6 +85,26 @@ public sealed class FileSystemMicroBundleRepositoryTests
     }
 
     [Fact]
+    public async Task Get_honors_pre_cancelled_token_even_when_artifact_is_missing()
+    {
+        var root = Directory.CreateTempSubdirectory();
+        try
+        {
+            var repository = new FileSystemMicroBundleRepository(root.FullName);
+            var artifact = MicroBundleArtifact.Create(42, "1.2.3", "cancelled-read"u8.ToArray());
+            using var cancellation = new CancellationTokenSource();
+            cancellation.Cancel();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                () => repository.GetAsync(artifact.Address, cancellation.Token).AsTask());
+        }
+        finally
+        {
+            root.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Put_honors_pre_cancelled_token()
     {
         var root = Directory.CreateTempSubdirectory();
