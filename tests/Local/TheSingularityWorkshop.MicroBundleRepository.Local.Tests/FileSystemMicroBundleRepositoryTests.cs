@@ -9,10 +9,11 @@ public sealed class FileSystemMicroBundleRepositoryTests
     [Fact]
     public async Task Put_and_get_round_trip_preserves_content_and_address()
     {
-        var root = Directory.CreateTempSubdirectory();
+        var rootPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootPath);
         try
         {
-            var repository = new FileSystemMicroBundleRepository(root.FullName);
+            var repository = new FileSystemMicroBundleRepository(rootPath);
             var artifact = MicroBundleArtifact.Create(42, "1.2.3", "stress-microbundle"u8.ToArray());
 
             await repository.PutAsync(artifact);
@@ -24,56 +25,59 @@ public sealed class FileSystemMicroBundleRepositoryTests
         }
         finally
         {
-            root.Delete(recursive: true);
+            Directory.Delete(rootPath, recursive: true);
         }
     }
 
     [Fact]
     public async Task Artifact_is_stored_at_deterministic_content_address()
     {
-        var root = Directory.CreateTempSubdirectory();
+        var rootPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootPath);
         try
         {
-            var repository = new FileSystemMicroBundleRepository(root.FullName);
+            var repository = new FileSystemMicroBundleRepository(rootPath);
             var artifact = MicroBundleArtifact.Create(42, "1.2.3", "bundle"u8.ToArray());
 
             await repository.PutAsync(artifact);
 
-            var expected = Path.Combine(root.FullName, "42", "1.2.3", artifact.Address.ContentHash + ".bundle");
+            var expected = Path.Combine(rootPath, "42", "1.2.3", artifact.Address.ContentHash + ".bundle");
             Assert.True(File.Exists(expected));
         }
         finally
         {
-            root.Delete(recursive: true);
+            Directory.Delete(rootPath, recursive: true);
         }
     }
 
     [Fact]
     public async Task Get_returns_null_when_artifact_is_missing()
     {
-        var root = Directory.CreateTempSubdirectory();
+        var rootPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootPath);
         try
         {
-            var repository = new FileSystemMicroBundleRepository(root.FullName);
+            var repository = new FileSystemMicroBundleRepository(rootPath);
             var artifact = MicroBundleArtifact.Create(42, "1.2.3", "missing"u8.ToArray());
 
             Assert.Null(await repository.GetAsync(artifact.Address));
         }
         finally
         {
-            root.Delete(recursive: true);
+            Directory.Delete(rootPath, recursive: true);
         }
     }
 
     [Fact]
     public async Task Get_rejects_corrupted_bytes_at_a_valid_address()
     {
-        var root = Directory.CreateTempSubdirectory();
+        var rootPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootPath);
         try
         {
-            var repository = new FileSystemMicroBundleRepository(root.FullName);
+            var repository = new FileSystemMicroBundleRepository(rootPath);
             var artifact = MicroBundleArtifact.Create(42, "1.2.3", "original"u8.ToArray());
-            var path = Path.Combine(root.FullName, "42", "1.2.3", artifact.Address.ContentHash + ".bundle");
+            var path = Path.Combine(rootPath, "42", "1.2.3", artifact.Address.ContentHash + ".bundle");
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             await File.WriteAllBytesAsync(path, "corrupted"u8.ToArray());
 
@@ -81,17 +85,18 @@ public sealed class FileSystemMicroBundleRepositoryTests
         }
         finally
         {
-            root.Delete(recursive: true);
+            Directory.Delete(rootPath, recursive: true);
         }
     }
 
     [Fact]
     public async Task Get_honors_pre_cancelled_token_even_when_artifact_is_missing()
     {
-        var root = Directory.CreateTempSubdirectory();
+        var rootPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootPath);
         try
         {
-            var repository = new FileSystemMicroBundleRepository(root.FullName);
+            var repository = new FileSystemMicroBundleRepository(rootPath);
             var artifact = MicroBundleArtifact.Create(42, "1.2.3", "cancelled-read"u8.ToArray());
             using var cancellation = new CancellationTokenSource();
             cancellation.Cancel();
@@ -101,17 +106,18 @@ public sealed class FileSystemMicroBundleRepositoryTests
         }
         finally
         {
-            root.Delete(recursive: true);
+            Directory.Delete(rootPath, recursive: true);
         }
     }
 
     [Fact]
     public async Task Put_honors_pre_cancelled_token()
     {
-        var root = Directory.CreateTempSubdirectory();
+        var rootPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootPath);
         try
         {
-            var repository = new FileSystemMicroBundleRepository(root.FullName);
+            var repository = new FileSystemMicroBundleRepository(rootPath);
             var artifact = MicroBundleArtifact.Create(42, "1.2.3", "cancelled"u8.ToArray());
             using var cancellation = new CancellationTokenSource();
             cancellation.Cancel();
@@ -121,17 +127,18 @@ public sealed class FileSystemMicroBundleRepositoryTests
         }
         finally
         {
-            root.Delete(recursive: true);
+            Directory.Delete(rootPath, recursive: true);
         }
     }
 
     [Fact]
     public async Task Observer_lists_artifact_addresses_in_stable_order()
     {
-        var root = Directory.CreateTempSubdirectory();
+        var rootPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootPath);
         try
         {
-            var repository = new FileSystemMicroBundleRepository(root.FullName);
+            var repository = new FileSystemMicroBundleRepository(rootPath);
             var second = MicroBundleArtifact.Create(8, "1.0.0", "second"u8.ToArray());
             var first = MicroBundleArtifact.Create(3, "1.0.0", "first"u8.ToArray());
             await repository.PutAsync(second);
@@ -143,7 +150,7 @@ public sealed class FileSystemMicroBundleRepositoryTests
         }
         finally
         {
-            root.Delete(recursive: true);
+            Directory.Delete(rootPath, recursive: true);
         }
     }
 }
