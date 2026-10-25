@@ -13,10 +13,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: 3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: a98b56852c35b8e3190ac28c8c2271da59106c68 # actions/setup-dotnet v6
         with:
           dotnet-version: 8.0.x
 
@@ -32,47 +32,47 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout MicroBundleRepository
-        uses: actions/checkout@v4
+        uses: 3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7
         with:
           path: TheSingularityWorkshop.MicroBundleRepository
 
       - name: Checkout FSM_REST source
-        uses: actions/checkout@v4
+        uses: 3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7
         with:
           repository: TrentBest/TheSingularityWorkshop.FSM_REST
           ref: development
           path: TheSingularityWorkshop.FSM_REST
 
       - name: Checkout FSM_COS source
-        uses: actions/checkout@v4
+        uses: 3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7
         with:
           repository: TrentBest/TheSingularityWorkshop.FSM_COS
           ref: development
           path: TheSingularityWorkshop.FSM_COS
 
       - name: Checkout FSM_API source
-        uses: actions/checkout@v4
+        uses: 3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7
         with:
           repository: TrentBest/FSM_API
           ref: development
           path: FSM_API
 
       - name: Checkout FSM_UserIO source
-        uses: actions/checkout@v4
+        uses: 3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7
         with:
           repository: TrentBest/FSM_UserIO
           ref: development
           path: FSM_UserIO
 
       - name: Checkout MicroBundleDomain source
-        uses: actions/checkout@v4
+        uses: 3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7
         with:
           repository: TrentBest/TheSingularityWorkshop.MicroBundleDomain
           ref: development
           path: TheSingularityWorkshop.MicroBundleDomain
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: a98b56852c35b8e3190ac28c8c2271da59106c68 # actions/setup-dotnet v6
         with:
           dotnet-version: 8.0.x
 
