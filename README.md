@@ -149,6 +149,20 @@ public interface IMicroBundleRepository
 }
 ~~~
 
+### Local development
+
+`TheSingularityWorkshop.MicroBundleRepository.Local` implements the same `IMicroBundleRepository` contract using a configurable filesystem root. It requires no Azure account, credentials, or network service.
+
+Storage is deterministic:
+
+~~~text
+{root}/{bundleId}/{version}/{sha256}.bundle
+~~~
+
+The adapter verifies bytes against the supplied SHA-256 address when retrieving an artifact. The local adapter is for development and testing; it is not itself a network server. The REST host can select a local provider separately from Azure storage.
+
+The Local tests are included in `TheSingularityWorkshop.MicroBundleRepository.slnx` and run with the same repository-wide `dotnet test` command.
+
 ### Azure
 
 `TheSingularityWorkshop.MicroBundleRepository.Azure` uses the Microsoft Azure SDK and `DefaultAzureCredential`.
