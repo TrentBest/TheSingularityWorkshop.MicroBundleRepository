@@ -1,3 +1,4 @@
+using Xunit;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 using TheSingularityWorkshop.MicroBundleRepository.Local;
 
