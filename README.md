@@ -33,7 +33,7 @@ Follow the documented local configuration and build steps below; test the Core c
 
 ## 🟪 05 Documentation and theory
 
-[Complete domain map and coverage gaps](docs/DOMAIN_MAP.md) · [REST package release checklist](docs/REST_RELEASE_READINESS.md) · [Living lifecycle diagram](docs/images/microbundle-lifecycle.svg) · [Artifact delivery at simulation scale](docs/SIMULATION_SCALE.md) · [Projects and boundaries](#projects) · [Azure configuration](#azure-configuration) · [Development](#development)
+[CiAi-assisted deployment vision](docs/CIAI_DEPLOYMENT_VISION.md) · [Complete domain map and coverage gaps](docs/DOMAIN_MAP.md) · [REST package release checklist](docs/REST_RELEASE_READINESS.md) · [Living lifecycle diagram](docs/images/microbundle-lifecycle.svg) · [Artifact delivery at simulation scale](docs/SIMULATION_SCALE.md) · [Projects and boundaries](#projects) · [Azure configuration](#azure-configuration) · [Development](#development)
 
 ---
 
