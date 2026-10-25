@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Xunit;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 using TheSingularityWorkshop.MicroBundleRepository.Local;
@@ -14,7 +15,7 @@ public sealed class FileSystemMicroBundleRepositoryTests
         try
         {
             var repository = new FileSystemMicroBundleRepository(rootPath);
-            var artifact = MicroBundleArtifact.Create(42, "1.2.3", "stress-microbundle"u8.ToArray());
+            var artifact = CreateArtifact(42, "1.2.3", "stress-microbundle"u8.ToArray());
 
             await repository.PutAsync(artifact);
             var retrieved = await repository.GetAsync(artifact.Address);
@@ -37,7 +38,7 @@ public sealed class FileSystemMicroBundleRepositoryTests
         try
         {
             var repository = new FileSystemMicroBundleRepository(rootPath);
-            var artifact = MicroBundleArtifact.Create(42, "1.2.3", "bundle"u8.ToArray());
+            var artifact = CreateArtifact(42, "1.2.3", "bundle"u8.ToArray());
 
             await repository.PutAsync(artifact);
 
@@ -58,7 +59,7 @@ public sealed class FileSystemMicroBundleRepositoryTests
         try
         {
             var repository = new FileSystemMicroBundleRepository(rootPath);
-            var artifact = MicroBundleArtifact.Create(42, "1.2.3", "missing"u8.ToArray());
+            var artifact = CreateArtifact(42, "1.2.3", "missing"u8.ToArray());
 
             Assert.Null(await repository.GetAsync(artifact.Address));
         }
@@ -76,7 +77,7 @@ public sealed class FileSystemMicroBundleRepositoryTests
         try
         {
             var repository = new FileSystemMicroBundleRepository(rootPath);
-            var artifact = MicroBundleArtifact.Create(42, "1.2.3", "original"u8.ToArray());
+            var artifact = CreateArtifact(42, "1.2.3", "original"u8.ToArray());
             var path = Path.Combine(rootPath, "42", "1.2.3", artifact.Address.ContentHash + ".bundle");
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             await File.WriteAllBytesAsync(path, "corrupted"u8.ToArray());
@@ -97,7 +98,7 @@ public sealed class FileSystemMicroBundleRepositoryTests
         try
         {
             var repository = new FileSystemMicroBundleRepository(rootPath);
-            var artifact = MicroBundleArtifact.Create(42, "1.2.3", "cancelled-read"u8.ToArray());
+            var artifact = CreateArtifact(42, "1.2.3", "cancelled-read"u8.ToArray());
             using var cancellation = new CancellationTokenSource();
             cancellation.Cancel();
 
@@ -118,7 +119,7 @@ public sealed class FileSystemMicroBundleRepositoryTests
         try
         {
             var repository = new FileSystemMicroBundleRepository(rootPath);
-            var artifact = MicroBundleArtifact.Create(42, "1.2.3", "cancelled"u8.ToArray());
+            var artifact = CreateArtifact(42, "1.2.3", "cancelled"u8.ToArray());
             using var cancellation = new CancellationTokenSource();
             cancellation.Cancel();
 
@@ -139,8 +140,8 @@ public sealed class FileSystemMicroBundleRepositoryTests
         try
         {
             var repository = new FileSystemMicroBundleRepository(rootPath);
-            var second = MicroBundleArtifact.Create(8, "1.0.0", "second"u8.ToArray());
-            var first = MicroBundleArtifact.Create(3, "1.0.0", "first"u8.ToArray());
+            var second = CreateArtifact(8, "1.0.0", "second"u8.ToArray());
+            var first = CreateArtifact(3, "1.0.0", "first"u8.ToArray());
             await repository.PutAsync(second);
             await repository.PutAsync(first);
 
@@ -152,5 +153,11 @@ public sealed class FileSystemMicroBundleRepositoryTests
         {
             Directory.Delete(rootPath, recursive: true);
         }
+    }
+
+    private static MicroBundleArtifact CreateArtifact(ulong bundleId, string version, byte[] content)
+    {
+        var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
+        return new MicroBundleArtifact(new MicroBundleArtifactAddress(bundleId, version, hash), content);
     }
 }
