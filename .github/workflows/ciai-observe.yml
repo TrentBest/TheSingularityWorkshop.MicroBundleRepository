@@ -1,9 +1,7 @@
 name: CiAi Repository Observation
 
 on:
-  workflow_run:
-    workflows: [Package]
-    types: [completed]
+  push:
     branches: [master, development]
   workflow_dispatch:
     inputs:
