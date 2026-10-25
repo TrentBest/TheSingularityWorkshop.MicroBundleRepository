@@ -22,6 +22,8 @@ public sealed class FileSystemMicroBundleRepository : IMicroBundleRepository, IM
         MicroBundleArtifactAddress address,
         CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var path = GetPath(address);
         if (!File.Exists(path))
             return null;
@@ -35,13 +37,24 @@ public sealed class FileSystemMicroBundleRepository : IMicroBundleRepository, IM
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(artifact);
+        cancellationToken.ThrowIfCancellationRequested();
 
         var path = GetPath(artifact.Address);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 
         var temporary = path + ".tmp-" + Guid.NewGuid().ToString("N");
-        await File.WriteAllBytesAsync(temporary, artifact.Content.ToArray(), cancellationToken);
-        File.Move(temporary, path, overwrite: true);
+        try
+        {
+            await File.WriteAllBytesAsync(temporary, artifact.Content.ToArray(), cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            File.Move(temporary, path, overwrite: true);
+        }
+        finally
+        {
+            // A cancelled or failed write must not leave temporary artifacts behind.
+            if (File.Exists(temporary))
+                File.Delete(temporary);
+        }
     }
 
     public ValueTask<IReadOnlyList<MicroBundleArtifactObservation>> ListAsync(
