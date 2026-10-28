@@ -69,6 +69,7 @@ jobs:
       - name: Observe this repository's CI evidence
         env:
           CIAI_GITHUB_TOKEN: ${{ secrets.CIAI_GITHUB_TOKEN || github.token }}
+          CIAI_REQUIRED_WORKFLOW_PATHS: .github/workflows/build.yml;.github/workflows/package.yml
           TARGET_REPOSITORY: ${{ github.repository }}
           TARGET_SHA: ${{ github.event.inputs.commit_sha || github.event.workflow_run.head_sha || github.sha }}
         run: |
