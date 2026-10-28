@@ -68,7 +68,7 @@ jobs:
 
       - name: Observe this repository's CI evidence
         env:
-          CIAI_GITHUB_TOKEN: ${{ secrets.CIAI_GITHUB_TOKEN }}
+          CIAI_GITHUB_TOKEN: ${{ secrets.CIAI_GITHUB_TOKEN || github.token }}
           TARGET_REPOSITORY: ${{ github.repository }}
           TARGET_SHA: ${{ github.event.inputs.commit_sha || github.event.workflow_run.head_sha || github.sha }}
         run: |
