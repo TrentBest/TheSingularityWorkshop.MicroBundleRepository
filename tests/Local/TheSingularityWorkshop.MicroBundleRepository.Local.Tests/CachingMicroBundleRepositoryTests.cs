@@ -137,6 +137,28 @@ public sealed class CachingMicroBundleRepositoryTests
         }
     }
 
+    [Fact]
+    public async Task Failed_origin_write_does_not_warm_local_cache()
+    {
+        var root = NewRoot();
+        try
+        {
+            var origin = new InMemoryRepository { ThrowOnPut = true };
+            var artifact = CreateArtifact(42, "1.0.0", "not-published"u8.ToArray());
+            var cache = new CachingMicroBundleRepository(root, origin);
+
+            await Assert.ThrowsAsync<IOException>(
+                () => cache.PutAsync(artifact).AsTask());
+
+            Assert.False(File.Exists(ArtifactPath(root, artifact.Address)));
+            Assert.Equal(0, origin.GetCount);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     private static string NewRoot()
     {
         var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
@@ -157,6 +179,7 @@ public sealed class CachingMicroBundleRepositoryTests
     {
         public Dictionary<MicroBundleArtifactAddress, MicroBundleArtifact> Artifacts { get; } = new();
         public int GetCount { get; private set; }
+        public bool ThrowOnPut { get; init; }
 
         public ValueTask<MicroBundleArtifact?> GetAsync(
             MicroBundleArtifactAddress address,
@@ -173,6 +196,9 @@ public sealed class CachingMicroBundleRepositoryTests
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (ThrowOnPut)
+                throw new IOException("Simulated origin write failure.");
+
             Artifacts[artifact.Address] = artifact;
             return ValueTask.CompletedTask;
         }
