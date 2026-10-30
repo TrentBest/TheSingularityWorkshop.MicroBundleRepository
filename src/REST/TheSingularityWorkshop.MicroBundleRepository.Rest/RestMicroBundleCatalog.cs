@@ -15,6 +15,7 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
     private readonly IReadOnlyDictionary<ulong, MicroBundleArtifactAddress> _addresses;
     private readonly IMicroBundleArtifactMaterializer _materializer;
     private readonly Dictionary<ulong, MicroBundle> _loaded = new();
+    private readonly Dictionary<ulong, MicroBundleArtifactAddress> _loadedAddresses = new();
     private readonly object _loadedGate = new();
 
     public RestMicroBundleCatalog(
@@ -28,7 +29,8 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
     }
 
     /// <summary>
-    /// Fetches requested bundles and recursively follows their declared dependencies.
+    /// Fetches the requested exact-version dependency closure. Every dependency
+    /// declared by a repository-backed bundle must carry an exact version pin.
     /// Composition remains synchronous after preload.
     /// </summary>
     public async Task PreloadClosureAsync(
@@ -37,36 +39,65 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
     {
         ArgumentNullException.ThrowIfNull(rootBundleIds);
 
-        var pending = new Queue<ulong>(rootBundleIds);
-        var visited = new HashSet<ulong>();
-        // Keep a candidate closure isolated until every artifact has been fetched,
-        // hash-verified, and materialized. A failed preload must not leave roots
-        // resolvable while one or more dependencies are missing.
-        var staged = new Dictionary<ulong, MicroBundle>();
+        var pending = new Queue<MicroBundleVersionRequest>();
+        foreach (var rootBundleId in rootBundleIds)
+        {
+            if (!_addresses.TryGetValue(rootBundleId, out var rootAddress))
+                throw new InvalidOperationException(
+                    $"No repository address is registered for MicroBundle {rootBundleId}.");
+
+            if (rootAddress.BundleId != rootBundleId)
+                throw new InvalidOperationException(
+                    $"The repository address registered for MicroBundle {rootBundleId} identifies MicroBundle {rootAddress.BundleId}.");
+
+            pending.Enqueue(new MicroBundleVersionRequest(rootBundleId, rootAddress.Version));
+        }
+
+        var visited = new Dictionary<ulong, string>();
+        var staged = new Dictionary<ulong, (MicroBundle Bundle, MicroBundleArtifactAddress Address)>();
 
         while (pending.Count > 0)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var bundleId = pending.Dequeue();
-            if (!visited.Add(bundleId) || staged.ContainsKey(bundleId))
+            var request = pending.Dequeue();
+            if (visited.TryGetValue(request.BundleId, out var visitedVersion))
+            {
+                if (!string.Equals(visitedVersion, request.Version, StringComparison.Ordinal))
+                    throw new InvalidOperationException(
+                        $"The dependency closure requests conflicting versions '{visitedVersion}' and '{request.Version}' for MicroBundle {request.BundleId}.");
+
                 continue;
+            }
+
+            visited.Add(request.BundleId, request.Version);
+
+            if (!_addresses.TryGetValue(request.BundleId, out var address))
+                throw new InvalidOperationException(
+                    $"No repository address is registered for MicroBundle {request.BundleId} version '{request.Version}'.");
+
+            if (address.BundleId != request.BundleId)
+                throw new InvalidOperationException(
+                    $"The repository address registered for MicroBundle {request.BundleId} identifies MicroBundle {address.BundleId}.");
+
+            if (!string.Equals(address.Version, request.Version, StringComparison.Ordinal))
+                throw new InvalidOperationException(
+                    $"The repository address for MicroBundle {request.BundleId} pins version '{address.Version}', " +
+                    $"but the dependency closure requires exact version '{request.Version}'.");
 
             lock (_loadedGate)
             {
-                if (_loaded.ContainsKey(bundleId))
-                    continue;
+                if (_loaded.TryGetValue(request.BundleId, out var loaded))
+                {
+                    if (_loadedAddresses.TryGetValue(request.BundleId, out var loadedAddress) &&
+                        loadedAddress == address)
+                        continue;
+
+                    throw new InvalidOperationException(
+                        $"MicroBundle {request.BundleId} is already loaded from a different immutable artifact. " +
+                        "Use an isolated candidate catalog when staging another Experience.");
+                }
             }
-
-            if (!_addresses.TryGetValue(bundleId, out var address))
-                throw new InvalidOperationException(
-                    $"No repository address is registered for MicroBundle {bundleId}.");
-
-            // The dictionary key is the dependency lookup key; the address is the
-            // immutable remote identity. Reject disagreement before making a request.
-            if (address.BundleId != bundleId)
-                throw new InvalidOperationException(
-                    $"The repository address registered for MicroBundle {bundleId} identifies MicroBundle {address.BundleId}.");
 
             var artifact = await _repository.GetAsync(address, cancellationToken);
             if (artifact is null)
@@ -76,18 +107,27 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
             var bundle = _materializer.Materialize(artifact);
             ArgumentNullException.ThrowIfNull(bundle);
 
-            if (bundle.Id != bundleId)
+            if (bundle.Id != request.BundleId)
                 throw new InvalidOperationException(
                     $"Materialized artifact {address} produced MicroBundle {bundle.Id}.");
 
-            if (!string.Equals(bundle.Descriptor.Version, address.Version, StringComparison.Ordinal))
+            if (!string.Equals(bundle.Descriptor.Version, request.Version, StringComparison.Ordinal))
                 throw new InvalidOperationException(
                     $"Materialized artifact {address} produced MicroBundle version {bundle.Descriptor.Version}.");
 
-            staged.Add(bundle.Id, bundle);
+            staged.Add(bundle.Id, (bundle, address));
 
             foreach (var dependency in bundle.Dependencies)
-                pending.Enqueue(dependency.BundleId);
+            {
+                if (!dependency.IsPinned)
+                    throw new InvalidOperationException(
+                        $"MicroBundle {bundle.Id} declares unpinned dependency {dependency.BundleId}. " +
+                        "Repository-backed published closures require exact dependency versions.");
+
+                pending.Enqueue(new MicroBundleVersionRequest(
+                    dependency.BundleId,
+                    dependency.Version!));
+            }
         }
 
         lock (_loadedGate)
@@ -106,7 +146,27 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
             }
 
             foreach (var entry in staged)
-                _loaded.Add(entry.Key, entry.Value);
+            {
+                _loaded.Add(entry.Key, entry.Value.Bundle);
+                _loadedAddresses.Add(entry.Key, entry.Value.Address);
+            }
+        }
+    }
+
+    /// <summary>Resolves a resident bundle only when its complete immutable address matches.</summary>
+    public bool TryResolve(
+        MicroBundleArtifactAddress address,
+        out MicroBundle? bundle)
+    {
+        lock (_loadedGate)
+        {
+            if (_loaded.TryGetValue(address.BundleId, out bundle) &&
+                _loadedAddresses.TryGetValue(address.BundleId, out var loadedAddress) &&
+                loadedAddress == address)
+                return true;
+
+            bundle = null;
+            return false;
         }
     }
 
