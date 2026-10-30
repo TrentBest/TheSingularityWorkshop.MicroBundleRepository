@@ -119,6 +119,7 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
 
             foreach (var dependency in bundle.Dependencies)
             {
+#if WORKSHOP_USE_REPOSITORY_SOURCES
                 if (!dependency.IsPinned)
                     throw new InvalidOperationException(
                         $"MicroBundle {bundle.Id} declares unpinned dependency {dependency.BundleId}. " +
@@ -127,6 +128,18 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
                 pending.Enqueue(new MicroBundleVersionRequest(
                     dependency.BundleId,
                     dependency.Version!));
+#else
+                // The currently released Domain package predates exact-version dependency
+                // requests. Preserve legacy package compatibility; source-integration builds
+                // compile against the development Domain contract and enforce the exact pin.
+                if (!_addresses.TryGetValue(dependency.BundleId, out var dependencyAddress))
+                    throw new InvalidOperationException(
+                        $"No repository address is registered for MicroBundle {dependency.BundleId}.");
+
+                pending.Enqueue(new MicroBundleVersionRequest(
+                    dependency.BundleId,
+                    dependencyAddress.Version));
+#endif
             }
         }
 
