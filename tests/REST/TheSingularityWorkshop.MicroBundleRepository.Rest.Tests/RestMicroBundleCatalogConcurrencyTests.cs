@@ -59,6 +59,15 @@ public sealed class RestMicroBundleCatalogConcurrencyTests
         }
     }
 
+    private static MicroBundleDependencyRequest CreateDependency(ulong id)
+    {
+#if WORKSHOP_USE_REPOSITORY_SOURCES
+        return MicroBundleDependencyRequest.Pinned(id, "1.0.0");
+#else
+        return MicroBundleDependencyRequest.Unconfigured(id);
+#endif
+    }
+
     private static MicroBundleArtifactAddress Address(ulong id, byte[] bytes) =>
         new(id, "1.0.0", Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant());
 
@@ -75,7 +84,7 @@ public sealed class RestMicroBundleCatalogConcurrencyTests
         public MicroBundleDescriptor Descriptor { get; } = new(id, "1.0.0");
         public ulong Id => Descriptor.Id;
         public IReadOnlyList<MicroBundleDependencyRequest> Dependencies { get; } =
-            dependencyIds.Select(id => MicroBundleDependencyRequest.Pinned(id, "1.0.0")).ToArray();
+            dependencyIds.Select(CreateDependency).ToArray();
 
         public void Load(IMicroBundleLoadContext context) { }
         public bool Arbitrate(IMicroBundleArbitrationContext context, int roundIndex) => false;
