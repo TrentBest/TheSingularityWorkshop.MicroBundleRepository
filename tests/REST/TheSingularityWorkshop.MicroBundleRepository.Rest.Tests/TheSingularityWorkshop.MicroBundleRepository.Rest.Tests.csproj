@@ -3,6 +3,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <DefineConstants Condition="'$(WorkshopUseRepositorySources)' == 'true'">$(DefineConstants);WORKSHOP_USE_REPOSITORY_SOURCES</DefineConstants>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
