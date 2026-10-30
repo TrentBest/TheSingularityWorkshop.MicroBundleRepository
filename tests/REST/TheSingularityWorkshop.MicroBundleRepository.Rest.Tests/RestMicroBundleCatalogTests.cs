@@ -125,7 +125,7 @@ public sealed class RestMicroBundleCatalogTests
         public MicroBundleDescriptor Descriptor { get; } = new(id, "1.0.0");
         public ulong Id => Descriptor.Id;
         public IReadOnlyList<MicroBundleDependencyRequest> Dependencies { get; } =
-            dependencyIds.Select(MicroBundleDependencyRequest.Unconfigured).ToArray();
+            dependencyIds.Select(id => MicroBundleDependencyRequest.Pinned(id, "1.0.0")).ToArray();
 
         public void Load(IMicroBundleLoadContext context) { }
 
