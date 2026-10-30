@@ -109,6 +109,90 @@ public sealed class RestMicroBundleCatalogTests
         Assert.False(catalog.TryResolve(2, out _));
     }
 
+    [Fact]
+    public async Task PreloadClosureAsync_rejects_unpinned_dependencies()
+    {
+        var rootContent = new byte[] { 31 };
+        var dependencyContent = new byte[] { 32 };
+        var rootAddress = Address(1, rootContent);
+        var dependencyAddress = Address(2, dependencyContent);
+        var repository = new RestMicroBundleRepository(
+            new Uri("https://repository.test"),
+            new RepositoryTransport(new Dictionary<string, MicroBundleArtifact>
+            {
+                [rootAddress.ToString()] = new(rootAddress, rootContent),
+                [dependencyAddress.ToString()] = new(dependencyAddress, dependencyContent)
+            }));
+        var catalog = new RestMicroBundleCatalog(
+            repository,
+            new Dictionary<ulong, MicroBundleArtifactAddress>
+            {
+                [1] = rootAddress,
+                [2] = dependencyAddress
+            },
+            new UnpinnedMaterializer());
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => catalog.PreloadClosureAsync(new[] { 1UL }));
+
+        Assert.Contains("unpinned dependency", error.Message);
+        Assert.False(catalog.TryResolve(1, out _));
+        Assert.False(catalog.TryResolve(2, out _));
+    }
+
+    [Fact]
+    public async Task PreloadClosureAsync_rejects_dependency_address_with_different_exact_version()
+    {
+        var rootContent = new byte[] { 41 };
+        var dependencyContent = new byte[] { 42 };
+        var rootAddress = Address(1, rootContent);
+        var dependencyAddress = new MicroBundleArtifactAddress(
+            2,
+            "2.0.0",
+            Convert.ToHexString(SHA256.HashData(dependencyContent)).ToLowerInvariant());
+        var repository = new RestMicroBundleRepository(
+            new Uri("https://repository.test"),
+            new RepositoryTransport(new Dictionary<string, MicroBundleArtifact>
+            {
+                [rootAddress.ToString()] = new(rootAddress, rootContent),
+                [dependencyAddress.ToString()] = new(dependencyAddress, dependencyContent)
+            }));
+        var catalog = new RestMicroBundleCatalog(
+            repository,
+            new Dictionary<ulong, MicroBundleArtifactAddress>
+            {
+                [1] = rootAddress,
+                [2] = dependencyAddress
+            },
+            new Materializer());
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => catalog.PreloadClosureAsync(new[] { 1UL }));
+
+        Assert.Contains("requires exact version '1.0.0'", error.Message);
+        Assert.False(catalog.TryResolve(1, out _));
+        Assert.False(catalog.TryResolve(2, out _));
+    }
+
+    private sealed class UnpinnedMaterializer : IMicroBundleArtifactMaterializer
+    {
+        public IMicroBundle Materialize(MicroBundleArtifact artifact) =>
+            new UnpinnedTestBundle(artifact.Address.BundleId);
+    }
+
+    private sealed class UnpinnedTestBundle(ulong id) : IMicroBundle
+    {
+        public MicroBundleDescriptor Descriptor { get; } = new(id, "1.0.0");
+        public ulong Id => Descriptor.Id;
+        public IReadOnlyList<MicroBundleDependencyRequest> Dependencies { get; } =
+            id == 1
+                ? new[] { MicroBundleDependencyRequest.Unconfigured(2) }
+                : Array.Empty<MicroBundleDependencyRequest>();
+
+        public void Load(IMicroBundleLoadContext context) { }
+        public bool Arbitrate(IMicroBundleArbitrationContext context, int roundIndex) => false;
+    }
+
     private static MicroBundleArtifactAddress Address(ulong id, byte[] content) =>
         new(id, "1.0.0", Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant());
 
