@@ -109,6 +109,7 @@ public sealed class RestMicroBundleCatalogTests
         Assert.False(catalog.TryResolve(2, out _));
     }
 
+ #if WORKSHOP_USE_REPOSITORY_SOURCES
     [Fact]
     public async Task PreloadClosureAsync_rejects_unpinned_dependencies()
     {
@@ -193,6 +194,17 @@ public sealed class RestMicroBundleCatalogTests
         public bool Arbitrate(IMicroBundleArbitrationContext context, int roundIndex) => false;
     }
 
+ #endif
+
+    private static MicroBundleDependencyRequest CreateDependency(ulong id)
+    {
+#if WORKSHOP_USE_REPOSITORY_SOURCES
+        return MicroBundleDependencyRequest.Pinned(id, "1.0.0");
+#else
+        return MicroBundleDependencyRequest.Unconfigured(id);
+#endif
+    }
+
     private static MicroBundleArtifactAddress Address(ulong id, byte[] content) =>
         new(id, "1.0.0", Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant());
 
@@ -209,7 +221,7 @@ public sealed class RestMicroBundleCatalogTests
         public MicroBundleDescriptor Descriptor { get; } = new(id, "1.0.0");
         public ulong Id => Descriptor.Id;
         public IReadOnlyList<MicroBundleDependencyRequest> Dependencies { get; } =
-            dependencyIds.Select(id => MicroBundleDependencyRequest.Pinned(id, "1.0.0")).ToArray();
+            dependencyIds.Select(CreateDependency).ToArray();
 
         public void Load(IMicroBundleLoadContext context) { }
 
