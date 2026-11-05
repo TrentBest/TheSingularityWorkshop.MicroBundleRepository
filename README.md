@@ -3,6 +3,7 @@
 # The Singularity Workshop — MicroBundle Repository
 
 
+[![Sith Policy](assets/sith-policy.svg)](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/workflows/sith-policy.yml)
 > **The durable artifact-delivery boundary for versioned MicroBundles.**
 
 The repository locates and delivers verified MicroBundle artifacts; it is not the composition engine, arbitration engine, Experience host, or GUI.
