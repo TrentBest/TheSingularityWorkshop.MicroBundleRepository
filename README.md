@@ -16,6 +16,8 @@ This README follows the Workshop's shared [Documentation Standard](https://githu
 [![Last commit](https://img.shields.io/github/last-commit/TrentBest/TheSingularityWorkshop.MicroBundleRepository/master?style=flat-square)](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/commits/master)
 [![GitHub issues](https://img.shields.io/github/issues/TrentBest/TheSingularityWorkshop.MicroBundleRepository?style=flat-square)](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/issues)
 
+[![Sith Policy](assets/sith-policy.svg)](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/workflows/sith-policy.yml)
+
 **The durable artifact boundary for MicroBundles.**
 
 This repository stores and delivers versioned MicroBundle artifacts. It deliberately does not become a database, composition engine, arbitration engine, Experience host, or GUI.
@@ -219,7 +221,6 @@ FSM_COS
 
 Storage can evolve later. The composition contract does not need to know that it was Azure today.
 
-
 ## Experience discovery and publication state
 
 The Experience artifact repository is immutable. Publication is a separate pointer that identifies which immutable artifact is currently live.
@@ -233,7 +234,6 @@ GET /api/experiences/{experienceId}/{version}/{sha256}
 ```
 
 The discovery endpoint returns only published artifact identity. It does not deserialize or execute the Experience. The selected artifact bytes remain the host/Experience boundary's responsibility.
-
 
 ~~~text
 experiences/
