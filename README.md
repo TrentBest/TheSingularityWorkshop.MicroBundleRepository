@@ -242,6 +242,21 @@ See [Azure setup](docs/AZURE_SETUP.md) for the portal and CLI configuration.
 
 See [architecture](docs/ARCHITECTURE.md) for the full repository boundary.
 
+## Experience artifact publication
+
+The REST host also exposes a separate Experience artifact store and mutable publication pointer. These writes use the same `X-Repository-Write-Key` authorization as MicroBundle writes; if `Repository:WriteApiKey` is absent, all write routes fail closed with `503`.
+
+| Method and route | Purpose |
+|---|---|
+| `PUT /api/experiences/{experienceId}/{version}/{contentHash}` | Upload immutable bytes as JSON `{ experienceId, version, contentHash, contentBase64 }`. The host verifies SHA-256, stores the artifact, and reads it back before returning `204`. |
+| `PUT /api/experiences/{experienceId}/publication` | Explicitly move the publication pointer using JSON `{ version, contentHash }`. The referenced immutable artifact must already exist and pass integrity verification. |
+| `DELETE /api/experiences/{experienceId}/publication` | Remove the publication pointer. Immutable artifact bytes are retained. |
+| `GET /api/experiences/{experienceId}/publication` | Read the current publication pointer. |
+| `GET /api/experiences/{experienceId}/{version}/{contentHash}` | Retrieve an immutable Experience artifact by its complete address. |
+
+The artifact limit is configured by `Repository:MaxExperienceArtifactBytes` (default 10 MiB). The JSON/Base64 request-body limit is separately configured by `Repository:MaxExperienceArtifactRequestBytes` (default 14 MiB); deployments that raise the artifact limit must also size the request limit for Base64 expansion and JSON overhead. Both values should be positive.
+
+Publication is an explicit authorized pointer update. The current catalog contract is last-write-wins for concurrent authorized publishers; it does not provide compare-and-swap or conflict detection. A successful publication response is read back from the catalog, but that read-back is not a concurrency lock. Do not treat this endpoint as a transactional release coordinator.
 ## What this repository does not do
 
 It does not:
