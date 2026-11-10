@@ -87,8 +87,13 @@ app.UseCors(policy =>
 // cannot force JSON/base64 request-body buffering on the write endpoint.
 app.Use(async (context, next) =>
 {
-    if (HttpMethods.IsPut(context.Request.Method) &&
-        context.Request.Path.StartsWithSegments("/api/microbundles"))
+    var isMicroBundleWrite = HttpMethods.IsPut(context.Request.Method) &&
+        context.Request.Path.StartsWithSegments("/api/microbundles");
+    var isExperienceWrite =
+        (HttpMethods.IsPut(context.Request.Method) || HttpMethods.IsDelete(context.Request.Method)) &&
+        context.Request.Path.StartsWithSegments("/api/experiences");
+
+    if (isMicroBundleWrite || isExperienceWrite)
     {
         var configuredKey = context.RequestServices
             .GetRequiredService<IConfiguration>()["Repository:WriteApiKey"];
@@ -98,7 +103,7 @@ app.Use(async (context, next) =>
             context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
             await context.Response.WriteAsJsonAsync(new
             {
-                error = "MicroBundle writes are disabled because write authorization is not configured."
+                error = "Repository writes are disabled because write authorization is not configured."
             });
             return;
         }
@@ -111,14 +116,15 @@ app.Use(async (context, next) =>
             return;
         }
 
-        var maxRequestBytes = context.RequestServices
-            .GetRequiredService<IConfiguration>()
-            .GetValue<long?>("Repository:MaxMicroBundleRequestBytes") ?? 16 * 1024 * 1024;
+        var configuration = context.RequestServices.GetRequiredService<IConfiguration>();
+        var maxRequestBytes = isExperienceWrite
+            ? configuration.GetValue<long?>("Repository:MaxExperienceArtifactRequestBytes") ?? 14 * 1024 * 1024
+            : configuration.GetValue<long?>("Repository:MaxMicroBundleRequestBytes") ?? 16 * 1024 * 1024;
 
         if (maxRequestBytes <= 0)
         {
             context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
-            await context.Response.WriteAsJsonAsync(new { error = "The MicroBundle request-size limit is invalid." });
+            await context.Response.WriteAsJsonAsync(new { error = "The repository request-size limit is invalid." });
             return;
         }
 
@@ -131,7 +137,7 @@ app.Use(async (context, next) =>
             context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
             await context.Response.WriteAsJsonAsync(new
             {
-                error = "The MicroBundle request exceeds the configured size limit."
+                error = "The repository request exceeds the configured size limit."
             });
             return;
         }
@@ -248,6 +254,123 @@ app.MapPut(
         }
     });
 
+app.MapPut(
+    "/api/experiences/{experienceId:long}/{version}/{contentHash}",
+    async (
+        ulong experienceId,
+        string version,
+        string contentHash,
+        ExperienceArtifactWriteDto dto,
+        IConfiguration configuration,
+        IServiceProvider services,
+        CancellationToken cancellationToken) =>
+    {
+        if (experienceId == 0 || !IsValidExperienceAddress(version, contentHash) ||
+            dto.ExperienceId != experienceId ||
+            !string.Equals(dto.Version, version, StringComparison.Ordinal) ||
+            !string.Equals(dto.ContentHash, contentHash, StringComparison.Ordinal))
+            return Results.BadRequest(new { error = "Route identity and artifact identity must match." });
+
+        var repository = services.GetService<IExperienceRepository>();
+        if (repository is null)
+            return Results.Problem(title: "Experience artifact storage is not configured.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+
+        try
+        {
+            var content = Convert.FromBase64String(dto.ContentBase64);
+            var maxBytes = configuration.GetValue<long?>("Repository:MaxExperienceArtifactBytes") ?? 10 * 1024 * 1024;
+            if (maxBytes <= 0)
+                return Results.Problem(title: "The Experience artifact size limit is invalid.",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            if (content.LongLength > maxBytes)
+                return Results.Problem(title: "Experience artifact exceeds the configured size limit.",
+                    statusCode: StatusCodes.Status413PayloadTooLarge);
+
+            var address = new ExperienceArtifactAddress(experienceId, version, contentHash);
+            var artifact = new ExperienceArtifact(address, content);
+            await repository.PutAsync(artifact, cancellationToken);
+
+            // A successful write means the immutable address can immediately be read
+            // back and independently verified, not merely accepted by the adapter.
+            var stored = await repository.GetAsync(address, cancellationToken);
+            if (stored is null || !stored.Content.Span.SequenceEqual(content))
+                return Results.Problem(title: "Stored Experience artifact could not be verified.",
+                    statusCode: StatusCodes.Status500InternalServerError);
+
+            return Results.NoContent();
+        }
+        catch (FormatException)
+        {
+            return Results.BadRequest(new { error = "Artifact content must be valid Base64." });
+        }
+        catch (ArgumentException)
+        {
+            return Results.BadRequest(new { error = "Artifact content does not match its SHA-256 address." });
+        }
+        catch (ExperienceArtifactTooLargeException)
+        {
+            return Results.Problem(title: "Experience artifact exceeds the configured storage limit.",
+                statusCode: StatusCodes.Status413PayloadTooLarge);
+        }
+    });
+
+app.MapPut(
+    "/api/experiences/{experienceId:long}/publication",
+    async (
+        ulong experienceId,
+        ExperiencePublicationWriteDto dto,
+        IServiceProvider services,
+        CancellationToken cancellationToken) =>
+    {
+        if (experienceId == 0 || !IsValidExperienceAddress(dto.Version, dto.ContentHash))
+            return Results.BadRequest(new { error = "The Experience publication address is invalid." });
+
+        var repository = services.GetService<IExperienceRepository>();
+        var catalog = services.GetService<IExperienceCatalog>();
+        if (repository is null || catalog is null)
+            return Results.Problem(title: "Experience publication storage is not configured.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+
+        var address = new ExperienceArtifactAddress(experienceId, dto.Version, dto.ContentHash);
+        var artifact = await repository.GetAsync(address, cancellationToken);
+        if (artifact is null)
+            return Results.Conflict(new { error = "The immutable Experience artifact must exist before publication." });
+        if (artifact.Address != address)
+            return Results.Problem(title: "Experience artifact identity verification failed.",
+                statusCode: StatusCodes.Status500InternalServerError);
+
+        var publication = new ExperiencePublication(address);
+        await catalog.PublishAsync(publication, cancellationToken);
+        var stored = await catalog.GetPublishedAsync(experienceId, cancellationToken);
+        if (stored?.Address != address)
+            return Results.Problem(title: "Experience publication could not be verified.",
+                statusCode: StatusCodes.Status500InternalServerError);
+
+        return Results.Ok(new { experienceId, version = dto.Version, contentHash = dto.ContentHash });
+    });
+
+app.MapDelete(
+    "/api/experiences/{experienceId:long}/publication",
+    async (
+        ulong experienceId,
+        IServiceProvider services,
+        CancellationToken cancellationToken) =>
+    {
+        if (experienceId == 0)
+            return Results.BadRequest(new { error = "Experience ID must be greater than zero." });
+        var catalog = services.GetService<IExperienceCatalog>();
+        if (catalog is null)
+            return Results.Problem(title: "Experience publication catalog is not configured.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        await catalog.UnpublishAsync(experienceId, cancellationToken);
+        var remaining = await catalog.GetPublishedAsync(experienceId, cancellationToken);
+        return remaining is null
+            ? Results.NoContent()
+            : Results.Problem(title: "Experience publication could not be removed.",
+                statusCode: StatusCodes.Status500InternalServerError);
+    });
+
 app.MapGet(
     "/api/experiences/{experienceId}/publication",
     async (
@@ -362,5 +485,15 @@ static bool IsValidExperienceAddress(string version, string contentHash)
 }
 
 app.Run();
+
+public sealed record ExperienceArtifactWriteDto(
+    ulong ExperienceId,
+    string Version,
+    string ContentHash,
+    string ContentBase64);
+
+public sealed record ExperiencePublicationWriteDto(
+    string Version,
+    string ContentHash);
 
 public partial class Program { }
