@@ -255,7 +255,7 @@ app.MapPut(
     });
 
 app.MapPut(
-    "/api/experiences/{experienceId:long}/{version}/{contentHash}",
+    "/api/experiences/{experienceId}/{version}/{contentHash}",
     async (
         ulong experienceId,
         string version,
@@ -316,7 +316,7 @@ app.MapPut(
     });
 
 app.MapPut(
-    "/api/experiences/{experienceId:long}/publication",
+    "/api/experiences/{experienceId}/publication",
     async (
         ulong experienceId,
         ExperiencePublicationWriteDto dto,
@@ -351,7 +351,7 @@ app.MapPut(
     });
 
 app.MapDelete(
-    "/api/experiences/{experienceId:long}/publication",
+    "/api/experiences/{experienceId}/publication",
     async (
         ulong experienceId,
         IServiceProvider services,
