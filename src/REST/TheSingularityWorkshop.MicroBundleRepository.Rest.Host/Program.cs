@@ -294,7 +294,7 @@ app.MapPut(
             // A successful write means the immutable address can immediately be read
             // back and independently verified, not merely accepted by the adapter.
             var stored = await repository.GetAsync(address, cancellationToken);
-            if (stored is null || !stored.Content.Span.SequenceEqual(content))
+            if (stored is null || stored.Address != address || !stored.Content.Span.SequenceEqual(content))
                 return Results.Problem(title: "Stored Experience artifact could not be verified.",
                     statusCode: StatusCodes.Status500InternalServerError);
 
