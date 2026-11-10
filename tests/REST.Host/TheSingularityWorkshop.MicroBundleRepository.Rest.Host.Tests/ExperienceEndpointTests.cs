@@ -264,8 +264,8 @@ public sealed class ExperienceEndpointTests
 
         public ValueTask PublishAsync(
             ExperiencePublication publication,
-            CancellationToken cancellationToken = default) =>
-            {
+            CancellationToken cancellationToken = default)
+        {
             CurrentPublication = publication;
             return ValueTask.CompletedTask;
         }
