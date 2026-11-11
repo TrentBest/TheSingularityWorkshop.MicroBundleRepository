@@ -35,11 +35,13 @@ Azure Blob Storage
 
 ## Artifact identity
 
-Every artifact is addressed by:
+Every artifact is addressed portably by:
 
-- MicroBundle ID
+- canonical ontology string
 - explicit version
 - SHA-256 content identity
+
+Each repository persists its own ontology-string-to-numeric-handle mapping. The numeric handle is an opaque storage locator only: it is not serialized into the REST contract or shared between repositories. The same portable artifact may therefore have different local handles in different repositories.
 
 The SHA-256 is not merely metadata. The repository constructs the immutable artifact only after verifying that the bytes match the declared content identity.
 
@@ -50,12 +52,12 @@ The first storage implementation uses one private container:
 ```text
 microbundles/
 └── artifacts/
-    └── {bundleId}/
+    └── {repositoryLocalHandle}/
         └── {version}/
             └── {sha256}.bundle
 ```
 
-This is intentionally boring. A complete address maps directly to one blob. No database lookup is required.
+This is intentionally boring. The repository first resolves the ontology string through its persisted ontology index, then uses the resulting repository-local handle in the blob path. Clients never need to know that handle.
 
 ## What Azure does not do
 
