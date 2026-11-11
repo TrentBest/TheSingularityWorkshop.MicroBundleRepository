@@ -1,17 +1,22 @@
 namespace TheSingularityWorkshop.MicroBundleRepository.Core;
 
 /// <summary>
-/// Immutable identity for one versioned MicroBundle artifact.
+/// Portable identity for one immutable, versioned MicroBundle artifact.
+/// Repository-local numeric handles are deliberately excluded from this address.
 /// </summary>
 public readonly record struct MicroBundleArtifactAddress
 {
-    public MicroBundleArtifactAddress(ulong bundleId, string version, string contentHash)
+    public MicroBundleArtifactAddress(string ontology, string version, string contentHash)
     {
-        if (bundleId == 0)
-            throw new ArgumentOutOfRangeException(nameof(bundleId));
-
+        ArgumentException.ThrowIfNullOrWhiteSpace(ontology);
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
         ArgumentException.ThrowIfNullOrWhiteSpace(contentHash);
+
+        if (!string.Equals(ontology, ontology.Trim(), StringComparison.Ordinal) ||
+            ontology.Any(char.IsControl) ||
+            ontology.Contains('/') ||
+            ontology.Contains('\\'))
+            throw new ArgumentException("Ontology must be a canonical, non-empty identity string.", nameof(ontology));
 
         if (version.Contains('/') || version.Contains('\\'))
             throw new ArgumentException("Version must be a single storage-safe path segment.", nameof(version));
@@ -19,14 +24,17 @@ public readonly record struct MicroBundleArtifactAddress
         if (contentHash.Length != 64 || contentHash.Any(c => !Uri.IsHexDigit(c)))
             throw new ArgumentException("Content hash must be a 64-character hexadecimal SHA-256 value.", nameof(contentHash));
 
-        BundleId = bundleId;
+        Ontology = ontology;
         Version = version;
         ContentHash = contentHash.ToLowerInvariant();
     }
 
-    public ulong BundleId { get; }
+    /// <summary>The canonical semantic identity of the MicroBundle.</summary>
+    public string Ontology { get; }
+
     public string Version { get; }
+
     public string ContentHash { get; }
 
-    public override string ToString() => $"{BundleId}/{Version}/{ContentHash}";
+    public override string ToString() => $"{Ontology}/{Version}/{ContentHash}";
 }
