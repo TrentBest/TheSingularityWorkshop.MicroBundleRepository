@@ -18,7 +18,7 @@ public sealed class MicroBundleWriteSecurityTests
 
         using var response = await client.PutAsync(
             "/api/microbundles/TheSingularityWorkshop.Renderer/1.0.0/" + new string('a', 64),
-            new StringContent("{\"bundleId\":42,\"version\":\"1.0.0\",\"contentHash\":\""
+            new StringContent("{\"ontology\":\"TheSingularityWorkshop.Renderer\",\"version\":\"1.0.0\",\"contentHash\":\""
                 + new string('a', 64) + "\",\"contentBase64\":\"\"}"));
 
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
@@ -32,7 +32,7 @@ public sealed class MicroBundleWriteSecurityTests
 
         using var response = await client.PutAsync(
             "/api/microbundles/TheSingularityWorkshop.Renderer/1.0.0/" + new string('a', 64),
-            new StringContent("{\"bundleId\":42,\"version\":\"1.0.0\",\"contentHash\":\""
+            new StringContent("{\"ontology\":\"TheSingularityWorkshop.Renderer\",\"version\":\"1.0.0\",\"contentHash\":\""
                 + new string('a', 64) + "\",\"contentBase64\":\"\"}"));
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
