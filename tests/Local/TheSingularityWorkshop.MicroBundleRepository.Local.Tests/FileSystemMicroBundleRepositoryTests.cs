@@ -64,6 +64,12 @@ public sealed class FileSystemMicroBundleRepositoryTests
 
             Assert.NotNull(retrieved);
             Assert.Equal(artifact.Address, retrieved.Address);
+
+            var firstFile = Directory.EnumerateFiles(firstRoot, "*.bundle", SearchOption.AllDirectories).Single();
+            var secondFile = Directory.EnumerateFiles(secondRoot, "*.bundle", SearchOption.AllDirectories).Single();
+            var firstHandle = Path.GetRelativePath(firstRoot, firstFile).Split(Path.DirectorySeparatorChar)[0];
+            var secondHandle = Path.GetRelativePath(secondRoot, secondFile).Split(Path.DirectorySeparatorChar)[0];
+            Assert.NotEqual(firstHandle, secondHandle);
         }
         finally
         {
