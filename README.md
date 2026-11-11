@@ -101,7 +101,7 @@ microbundles/
             └── {sha256}.bundle
 ~~~
 
-The repository resolves the ontology string through its persisted ontology-to-local-handle index. The resulting numeric handle is private to that repository; clients address the artifact by ontology, version, and SHA-256.
+The repository resolves the ontology string through its persisted ontology-to-local-handle index (`ontology-index/{sha256(ontology)}.json` in Azure and `.ontology-index/{sha256(ontology)}.json` locally). The resulting numeric handle is private to that repository; clients address the artifact by ontology, version, and SHA-256.
 
 The repository verifies the SHA-256 before materializing the immutable artifact object. Storage metadata repeats the identity for inspection, but the bytes remain authoritative.
 
