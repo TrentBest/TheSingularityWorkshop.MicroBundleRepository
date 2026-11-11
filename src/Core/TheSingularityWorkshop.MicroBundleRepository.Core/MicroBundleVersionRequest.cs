@@ -5,6 +5,7 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Core;
 /// </summary>
 public readonly record struct MicroBundleVersionRequest
 {
+    /// <summary>Creates an exact-version request for a canonical ontology identity.</summary>
     public MicroBundleVersionRequest(string ontology, string version)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(ontology);
@@ -19,6 +20,8 @@ public readonly record struct MicroBundleVersionRequest
         Version = version;
     }
 
+    /// <summary>The portable semantic identity.</summary>
     public string Ontology { get; }
+    /// <summary>The exact requested version.</summary>
     public string Version { get; }
 }
