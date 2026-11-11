@@ -33,6 +33,7 @@ jobs:
           repository: TrentBest/TheSingularityWorkshop.CiAi
           ref: development
           path: CiAi
+          submodules: recursive
           persist-credentials: false
 
       - name: Setup .NET
