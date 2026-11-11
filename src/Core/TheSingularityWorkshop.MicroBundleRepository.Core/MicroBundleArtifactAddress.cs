@@ -6,6 +6,7 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Core;
 /// </summary>
 public readonly record struct MicroBundleArtifactAddress
 {
+    /// <summary>Creates a portable artifact address from ontology, version, and SHA-256.</summary>
     public MicroBundleArtifactAddress(string ontology, string version, string contentHash)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(ontology);
@@ -32,9 +33,12 @@ public readonly record struct MicroBundleArtifactAddress
     /// <summary>The canonical semantic identity of the MicroBundle.</summary>
     public string Ontology { get; }
 
+    /// <summary>The explicit artifact version.</summary>
     public string Version { get; }
 
+    /// <summary>The lowercase SHA-256 content identity.</summary>
     public string ContentHash { get; }
 
+    /// <summary>Returns the portable ontology/version/content address.</summary>
     public override string ToString() => $"{Ontology}/{Version}/{ContentHash}";
 }
