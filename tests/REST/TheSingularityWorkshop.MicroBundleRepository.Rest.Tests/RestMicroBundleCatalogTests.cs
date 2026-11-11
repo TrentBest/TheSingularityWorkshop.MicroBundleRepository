@@ -250,7 +250,7 @@ public sealed class RestMicroBundleCatalogTests
                         string.Empty));
 
             var dto = new MicroBundleArtifactDto(
-                ulong.Parse(artifact.Address.Ontology[("TheSingularityWorkshop.Bundle".Length)..], System.Globalization.CultureInfo.InvariantCulture),
+                artifact.Address.Ontology,
                 artifact.Address.Version,
                 artifact.Address.ContentHash,
                 Convert.ToBase64String(artifact.Content.ToArray()));
