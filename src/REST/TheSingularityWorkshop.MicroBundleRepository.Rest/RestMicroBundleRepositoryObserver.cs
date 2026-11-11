@@ -49,7 +49,7 @@ public sealed class RestMicroBundleRepositoryObserver : IMicroBundleRepositoryOb
         return observations
             .Select(observation => new MicroBundleArtifactObservation(
                 new MicroBundleArtifactAddress(
-                    observation.BundleId,
+                    observation.Ontology,
                     observation.Version,
                     observation.ContentHash),
                 observation.ContentLength,
