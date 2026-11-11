@@ -1,20 +1,24 @@
 namespace TheSingularityWorkshop.MicroBundleRepository.Core;
 
 /// <summary>
-/// A publication-time request for one exact MicroBundle ID and version.
+/// A publication-time request for one exact ontology identity and version.
 /// </summary>
 public readonly record struct MicroBundleVersionRequest
 {
-    public MicroBundleVersionRequest(ulong bundleId, string version)
+    public MicroBundleVersionRequest(string ontology, string version)
     {
-        if (bundleId == 0)
-            throw new ArgumentOutOfRangeException(nameof(bundleId));
-
+        ArgumentException.ThrowIfNullOrWhiteSpace(ontology);
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
-        BundleId = bundleId;
+        if (!string.Equals(ontology, ontology.Trim(), StringComparison.Ordinal) ||
+            ontology.Any(char.IsControl) ||
+            ontology.Contains('/') ||
+            ontology.Contains('\\'))
+            throw new ArgumentException("Ontology must be a canonical, non-empty identity string.", nameof(ontology));
+
+        Ontology = ontology;
         Version = version;
     }
 
-    public ulong BundleId { get; }
+    public string Ontology { get; }
     public string Version { get; }
 }
