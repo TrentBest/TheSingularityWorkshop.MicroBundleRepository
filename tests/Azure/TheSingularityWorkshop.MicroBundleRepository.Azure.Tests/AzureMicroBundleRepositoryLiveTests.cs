@@ -7,7 +7,7 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Azure.Tests;
 public sealed class AzureMicroBundleRepositoryLiveTests
 {
     [Fact]
-    public async Task AzureBlob_RoundTrip_PreservesContentAndIdentity()
+    public async Task AzureBlob_RoundTrip_PreservesContentAndPortableIdentity()
     {
         var storageAccountUri = Environment.GetEnvironmentVariable("MICROBUNDLE_STORAGE_ACCOUNT_URI");
         if (string.IsNullOrWhiteSpace(storageAccountUri))
@@ -22,10 +22,10 @@ public sealed class AzureMicroBundleRepositoryLiveTests
 
         await repository.InitializeAsync();
 
-        var content = System.Text.Encoding.UTF8.GetBytes(
-            $"MicroBundleRepository Azure smoke test {Guid.NewGuid():N}");
+        var ontology = $"TheSingularityWorkshop.MicroBundleRepository.AzureSmokeTest.{Guid.NewGuid():N}";
+        var content = System.Text.Encoding.UTF8.GetBytes($"MicroBundleRepository Azure smoke test {Guid.NewGuid():N}");
         var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
-        var address = new MicroBundleArtifactAddress(0x534D4F4B455F415AUL, "0.1.0-smoke", hash);
+        var address = new MicroBundleArtifactAddress(ontology, "0.1.0-smoke", hash);
         var artifact = new MicroBundleArtifact(address, content);
 
         await repository.PutAsync(artifact);
