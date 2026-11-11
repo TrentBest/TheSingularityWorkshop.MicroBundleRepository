@@ -170,7 +170,7 @@ public sealed class RestMicroBundleCatalogTests
         var error = await Assert.ThrowsAsync<InvalidOperationException>(
             () => catalog.PreloadClosureAsync(new[] { 1UL }));
 
-        Assert.Contains("requires exact version '1.0.0'", error.Message);
+        Assert.Contains("dependency closure requires ontology", error.Message);
         Assert.False(catalog.TryResolve(1, out _));
         Assert.False(catalog.TryResolve(2, out _));
     }
