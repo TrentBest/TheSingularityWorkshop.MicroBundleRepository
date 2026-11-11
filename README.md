@@ -208,13 +208,13 @@ dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli --
 Publish a local artifact:
 
 ~~~powershell
-dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- put 2110 1.0.0 .undle.bin
+dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- put TheSingularityWorkshop.Renderer 1.0.0 ./bundle.bin
 ~~~
 
 Retrieve a known artifact:
 
 ~~~powershell
-dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- get 2110 1.0.0 <sha256> .undle.bin
+dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- get TheSingularityWorkshop.Renderer 1.0.0 <sha256> ./bundle.bin
 ~~~
 
 The CLI computes the SHA-256 from the supplied bytes and the existing Core artifact contract verifies the identity before the request is sent. That gives us a simple human-operated path for publishing and inspecting the small MicroBundles that will eventually compose the zeroth ontology:
