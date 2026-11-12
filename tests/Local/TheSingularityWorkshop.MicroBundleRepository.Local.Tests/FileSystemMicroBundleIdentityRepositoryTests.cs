@@ -188,6 +188,43 @@ public sealed class FileSystemMicroBundleIdentityRepositoryTests
         }
     }
 
+    [Fact]
+    public async Task Failed_index_commit_leaves_no_binding_and_reopen_can_recover()
+    {
+        var root = NewRoot();
+        try
+        {
+            var content = "filesystem artifact before injected index failure"u8.ToArray();
+            var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
+            var identity = new MicroBundleArtifactIdentity("ontology.failed-index-commit", "1.0.0", hash);
+            var failingRepository = new FileSystemMicroBundleIdentityRepository(
+                root,
+                _ => Task.FromException(new IOException("Injected index-commit failure.")));
+
+            await Assert.ThrowsAsync<IOException>(
+                async () => await failingRepository.PutAsync(identity.Ontology, identity.Version, content));
+
+            var reopened = new FileSystemMicroBundleIdentityRepository(root);
+            Assert.Null(await reopened.ResolveAsync(identity));
+
+            var orphanFiles = Directory.EnumerateFiles(root, "*.bundle", SearchOption.AllDirectories).ToArray();
+            var orphanPath = Assert.Single(orphanFiles);
+            var orphanRelative = Path.GetRelativePath(root, orphanPath);
+            var orphanId = ulong.Parse(
+                orphanRelative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)[0],
+                System.Globalization.CultureInfo.InvariantCulture);
+
+            var recovered = await reopened.PutAsync(identity.Ontology, identity.Version, content);
+
+            Assert.NotEqual(orphanId, recovered.Address.BundleId);
+            Assert.Equal(recovered, await reopened.ResolveAsync(identity));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     private static string NewRoot()
     {
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
