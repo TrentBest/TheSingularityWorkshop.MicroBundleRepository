@@ -56,7 +56,7 @@ The interface does not move identity allocation into Experiences, MicroBundleDom
 
 ### Filesystem
 
-The filesystem identity adapter persists the forward/reverse mapping in one atomically replaced index. Identity ingestion and legacy numeric writes share an exclusive cross-process lock, so ID allocation, checks against legacy numeric artifact directories, and numeric writes are serialized within this adapter. Artifact bytes are flushed before the index is replaced. The adapter verifies artifact bytes when resolving a binding.
+The filesystem identity adapter persists the forward/reverse mapping in one atomically replaced index. Identity ingestion and legacy numeric writes share an exclusive cross-process lock, so ID allocation, checks against legacy numeric artifact directories, and numeric writes are serialized within this adapter. Artifact and index file contents are flushed to disk before same-directory replacement, and the adapter verifies artifact bytes when resolving a binding. The implementation does not explicitly fsync the parent directory after rename, so it does not claim a guarantee against every sudden-power-loss/filesystem-metadata failure.
 
 ### Azure Blob Storage
 
@@ -74,13 +74,15 @@ Implemented on the current feature branch:
 
 ### Exact-head validation
 
-Head `0b8c0efa44d5db99cc1cf29326da00bd0e0c85ff` passes:
-- Build and Test, including source-integration: **passed**.
-- Package verification: **passed**; publish job skipped.
-- Test suites: Core 17/17, Local 21/21, Azure 23/23, REST 15/15, REST host 21/21 (**97/97 total**).
+Current feature head at the time of this validation: `412e4e59fcf82405fa8a5a700b410f02794a506e`.
 
-The deterministic reservation race, conditional-index ETag contention/retry, Azure/filesystem artifact-before-index failure injection, orphan recovery, and corrupt-index fail-closed tests all pass. Build and Test run #467 passed both the regular and source-integrated test jobs; Package run #455 passed verification and skipped publication. The tests exercise Azurite for Azure storage; they do not claim a live production-account migration has been performed.
+- Build and Test run #477: regular build/test job **passed**; all five suites passed (**103/103 total**): Core 18/18, Local 23/23, REST host 21/21, Azure 26/26, REST 15/15.
+- The same run's source-integration job **failed during compilation**, before its test step. It checked out the moving `FSM_API/development` branch at `46eab8253ad5a3ab2301e24262290b1e6bf3aed3`. Compiler errors include duplicate `FSM_API.FsmApi` / duplicate `FsmApi.Create`, `FsmApi.Interact`, and `FsmApi.Error` members in `FsmApi.Public.cs`, plus a missing `TheSingularityWorkshop.FSM_API.FSMCompilationResult` referenced by `FsmApi.Namespace.cs`. An earlier passing source-integration run used FSM_API commit `56ba5d22`. This is an upstream moving-source build blocker; this repository does not pin or modify FSM_API.
+- Package run #465: verification **passed**; publish job **skipped**. Package publication remains disabled.
+- Azure integration tests use Azurite. No live production-account migration is claimed.
 
-Mixed-version Azure deployments still require older numeric writers to be quiesced or migrated because they do not participate in the reservation protocol. The Sith branch-policy gate also remains blocked until the repository returns to exactly `master` and `development`; five branches have been certified ready for the user's eventual deletion batch, with the remaining unique work inventoried separately.
+The upstream compilation blocker has been reported to FSM_API in [issue #36](https://github.com/TrentBest/FSM_API/issues/36). The source-integration gate must pass against the current upstream development source before this PR can be considered fully validated.
 
-This PR remains draft for human review. It does not authorize merge, package publication, release, deployment, or branch deletion.
+The Sith branch-policy gate also remains blocked because this repository currently has 18 branches rather than exactly `master` and `development`. No branch has been certified ready for deletion by this audit; individual branch content and PR history still require review, followed by the user's explicit authorization for a single deletion batch.
+
+This PR remains draft and unmerged. No package was published. No merge, release, deployment, `master` change, or branch deletion was performed.
