@@ -249,7 +249,8 @@ public sealed class AzureMicroBundleIdentityRepositoryIntegrationTests
             await foreach (var blob in container.GetBlobsAsync(
                 traits: BlobTraits.None,
                 states: BlobStates.None,
-                prefix: "artifacts/"))
+                prefix: "artifacts/",
+                cancellationToken: CancellationToken.None))
                 artifactNames.Add(blob.Name);
             var orphanName = Assert.Single(artifactNames);
             var orphanId = ulong.Parse(
