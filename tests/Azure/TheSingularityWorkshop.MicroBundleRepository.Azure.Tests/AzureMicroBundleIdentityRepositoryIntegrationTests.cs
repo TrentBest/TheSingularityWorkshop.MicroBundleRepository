@@ -51,6 +51,36 @@ public sealed class AzureMicroBundleIdentityRepositoryIntegrationTests
     }
 
     [Fact]
+    public async Task Concurrent_repository_instances_commit_distinct_bindings_without_aliasing()
+    {
+        var (container, _) = await CreateRepositoryAsync();
+        try
+        {
+            var repositories = Enumerable.Range(0, 8)
+                .Select(_ => new AzureMicroBundleIdentityRepository(container))
+                .ToArray();
+            var tasks = repositories.Select((repository, index) =>
+                repository.PutAsync(
+                    $"sample.ontology.{index}",
+                    "1.0.0",
+                    System.Text.Encoding.UTF8.GetBytes($"revision-{index}")).AsTask());
+
+            var bindings = await Task.WhenAll(tasks);
+
+            Assert.Equal(bindings.Length, bindings.Select(binding => binding.Address.BundleId).Distinct().Count());
+            foreach (var binding in bindings)
+            {
+                var resolved = await repositories[0].ResolveAsync(binding.Address.BundleId);
+                Assert.Equal(binding, resolved);
+            }
+        }
+        finally
+        {
+            await container.DeleteIfExistsAsync();
+        }
+    }
+
+    [Fact]
     public async Task Numeric_write_cannot_reuse_an_identity_bound_id()
     {
         var (container, repository) = await CreateRepositoryAsync();
