@@ -13,12 +13,12 @@ public sealed class FileSystemMicroBundleIdentityRepositoryTests
         var root = NewRoot();
         try
         {
-            var firstRepository = new FileSystemMicroBundleIdentityRepository(root);
+            var firstRepository = new FileSystemMicroBundleRepository(root);
             var content = "zeroth ontology"u8.ToArray();
 
             var first = await firstRepository.PutAsync("workshop/zeroth", "1.0.0", content);
             var repeated = await firstRepository.PutAsync("workshop/zeroth", "1.0.0", content);
-            var reopened = new FileSystemMicroBundleIdentityRepository(root);
+            var reopened = new FileSystemMicroBundleRepository(root);
             var recovered = await reopened.ResolveAsync(first.Identity);
             var reverse = await reopened.ResolveAsync(first.Address.BundleId);
 
@@ -39,7 +39,7 @@ public sealed class FileSystemMicroBundleIdentityRepositoryTests
         var root = NewRoot();
         try
         {
-            var repository = new FileSystemMicroBundleIdentityRepository(root);
+            var repository = new FileSystemMicroBundleRepository(root);
             var v1 = await repository.PutAsync("workshop/zeroth", "1.0.0", "first"u8.ToArray());
             var v2 = await repository.PutAsync("workshop/zeroth", "2.0.0", "first"u8.ToArray());
             var revised = await repository.PutAsync("workshop/zeroth", "2.0.0", "second"u8.ToArray());
@@ -67,7 +67,7 @@ public sealed class FileSystemMicroBundleIdentityRepositoryTests
         try
         {
             var repositories = Enumerable.Range(0, 12)
-                .Select(_ => new FileSystemMicroBundleIdentityRepository(root))
+                .Select(_ => new FileSystemMicroBundleRepository(root))
                 .ToArray();
 
             var sameContent = "same immutable revision"u8.ToArray();
@@ -86,7 +86,7 @@ public sealed class FileSystemMicroBundleIdentityRepositoryTests
 
             Assert.Equal(distinctResults.Length, distinctResults.Select(x => x.Address.BundleId).Distinct().Count());
 
-            var reopened = new FileSystemMicroBundleIdentityRepository(root);
+            var reopened = new FileSystemMicroBundleRepository(root);
             foreach (var binding in sameIdentityResults.Concat(distinctResults))
             {
                 Assert.Equal(binding, await reopened.ResolveAsync(binding.Identity));
@@ -105,7 +105,7 @@ public sealed class FileSystemMicroBundleIdentityRepositoryTests
         var root = NewRoot();
         try
         {
-            var repository = new FileSystemMicroBundleIdentityRepository(root);
+            var repository = new FileSystemMicroBundleRepository(root);
             using var cancellation = new CancellationTokenSource();
             cancellation.Cancel();
 
@@ -130,7 +130,7 @@ public sealed class FileSystemMicroBundleIdentityRepositoryTests
         var root = NewRoot();
         try
         {
-            var repository = new FileSystemMicroBundleIdentityRepository(root);
+            var repository = new FileSystemMicroBundleRepository(root);
             var legacyRepository = new FileSystemMicroBundleRepository(root);
             var bytes = "legacy numeric path"u8.ToArray();
             var hash = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
@@ -164,7 +164,7 @@ public sealed class FileSystemMicroBundleIdentityRepositoryTests
         var root = NewRoot();
         try
         {
-            var repository = new FileSystemMicroBundleIdentityRepository(root);
+            var repository = new FileSystemMicroBundleRepository(root);
             var binding = await repository.PutAsync(
                 "ontology/bound",
                 "1.0.0",
