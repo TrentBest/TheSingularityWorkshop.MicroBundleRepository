@@ -72,6 +72,15 @@ Implemented on the current feature branch:
 - Failure injection after artifact persistence and before identity-index commit for both Azure and filesystem adapters. The tests verify that the artifact remains unbound, the orphan reservation/path is not reused, and a reopened repository can commit a fresh binding.
 - Corrupt-index rejection and byte-integrity checks on resolution.
 
-The deterministic race and failure-injection tests were added after the last green head. Their exact-head Build/Test and Package verification are pending; do not infer success from the earlier green runs. Mixed-version Azure deployments still require older numeric writers to be quiesced or migrated because they do not participate in the reservation protocol.
+### Exact-head validation
 
-This PR remains draft until the new exact-head workflows pass and the remaining provider recovery/concurrency behavior has been reviewed. It does not authorize merge, package publication, release, deployment, or branch deletion.
+Head `78bea64ca8243dabc62f604651a1055aca1f6556` passes:
+- Build and Test, including source-integration: **passed**.
+- Package verification: **passed**; publish job skipped.
+- Test suites: Core 17/17, Local 21/21, Azure 23/23, REST 15/15, REST host 21/21 (**97/97 total**).
+
+The deterministic reservation race, conditional-index ETag contention/retry, Azure/filesystem artifact-before-index failure injection, orphan recovery, and corrupt-index fail-closed tests all pass. The tests exercise Azurite for Azure storage; they do not claim a live production-account migration has been performed.
+
+Mixed-version Azure deployments still require older numeric writers to be quiesced or migrated because they do not participate in the reservation protocol. The Sith branch-policy gate also remains blocked until the repository returns to exactly `master` and `development`; five branches have been certified ready for the user's eventual deletion batch, with the remaining unique work inventoried separately.
+
+This PR remains draft for human review. It does not authorize merge, package publication, release, deployment, or branch deletion.
