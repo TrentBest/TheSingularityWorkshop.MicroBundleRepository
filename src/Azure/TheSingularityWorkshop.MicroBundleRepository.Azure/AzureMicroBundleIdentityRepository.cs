@@ -84,7 +84,7 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
             var bundleId = await AllocateUniqueIdAsync(snapshot.Records, cancellationToken);
             var address = new MicroBundleArtifactAddress(bundleId, version, addresslessArtifactHash);
             var artifact = new MicroBundleArtifact(address, content);
-            await _artifacts.PutAsync(artifact, cancellationToken);
+            await _artifacts.PutArtifactAsync(artifact, cancellationToken);
 
             var updated = new List<BindingRecord>(snapshot.Records)
             {
