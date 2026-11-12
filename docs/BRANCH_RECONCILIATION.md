@@ -119,7 +119,7 @@ Disposition: retain until its checklist and visual are either updated into curre
 
 ### `docs/visual-readme` — README concepts reconciled; implementation remains historical
 
-The branch is 36 commits ahead and 253 behind `development` at the 2026-11-12 comparison (merge base `a7b3632b33215fbdceeca1b7e056142793e9a7cb`). Its large README rewrite contains useful reader-oriented explanations, but the valid architectural content is already represented in the current development README.
+The branch is 36 commits ahead and 254 behind `development` at the 2026-11-12 comparison (merge base `a7b3632b33215fbdceeca1b7e056142793e9a7cb`). Its large README rewrite contains useful reader-oriented explanations, but the valid architectural content is already represented in the current development README.
 
 - **No wholesale README replacement is needed:** the current README already explains the repository as the durable artifact-delivery boundary, distinguishes MicroBundleDomain (what), repository (where), and FSM_COS (how), gives the five-part reader journey, shows the artifact lifecycle and deterministic address, and explicitly excludes dependency resolution, arbitration, composition, Experience hosting, and general-purpose database behavior.
 - **Useful phrasing, already represented:** the branch's “warehouse door” mental model and the rule that verified bytes are handed to composition are consistent with the current README. The current guide also already distinguishes the operational artifact inventory from semantic discovery.
