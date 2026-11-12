@@ -24,17 +24,27 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
     private readonly AzureMicroBundleRepository _artifacts;
     private readonly BlobContainerClient _container;
     private readonly BlobClient _index;
+    private readonly Func<ulong>? _candidateIdFactory;
+    private readonly Func<ulong, string, CancellationToken, Task>? _beforeReservation;
+    private readonly Func<CancellationToken, Task>? _beforeIndexCommit;
 
     public AzureMicroBundleIdentityRepository(AzureMicroBundleRepositoryOptions options)
         : this(CreateContainer(options))
     {
     }
 
-    internal AzureMicroBundleIdentityRepository(BlobContainerClient container)
+    internal AzureMicroBundleIdentityRepository(
+        BlobContainerClient container,
+        Func<ulong>? candidateIdFactory = null,
+        Func<ulong, string, CancellationToken, Task>? beforeReservation = null,
+        Func<CancellationToken, Task>? beforeIndexCommit = null)
     {
         _container = container ?? throw new ArgumentNullException(nameof(container));
         _artifacts = new AzureMicroBundleRepository(container, initializeIdentityRepository: false);
         _index = container.GetBlobClient(IndexBlobName);
+        _candidateIdFactory = candidateIdFactory;
+        _beforeReservation = beforeReservation;
+        _beforeIndexCommit = beforeIndexCommit;
     }
 
     public Task InitializeAsync(CancellationToken cancellationToken = default) =>
@@ -85,6 +95,9 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
             var address = new MicroBundleArtifactAddress(bundleId, version, addresslessArtifactHash);
             var artifact = new MicroBundleArtifact(address, content);
             await _artifacts.PutArtifactAsync(artifact, cancellationToken);
+
+            if (_beforeIndexCommit is not null)
+                await _beforeIndexCommit(cancellationToken);
 
             var updated = new List<BindingRecord>(snapshot.Records)
             {
@@ -155,8 +168,16 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            RandomNumberGenerator.Fill(bytes);
-            var candidate = BitConverter.ToUInt64(bytes);
+            ulong candidate;
+            if (_candidateIdFactory is null)
+            {
+                RandomNumberGenerator.Fill(bytes);
+                candidate = BitConverter.ToUInt64(bytes);
+            }
+            else
+            {
+                candidate = _candidateIdFactory();
+            }
             if (candidate == 0 || occupied.Contains(candidate))
                 continue;
 
@@ -177,6 +198,8 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
 
             try
             {
+                if (_beforeReservation is not null)
+                    await _beforeReservation(candidate, "identity", cancellationToken);
                 await ReserveIdAsync(candidate, "identity", cancellationToken);
                 return candidate;
             }
@@ -199,6 +222,8 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
         var reservation = _container.GetBlobClient($"{ReservationPrefix}{bundleId}");
         try
         {
+            if (_beforeReservation is not null)
+                await _beforeReservation(bundleId, "numeric", cancellationToken);
             await ReserveIdAsync(bundleId, "numeric", cancellationToken);
         }
         catch (RequestFailedException ex) when (ex.Status is 409 or 412)
