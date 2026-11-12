@@ -10,6 +10,13 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      azurite:
+        image: mcr.microsoft.com/azure-storage/azurite:3.35.0
+        ports:
+          - 10000:10000
+    env:
+      AZURITE_CONNECTION_STRING: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFeqC6w==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
 
     steps:
       - name: Checkout
@@ -30,6 +37,13 @@ jobs:
         run: dotnet test TheSingularityWorkshop.MicroBundleRepository.slnx --configuration Release --no-build --collect:"XPlat Code Coverage"
   source-integration:
     runs-on: ubuntu-latest
+    services:
+      azurite:
+        image: mcr.microsoft.com/azure-storage/azurite:3.35.0
+        ports:
+          - 10000:10000
+    env:
+      AZURITE_CONNECTION_STRING: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFeqC6w==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
     steps:
       - name: Checkout MicroBundleRepository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
