@@ -61,6 +61,18 @@ The former `feat/local-microbundle-roundtrip` branch is absent from the current 
 5. Keep package publication disabled unless explicitly authorized.
 6. Branch deletion is a separate user-authorized operation. Present the confirmed candidates together for one batch; do not delete branches as part of this audit.
 
+
+### `fix/repository-boundary` — selective salvage only
+
+The branch is highly divergent from current integration: at the 2026-11-12 audit it is 36 commits ahead and 250 behind `development` (merge base `a7b3632b33215fbdceeca1b7e056142793e9a7cb`). Its remaining distinct contributions are primarily boundary documentation and a proposed published-Experience listing surface.
+
+- **Documentation worth preserving:** the branch states explicitly that the repository returns verified opaque bytes and does not define or interpret the executable representation. The current README already expresses this boundary, but the branch's architecture explanation can inform future refinements.
+- **Potential API contribution, not accepted:** the branch adds `IExperienceCatalog.ListPublishedAsync`, an Azure Blob enumeration implementation, and `GET /api/experiences`. This is a catalog/discovery capability, not part of immutable artifact retrieval. Before adopting it, define pagination, ordering guarantees, listing cost, and whether a mutable publication catalog is the right source for discovery.
+- **Do not transplant its REST host or Azure catalog wholesale:** the branch's host uses permissive `AllowAnyOrigin` CORS and exposes write routes without the current development branch's fail-closed write-key middleware and request-body limits. Current development has since added local MicroBundle storage, explicit CORS allowlisting, write authorization, bounded request bodies, and stronger Experience artifact verification.
+- **Do not revive removed REST materializer/catalog adapter types from this branch:** the current architecture keeps representation/materialization outside repository Core and keeps repository responsibilities narrow.
+
+Disposition: retain pending a deliberate decision on whether published-Experience listing belongs in this repository and, if so, a paginated, secured design with tests against current development. No branch-wide merge or cherry-pick is recommended.
+
 ## Current result
 
 - **17 branches total**
