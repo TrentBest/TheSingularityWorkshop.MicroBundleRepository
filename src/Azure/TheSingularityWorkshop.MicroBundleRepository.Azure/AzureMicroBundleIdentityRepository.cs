@@ -296,7 +296,12 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
         if (string.IsNullOrWhiteSpace(options.ContainerName))
             throw new ArgumentException("Container name is required.", nameof(options));
 
-        var service = new BlobServiceClient(options.StorageAccountUri, new DefaultAzureCredential());
+        // Match the protocol version used by the Azure repository adapter so local
+        // Azurite tests and production clients exercise the same request semantics.
+        var service = new BlobServiceClient(
+            options.StorageAccountUri,
+            new DefaultAzureCredential(),
+            new BlobClientOptions(BlobClientOptions.ServiceVersion.V2025_11_05));
         return service.GetBlobContainerClient(options.ContainerName);
     }
 
