@@ -52,16 +52,24 @@ The interface does not move identity allocation into Experiences, MicroBundleDom
 - No dependency resolution, composition, materialization, or runtime policy in this repository.
 - No package publication or cross-repository integration in this change.
 
-## Implementation status
-
-The current change includes the Core identity contract and a filesystem adapter implementation. The filesystem adapter uses an exclusive lock file to serialize writers, writes and flushes immutable artifact bytes before committing the atomically replaced identity index, checks candidate IDs against both indexed bindings and pre-existing numeric artifact directories, and verifies the artifact when resolving a binding. The existing numeric artifact path layout is retained.
-
-The Azure adapter is not yet implemented. The filesystem adapter's current-head CI has not yet been observed, and its crash-recovery/failure-injection behavior still requires additional tests. These are explicit remaining acceptance items; the interface and documentation do not imply that all providers already satisfy the contract.
-
 ## Provider implementation status
 
-The local filesystem adapter now serializes identity writers with an exclusive lock file and atomically replaces its persisted index after flushing artifact bytes.
+### Filesystem
 
-The Azure adapter now exposes the same identity contract through the existing `AzureMicroBundleRepository`. It stores the mapping in one JSON blob and uses ETag-based conditional writes (`If-Match` / `If-None-Match`) to serialize competing index updates across processes and hosts. Immutable artifact blobs are committed before the mapping index. A failed conditional index update may leave an unreferenced artifact, but the retry re-reads the winning index before selecting a binding.
+The filesystem identity adapter persists the forward/reverse mapping in one atomically replaced index. Identity ingestion and legacy numeric writes share an exclusive cross-process lock, so ID allocation, checks against legacy numeric artifact directories, and numeric writes are serialized within this adapter. Artifact bytes are flushed before the index is replaced. The adapter verifies artifact bytes when resolving a binding.
 
-These provider implementations are initial slices, not a declaration that all acceptance criteria are complete. In particular, Azure concurrency/failure behavior needs focused tests against an emulator or live test account, numeric legacy writes need a fully coordinated reservation strategy to rule out cross-operation ID races, and both providers need failure-injection coverage for artifact/index commit boundaries and index corruption. Current-head CI is running for the combined implementation.
+### Azure Blob Storage
+
+The Azure adapter persists the mapping in one JSON blob and uses ETag conditional writes (`If-Match` / `If-None-Match`) to serialize competing identity-index updates across processes and hosts. Immutable artifact blobs are written before the mapping index. A failed conditional index update can leave an unreferenced artifact; the retry re-reads the winning index before selecting a binding.
+
+**Important acceptance gap:** ETag serialization of identity-index writers does not coordinate the separate legacy numeric `PutAsync(MicroBundleArtifact)` operation with identity-ID allocation. A numeric write can pass its current “ID is not bound” check while an identity writer has already checked that candidate ID but has not yet committed its index update. This leaves a cross-operation ID collision/alias race. The Azure provider is not ready for acceptance until both paths share an atomic reservation protocol (for example, a conditional per-ID reservation blob or a single transactional allocation authority) and tests prove the interleaving is safe.
+
+### Remaining acceptance work
+
+- Azure identity-ingestion concurrency and conditional-write failure tests against Azurite or a live test account.
+- Coordinated Azure reservation between identity allocation and legacy numeric writes, with a deterministic race test.
+- Failure-injection tests at artifact persistence and index-commit boundaries for both providers.
+- Corrupt/truncated index recovery tests for both providers.
+- Explicit verification that resolution validates the stored bytes against the indexed SHA-256, not merely that the artifact path exists.
+
+The current PR-head Package and Build/Test workflows pass, including source-integration builds. CI success does not close the acceptance gaps above. This PR remains draft; it does not authorize merge, package publication, release, deployment, or branch deletion.
