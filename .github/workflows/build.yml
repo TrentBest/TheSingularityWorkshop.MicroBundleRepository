@@ -16,7 +16,7 @@ jobs:
         ports:
           - 10000:10000
     env:
-      AZURITE_CONNECTION_STRING: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFeqC6w==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
+      AZURITE_CONNECTION_STRING: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
 
     steps:
       - name: Checkout
@@ -43,7 +43,7 @@ jobs:
         ports:
           - 10000:10000
     env:
-      AZURITE_CONNECTION_STRING: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFeqC6w==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
+      AZURITE_CONNECTION_STRING: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
     steps:
       - name: Checkout MicroBundleRepository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
