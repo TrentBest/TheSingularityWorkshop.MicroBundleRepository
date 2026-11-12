@@ -9,11 +9,12 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Azure;
 /// <summary>
 /// Stores MicroBundle artifacts as deterministic Azure block blobs.
 /// </summary>
-public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroBundleRepositoryObserver
+public sealed class AzureMicroBundleRepository : IMicroBundleIdentityRepository, IMicroBundleRepositoryObserver
 {
     private const string ArtifactPrefix = "artifacts";
 
     private readonly BlobContainerClient _container;
+    private readonly AzureMicroBundleIdentityRepository _identityRepository;
 
     public AzureMicroBundleRepository(AzureMicroBundleRepositoryOptions options)
         : this(CreateContainerClient(options))
@@ -21,8 +22,16 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroB
     }
 
     internal AzureMicroBundleRepository(BlobContainerClient container)
+        : this(container, initializeIdentityRepository: true)
+    {
+    }
+
+    internal AzureMicroBundleRepository(BlobContainerClient container, bool initializeIdentityRepository)
     {
         _container = container ?? throw new ArgumentNullException(nameof(container));
+        _identityRepository = initializeIdentityRepository
+            ? new AzureMicroBundleIdentityRepository(container)
+            : null!;
     }
 
     /// <summary>
@@ -116,6 +125,24 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroB
             // exists, the repository is already in the requested state.
         }
     }
+
+
+    public ValueTask<MicroBundleIdentityBinding> PutAsync(
+        string ontology,
+        string version,
+        ReadOnlyMemory<byte> content,
+        CancellationToken cancellationToken = default) =>
+        _identityRepository.PutAsync(ontology, version, content, cancellationToken);
+
+    public ValueTask<MicroBundleIdentityBinding?> ResolveAsync(
+        MicroBundleArtifactIdentity identity,
+        CancellationToken cancellationToken = default) =>
+        _identityRepository.ResolveAsync(identity, cancellationToken);
+
+    public ValueTask<MicroBundleIdentityBinding?> ResolveAsync(
+        ulong bundleId,
+        CancellationToken cancellationToken = default) =>
+        _identityRepository.ResolveAsync(bundleId, cancellationToken);
 
     internal static string GetBlobName(MicroBundleArtifactAddress address) =>
         $"{ArtifactPrefix}/{address.BundleId}/{address.Version}/{address.ContentHash}.bundle";
