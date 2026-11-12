@@ -29,7 +29,7 @@ public sealed class FileSystemMicroBundleIdentityRepository : IMicroBundleIdenti
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(root);
         _root = Path.GetFullPath(root);
-        _artifactRoot = Path.Combine(_root, "artifacts");
+        _artifactRoot = _root;
         _indexPath = Path.Combine(_root, IndexFileName);
         _lockPath = Path.Combine(_root, LockFileName);
         Directory.CreateDirectory(_artifactRoot);
@@ -79,7 +79,12 @@ public sealed class FileSystemMicroBundleIdentityRepository : IMicroBundleIdenti
         cancellationToken.ThrowIfCancellationRequested();
         var records = await ReadIndexAsync(cancellationToken);
         var record = records.SingleOrDefault(item => Matches(item, identity));
-        return record is null ? null : ToBinding(record);
+        if (record is null)
+            return null;
+
+        var binding = ToBinding(record);
+        await EnsureArtifactExistsAndVerifiesAsync(binding, cancellationToken);
+        return binding;
     }
 
     public async ValueTask<MicroBundleIdentityBinding?> ResolveAsync(
@@ -92,7 +97,12 @@ public sealed class FileSystemMicroBundleIdentityRepository : IMicroBundleIdenti
 
         var records = await ReadIndexAsync(cancellationToken);
         var record = records.SingleOrDefault(item => item.BundleId == bundleId);
-        return record is null ? null : ToBinding(record);
+        if (record is null)
+            return null;
+
+        var binding = ToBinding(record);
+        await EnsureArtifactExistsAndVerifiesAsync(binding, cancellationToken);
+        return binding;
     }
 
     public async ValueTask<MicroBundleArtifact?> GetAsync(
@@ -115,6 +125,15 @@ public sealed class FileSystemMicroBundleIdentityRepository : IMicroBundleIdenti
         ArgumentNullException.ThrowIfNull(artifact);
         cancellationToken.ThrowIfCancellationRequested();
         await WriteArtifactDurablyAsync(artifact, cancellationToken);
+    }
+
+    private async Task EnsureArtifactExistsAndVerifiesAsync(
+        MicroBundleIdentityBinding binding,
+        CancellationToken cancellationToken)
+    {
+        var artifact = await GetAsync(binding.Address, cancellationToken);
+        if (artifact is null)
+            throw new InvalidDataException("The identity index points to an artifact that is not present in storage.");
     }
 
     private async Task WriteArtifactDurablyAsync(
