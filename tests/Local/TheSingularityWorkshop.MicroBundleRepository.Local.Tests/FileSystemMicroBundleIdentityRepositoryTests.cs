@@ -131,16 +131,26 @@ public sealed class FileSystemMicroBundleIdentityRepositoryTests
         try
         {
             var repository = new FileSystemMicroBundleIdentityRepository(root);
+            var legacyRepository = new FileSystemMicroBundleRepository(root);
             var bytes = "legacy numeric path"u8.ToArray();
             var hash = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
             var address = new MicroBundleArtifactAddress(987, "3.2.1", hash);
             var artifact = new MicroBundleArtifact(address, bytes);
 
             await repository.PutAsync(artifact);
-            var retrieved = await repository.GetAsync(address);
+            var retrievedByLegacyAdapter = await legacyRepository.GetAsync(address);
 
-            Assert.NotNull(retrieved);
-            Assert.Equal(bytes, retrieved.Content.ToArray());
+            Assert.NotNull(retrievedByLegacyAdapter);
+            Assert.Equal(bytes, retrievedByLegacyAdapter.Content.ToArray());
+
+            var legacyBytes = "written by legacy adapter"u8.ToArray();
+            var legacyHash = Convert.ToHexString(SHA256.HashData(legacyBytes)).ToLowerInvariant();
+            var legacyAddress = new MicroBundleArtifactAddress(654, "1.0.0", legacyHash);
+            await legacyRepository.PutAsync(new MicroBundleArtifact(legacyAddress, legacyBytes));
+
+            var retrievedByIdentityAdapter = await repository.GetAsync(legacyAddress);
+            Assert.NotNull(retrievedByIdentityAdapter);
+            Assert.Equal(legacyBytes, retrievedByIdentityAdapter.Content.ToArray());
         }
         finally
         {
