@@ -7,55 +7,45 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Local;
 /// Local development repository that preserves the same artifact contract as durable storage.
 /// It is an emulator of repository storage, not a second artifact model.
 /// </summary>
-public sealed class FileSystemMicroBundleRepository : IMicroBundleRepository, IMicroBundleRepositoryObserver
+public sealed class FileSystemMicroBundleRepository : IMicroBundleIdentityRepository, IMicroBundleRepositoryObserver
 {
     private readonly string _root;
+    private readonly FileSystemMicroBundleIdentityRepository _identityRepository;
 
     public FileSystemMicroBundleRepository(string root)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(root);
         _root = Path.GetFullPath(root);
         Directory.CreateDirectory(_root);
+        _identityRepository = new FileSystemMicroBundleIdentityRepository(_root);
     }
 
-    public async ValueTask<MicroBundleArtifact?> GetAsync(
+    public ValueTask<MicroBundleArtifact?> GetAsync(
         MicroBundleArtifactAddress address,
-        CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
+        CancellationToken cancellationToken = default) =>
+        _identityRepository.GetAsync(address, cancellationToken);
 
-        var path = GetPath(address);
-        if (!File.Exists(path))
-            return null;
-
-        var content = await File.ReadAllBytesAsync(path, cancellationToken);
-        return new MicroBundleArtifact(address, content);
-    }
-
-    public async ValueTask PutAsync(
+    public ValueTask PutAsync(
         MicroBundleArtifact artifact,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(artifact);
-        cancellationToken.ThrowIfCancellationRequested();
+        CancellationToken cancellationToken = default) =>
+        _identityRepository.PutAsync(artifact, cancellationToken);
 
-        var path = GetPath(artifact.Address);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+    public ValueTask<MicroBundleIdentityBinding> PutAsync(
+        string ontology,
+        string version,
+        ReadOnlyMemory<byte> content,
+        CancellationToken cancellationToken = default) =>
+        _identityRepository.PutAsync(ontology, version, content, cancellationToken);
 
-        var temporary = path + ".tmp-" + Guid.NewGuid().ToString("N");
-        try
-        {
-            await File.WriteAllBytesAsync(temporary, artifact.Content.ToArray(), cancellationToken);
-            cancellationToken.ThrowIfCancellationRequested();
-            File.Move(temporary, path, overwrite: true);
-        }
-        finally
-        {
-            // A cancelled or failed write must not leave temporary artifacts behind.
-            if (File.Exists(temporary))
-                File.Delete(temporary);
-        }
-    }
+    public ValueTask<MicroBundleIdentityBinding?> ResolveAsync(
+        MicroBundleArtifactIdentity identity,
+        CancellationToken cancellationToken = default) =>
+        _identityRepository.ResolveAsync(identity, cancellationToken);
+
+    public ValueTask<MicroBundleIdentityBinding?> ResolveAsync(
+        ulong bundleId,
+        CancellationToken cancellationToken = default) =>
+        _identityRepository.ResolveAsync(bundleId, cancellationToken);
 
     public ValueTask<IReadOnlyList<MicroBundleArtifactObservation>> ListAsync(
         CancellationToken cancellationToken = default)
