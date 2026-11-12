@@ -83,3 +83,36 @@ Disposition: retain pending a deliberate decision on whether published-Experienc
 - **0 branches deleted by this audit**
 
 The candidate list is a recommendation, not a deletion action. Recheck the branch/PR state immediately before any future deletion batch.
+
+
+### `release-prep/core-1.0.0` — preserve theory, do not revive the release snapshot
+
+The branch is 59 commits ahead and 251 behind `development` (merge base `a7b3632b33215fbdceeca1b7e056142793e9a7cb`). It contains substantial unique documentation, but its implementation and release assumptions predate current integration and PR #33.
+
+- **Documentation worth reconciling:** `docs/CORE_CONTRACT.md` and `docs/REPOSITORY_THEORY.md` explain the immutable artifact/delivery boundary, separation of artifact bytes from publication pointers, and the boundary between MicroBundleDomain, repository storage, and FSM_COS composition. These are useful source material, not ready-to-publish current contracts: their identity examples still use numeric BundleId as the portable semantic identity and need updating to the current dual-identity model (portable `(ontology, version, SHA-256)`; repository-local numeric address/binding retained for existing runtime-facing APIs).
+- **Federation theory:** `docs/FEDERATED_HOSTING.md` adds useful third-party repository custody/admission concepts. Reconcile against current security/admission ownership before presenting it as implemented behavior; keep the distinction between documented architecture and shipped capability explicit.
+- **Release graph:** `docs/PACKAGE_BUILD_GRAPH.md` contains a useful rule that stable release eligibility depends on the complete first-party dependency closure and that publication remains a separate human-authorized action. Its listed 1.0.0 package frontier and cross-repository versions are historical and do not describe current development, where repository Core and REST project files declare alpha versions and current upstream dependencies. Rewrite the graph from live project/package metadata before using it as a release gate.
+- **Implementation not adopted:** the branch adds `MicroBundleAssemblyPayload` and serialization tests, but the payload implements `IBinarySerializable` from `FSM_Serialization`; current Core has no such project/package dependency. Its envelope also embeds the numeric BundleId, which needs an explicit compatibility decision against the portable revision identity and repository-owned mapping in PR #33. Do not copy this implementation into Core without deciding representation ownership, dependency direction, and identity semantics.
+- **Identity/API changes:** the branch's altered artifact addresses and identity tests are older than the current revision-binding design in PR #33. Use PR #33 as the current implementation candidate; preserve the older branch as historical design evidence only.
+- **REST materializer:** the branch adds an assembly materializer in the REST package. Current architecture keeps representation/materialization outside repository Core and avoids making repository storage responsible for composition. Verify the active PR #21 integration boundary before considering any adapter; do not transplant the old type simply because it exists in the release branch.
+
+Disposition: retain until the unique theory/federation/release-governance material is selectively reconciled into current documentation and the payload question is resolved. The branch is not a valid 1.0.0 release snapshot and should not be merged or cherry-picked wholesale.
+
+### `release-prep/rest-1.0.0` — salvage checklist, refresh dependency frontier
+
+The branch is 28 commits ahead and 251 behind `development` (same merge base `a7b3632b33215fbdceeca1b7e056142793e9a7cb`). It contains a unique `docs/REST_RELEASE_1_0.md`, a release-frontier SVG, package/workflow changes, and an older REST host revision.
+
+- **Documentation worth preserving:** the release contract correctly distinguishes REST transport, repository delivery, and FSM_COS composition, and it explicitly keeps package publication manual. The checklist is useful as a starting point for a future release-readiness document.
+- **Refresh dependency claims:** the document names MicroBundleRepository.Core 1.0.0, FSM_REST 1.0.0, and FSM_COS 1.0.0 as the stable dependency closure. That is a historical release plan, not the current state: development's REST project references FSM_REST 0.1.0-alpha.4, FSM_COS 0.1.0-alpha.6, MicroBundleDomain 1.0.1, and the repository Core project. Recalculate the complete graph from current project metadata and the actual intended package boundaries before any release work.
+- **Current host is materially safer:** the old branch's `Program.cs` predates current development's opt-in CORS allowlist, fail-closed write-key authorization, constant-time key comparison, and bounded request-body handling. Do not transplant the old host.
+- **Identity and REST contract are stale:** the branch predates current revision identity work and the active PR #31/#33 design discussion. Any route or DTO release checklist must be reconciled with the selected public portable identity and the preserved numeric runtime/storage compatibility contract.
+- **Workflow changes are not release authority:** the branch's package workflow changes do not authorize publication. Current policy remains that package verification and packaging may run, but NuGet publication requires explicit user authorization.
+
+Disposition: retain until its checklist and visual are either updated into current docs/assets or deliberately rejected. No release snapshot, package version, dependency closure, or workflow from this branch is accepted as current.
+
+
+## Release-prep audit result
+
+- `release-prep/core-1.0.0`: 59 ahead / 251 behind; retain for selective documentation reconciliation and the unresolved assembly-payload boundary.
+- `release-prep/rest-1.0.0`: 28 ahead / 251 behind; retain for selective release-checklist/visual reconciliation only.
+- Neither branch is a current release candidate. Both contain historical package versions and host/identity assumptions; neither was merged or cherry-picked.
