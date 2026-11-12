@@ -86,16 +86,15 @@ public sealed class AzureMicroBundleRepository : IMicroBundleIdentityRepository,
         return observations;
     }
 
-    public async ValueTask PutAsync(
+    public ValueTask PutAsync(
         MicroBundleArtifact artifact,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(artifact);
-        if (_identityRepository is not null &&
-            await _identityRepository.IsBundleIdBoundAsync(artifact.Address.BundleId, cancellationToken))
-            throw new InvalidOperationException("A repository-local ID already bound to an ontology revision cannot be overwritten through the unbound numeric API.");
 
-        await PutArtifactAsync(artifact, cancellationToken);
+        // Route through the identity adapter so numeric writes acquire the same
+        // conditional per-ID reservation used by ontology identity allocation.
+        return _identityRepository.PutAsync(artifact, cancellationToken);
     }
 
     internal async ValueTask PutArtifactAsync(
