@@ -13,6 +13,7 @@
     "feat/local-microbundle-roundtrip",
     "feature/microbundle-publisher",
     "feature/ontology-address-mapping",
+    "feature/revision-identity-bindings",
     "fix/repository-boundary",
     "fix/repository-build-errors",
     "forge/experience-publication-catalog",
@@ -24,9 +25,9 @@
     "release-prep/rest-1.0.0",
     "work/microbundle-artifact-discovery"
   ],
-  "branch_count": 17,
+  "branch_count": 18,
   "status": "NON-COMPLIANT",
-  "evaluated_at": "2026-11-11T11:56:18Z",
-  "workflow_run": "https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/43016043965",
-  "triggering_commit": "b27344a156a6c18a293b2791c7b346b3e430bebd"
+  "evaluated_at": "2026-11-12T12:53:12Z",
+  "workflow_run": "https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/43222008358",
+  "triggering_commit": "28d4a26680f998e98949a6c5d0d3bc61cf6cefab"
 }
