@@ -255,7 +255,9 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
         try
         {
             var response = await _index.DownloadContentAsync(cancellationToken);
-            var records = response.Value.Content.ToObjectFromJson<List<BindingRecord>>() ?? [];
+            var records = response.Value.Content.ToObjectFromJson<List<BindingRecord>>();
+            if (records is null)
+                throw new InvalidDataException("The Azure identity index must contain a JSON array, not null.");
             ValidateIndex(records);
             return new IndexSnapshot(records, response.Value.Details.ETag, true);
         }
@@ -295,6 +297,9 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
         var ids = new HashSet<ulong>();
         foreach (var record in records)
         {
+            if (record is null)
+                throw new InvalidDataException("The Azure identity index contains a null binding record.");
+
             var identity = new MicroBundleArtifactIdentity(record.Ontology, record.Version, record.ContentHash);
             if (record.BundleId == 0 || !identities.Add(identity) || !ids.Add(record.BundleId))
                 throw new InvalidDataException("The Azure identity index contains invalid or conflicting bindings.");
