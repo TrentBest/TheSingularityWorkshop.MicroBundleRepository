@@ -60,16 +60,16 @@ The filesystem identity adapter persists the forward/reverse mapping in one atom
 
 ### Azure Blob Storage
 
-The Azure adapter persists the mapping in one JSON blob and uses ETag conditional writes (`If-Match` / `If-None-Match`) to serialize competing identity-index updates across processes and hosts. Immutable artifact blobs are written before the mapping index. A failed conditional index update can leave an unreferenced artifact; the retry re-reads the winning index before selecting a binding.
+The Azure adapter persists the mapping in one JSON index blob and uses ETag conditional writes (`If-Match` / `If-None-Match`) to serialize competing identity-index updates across processes and hosts. It also creates a per-ID reservation blob with `If-None-Match: *` before an identity ID is committed or a new numeric write proceeds. The conditional reservation is the shared allocation boundary: if a numeric writer wins, identity allocation rejects that ID; if identity allocation wins, the numeric API rejects it. Legacy numeric artifact prefixes are checked before identity reservations are created. Immutable artifact blobs are written before the mapping index. A failed conditional index update can leave an unreferenced artifact and a safely unavailable reservation; the retry re-reads the winning index before selecting a binding.
 
-**Important acceptance gap:** ETag serialization of identity-index writers does not coordinate the separate legacy numeric `PutAsync(MicroBundleArtifact)` operation with identity-ID allocation. A numeric write can pass its current “ID is not bound” check while an identity writer has already checked that candidate ID but has not yet committed its index update. This leaves a cross-operation ID collision/alias race. The Azure provider is not ready for acceptance until both paths share an atomic reservation protocol (for example, a conditional per-ID reservation blob or a single transactional allocation authority) and tests prove the interleaving is safe.
+**Important compatibility boundary:** this reservation protocol coordinates writers using the updated Azure adapter. Older processes that write numeric artifacts without creating reservation blobs cannot participate in that protocol; deployments must quiesce those writers or migrate them before relying on concurrent mixed-version writes. The Azure provider is not ready for acceptance until Azurite/live tests prove reservation races, ETag retries, and crash recovery.
 
 ### Remaining acceptance work
 
 - Azure identity-ingestion concurrency and conditional-write failure tests against Azurite or a live test account.
-- Coordinated Azure reservation between identity allocation and legacy numeric writes, with a deterministic race test.
+- Deterministic Azure reservation race tests, including identity-vs-numeric writers and mixed-version deployment constraints.
 - Failure-injection tests at artifact persistence and index-commit boundaries for both providers.
 - Corrupt/truncated index recovery tests for both providers.
-- Explicit verification that resolution validates the stored bytes against the indexed SHA-256, not merely that the artifact path exists.
+- Explicit tests proving resolution validates stored bytes against the indexed SHA-256, not merely that the artifact path exists.
 
 The current PR-head Package and Build/Test workflows pass, including source-integration builds. CI success does not close the acceptance gaps above. This PR remains draft; it does not authorize merge, package publication, release, deployment, or branch deletion.
