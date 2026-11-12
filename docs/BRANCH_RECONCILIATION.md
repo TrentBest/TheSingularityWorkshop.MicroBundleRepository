@@ -3,7 +3,7 @@
 **Purpose:** preserve every unique implementation, test, document, visual, and release artifact; then reduce this repository to exactly `master` and `development`.
 
 **Audit date:** 2026-11-12  
-**Inventory:** 18 branches. This is a content/PR audit, not authorization to delete branches.
+**Inventory:** 17 branches on the live remote at the time of this update. The former `feat/local-microbundle-roundtrip` ref is no longer present; its commits remain reachable from the active publisher branch. This is a content/PR audit, not authorization to delete branches.
 
 ## Active work and dependency boundaries
 
@@ -32,7 +32,7 @@ The repository identity work is consumed downstream by Experiences, but the repo
 - `feature/microbundle-publisher` — PR #17; retain.
 - `work/microbundle-artifact-discovery` — PR #21; retain.
 
-### Ready for the single deletion batch — 8
+### Ready for the single deletion batch — 7
 
 These are candidates whose useful work has a surviving home or whose PR is merged/superseded. They have **not** been deleted.
 
@@ -43,12 +43,12 @@ These are candidates whose useful work has a surviving home or whose PR is merge
 5. `implementation-azure-solidification` — PR #2 merged; Azure setup/live-test work is represented in `development`; remaining workflow is obsolete.
 6. `implementation-core-azure-blob` — PR #1 merged; historical implementation baseline is superseded by the current Core/Azure implementation and tests.
 7. `docs/readme-standard` — PR #18 closed as superseded; useful Visual Studio-first onboarding and package-boundary guidance is present in the current README; old workflow changes are intentionally not carried forward.
-8. `feat/local-microbundle-roundtrip` — its complete commit history is contained in the newer active `feature/microbundle-publisher` branch (PR #17), which is 14 commits ahead and has no unique commits from the older branch. Deleting this branch ref does not delete commits still reachable from the publisher branch.
+The former `feat/local-microbundle-roundtrip` branch is absent from the current remote inventory. Its complete history had been contained in `feature/microbundle-publisher` (PR #17), so its commits remain reachable there; no additional cleanup action is needed for that ref.
 
 ### Retain pending reconciliation — 4
 
-- `docs/visual-readme` — its architecture SVGs are present in `development`, and its longer README has useful explanatory passages. The current README already covers the main boundary, identity, lifecycle, REST discovery, and development story, but the remaining text needs a final selective comparison before this branch is retired.
-- `fix/repository-boundary` — the opaque-artifact/composition-host separation is partly reflected in current code and docs. Its earlier materializer and integration changes must be compared against merged PR #14 and active PR #21 before disposition.
+- `docs/visual-readme` — its four architecture SVGs are present in `development`. Its 36-commit diff also carries the compiled-assembly payload, Experience catalog changes, REST/FSM_COS materializer integration package, host wiring, and associated tests. The same implementation family is present in PR #21, but the branch adds a distinct long-form README and four diagrams. Preserve pending final README reconciliation and confirmation that all implementation changes are represented by the surviving PR #21 branch. Do not treat it as a documentation-only branch.
+- `fix/repository-boundary` — its README and architecture document sharpen the opaque-artifact/composition-host boundary. Its diff removes payload/materializer/catalog code from the REST package and differs from the integration-package direction in PR #14 and PR #21. Preserve until the intended boundary is resolved; do not merge it wholesale.
 - `release-prep/core-1.0.0` — contains four substantial documents absent from `development`: `CORE_CONTRACT.md`, `REPOSITORY_THEORY.md`, `FEDERATED_HOSTING.md`, and `PACKAGE_BUILD_GRAPH.md`. Preserve and reconcile their useful contract, federation, and release-governance theory. Update old payload/identity assumptions against PR #33 before publishing these as current guidance.
 - `release-prep/rest-1.0.0` — contains `REST_RELEASE_1_0.md` and release work absent from `development`. Its stated dependency closure includes FSM_COS, which conflicts with the later REST/composition transport-boundary separation. Preserve the useful transport/release checklist, but rewrite the dependency closure and recheck implementation/tests before retiring the branch.
 
@@ -63,11 +63,11 @@ These are candidates whose useful work has a surviving home or whose PR is merge
 
 ## Current result
 
-- **18 branches total**
-- **8 ready-to-delete candidates**
+- **17 branches total**
+- **7 ready-to-delete candidates**
 - **4 retained for reconciliation**
 - **4 active PR branches**
 - **2 permanent branches**
-- **0 branches deleted in this audit**
+- **0 branches deleted by this audit**
 
 The candidate list is a recommendation, not a deletion action. Recheck the branch/PR state immediately before any future deletion batch.
