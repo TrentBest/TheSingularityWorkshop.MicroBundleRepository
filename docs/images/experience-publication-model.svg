@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 570" role="img" aria-labelledby="title desc">
+<title id="title">Experience artifact publication model</title><desc id="desc">Immutable Experience artifacts remain in storage while a separate publication pointer selects the currently live version.</desc>
+<rect width="1200" height="570" rx="32" fill="#111827"/>
+<text x="70" y="70" fill="white" font-family="Segoe UI,Arial" font-size="34" font-weight="700">Immutable artifacts, mutable publication pointer</text>
+<text x="70" y="106" fill="#aab4c8" font-family="Segoe UI,Arial" font-size="18">Publishing chooses what is live without rewriting or deleting artifact history.</text>
+<g font-family="Segoe UI,Arial">
+<rect x="70" y="165" width="330" height="300" rx="24" fill="#1e293b"/><text x="235" y="210" fill="#93c5fd" font-size="17" text-anchor="middle">IMMUTABLE ARTIFACTS</text>
+<text x="110" y="260" fill="#e2e8f0" font-size="18">v1  •  sha…111</text><text x="110" y="305" fill="#e2e8f0" font-size="18">v2  •  sha…222</text><text x="110" y="350" fill="#e2e8f0" font-size="18">v3  •  sha…333</text><text x="110" y="410" fill="#94a3b8" font-size="15">bytes remain addressable</text>
+<rect x="500" y="225" width="250" height="125" rx="24" fill="#2563eb"/><text x="625" y="270" fill="white" font-size="20" font-weight="700" text-anchor="middle">publication pointer</text><text x="625" y="305" fill="#dbeafe" font-size="17" text-anchor="middle">experience → v3</text>
+<path d="M400 300h85M750 300h85" stroke="#93c5fd" stroke-width="5" stroke-linecap="round"/>
+<path d="m472 288 18 12-18 12zM828 288 846 300l-18 12z" fill="#93c5fd"/>
+<rect x="850" y="165" width="280" height="300" rx="24" fill="#1e293b"/><text x="990" y="210" fill="#93c5fd" font-size="17" text-anchor="middle">HOST DISCOVERY</text><text x="990" y="265" fill="#e2e8f0" font-size="18" text-anchor="middle">GET /api/experiences</text><text x="990" y="315" fill="#e2e8f0" font-size="18" text-anchor="middle">identity only</text><text x="990" y="365" fill="#94a3b8" font-size="15" text-anchor="middle">host fetches bytes</text><text x="990" y="395" fill="#94a3b8" font-size="15" text-anchor="middle">and decides execution</text>
+</g>
+</svg>
