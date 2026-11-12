@@ -145,6 +145,48 @@ public sealed class AzureMicroBundleIdentityRepositoryIntegrationTests
     }
 
     [Fact]
+    public async Task Concurrent_identity_writers_retry_conditional_index_commit_without_losing_bindings()
+    {
+        var (container, _) = await CreateRepositoryAsync();
+        try
+        {
+            var arrivals = 0;
+            var bothReady = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            async Task BeforeIndexCommit(CancellationToken cancellationToken)
+            {
+                var arrival = Interlocked.Increment(ref arrivals);
+                if (arrival == 2)
+                    bothReady.TrySetResult(true);
+
+                if (arrival <= 2)
+                    await bothReady.Task.WaitAsync(cancellationToken);
+            }
+
+            var candidateSequence = 0;
+            ulong CandidateId() => 7_400_000UL + (ulong)Interlocked.Increment(ref candidateSequence);
+            var repository = new AzureMicroBundleIdentityRepository(
+                container,
+                CandidateId,
+                beforeIndexCommit: BeforeIndexCommit);
+
+            var firstBytes = "first concurrent revision"u8.ToArray();
+            var secondBytes = "second concurrent revision"u8.ToArray();
+            var bindings = await Task.WhenAll(
+                repository.PutAsync("sample.index-race.first", "1.0.0", firstBytes).AsTask(),
+                repository.PutAsync("sample.index-race.second", "1.0.0", secondBytes).AsTask());
+
+            Assert.Equal(2, bindings.Select(binding => binding.Address.BundleId).Distinct().Count());
+            foreach (var binding in bindings)
+                Assert.Equal(binding, await repository.ResolveAsync(binding.Identity));
+        }
+        finally
+        {
+            await container.DeleteIfExistsAsync();
+        }
+    }
+
+    [Fact]
     public async Task Identity_and_numeric_writers_cannot_claim_the_same_id_under_a_forced_reservation_race()
     {
         var (container, _) = await CreateRepositoryAsync();
