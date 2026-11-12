@@ -156,6 +156,12 @@ Choose the smallest dependency that matches the host's responsibility:
 
 The project files declare source package versions, not proof of publication. Verify the exact package/version on NuGet before depending on it; until then, use a local project reference from the host solution.
 
+For example, from the host project directory (adjust the relative path to your clone):
+
+```powershell
+dotnet add reference ..\\TheSingularityWorkshop.MicroBundleRepository\\src\\Core\\TheSingularityWorkshop.MicroBundleRepository.Core\\TheSingularityWorkshop.MicroBundleRepository.Core.csproj
+```
+
 ### Core
 
 `TheSingularityWorkshop.MicroBundleRepository.Core` has no Azure, GUI, or host dependency.
