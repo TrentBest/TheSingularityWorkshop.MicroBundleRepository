@@ -74,15 +74,14 @@ Implemented on the current feature branch:
 
 ### Exact-head validation
 
-Current feature head at the time of this validation: `412e4e59fcf82405fa8a5a700b410f02794a506e`.
+Validated feature head: `987d6662c54d56cf2696d22eee1724a82118851c`.
 
-- Build and Test run #477: regular build/test job **passed**; all five suites passed (**103/103 total**): Core 18/18, Local 23/23, REST host 21/21, Azure 26/26, REST 15/15.
-- The same run's source-integration job **failed during compilation**, before its test step. It checked out the moving `FSM_API/development` branch at `46eab8253ad5a3ab2301e24262290b1e6bf3aed3`. Compiler errors include duplicate `FSM_API.FsmApi` / duplicate `FsmApi.Create`, `FsmApi.Interact`, and `FsmApi.Error` members in `FsmApi.Public.cs`, plus a missing `TheSingularityWorkshop.FSM_API.FSMCompilationResult` referenced by `FsmApi.Namespace.cs`. An earlier passing source-integration run used FSM_API commit `56ba5d22`. This is an upstream moving-source build blocker; this repository does not pin or modify FSM_API.
-- Package run #465: verification **passed**; publish job **skipped**. Package publication remains disabled.
+- Build and Test run #478: regular build/test **passed** (103/103 tests: Core 18, Local 23, Azure 26, REST host 21, REST 15).
+- The same run's source-integration job **passed**, including the source-integrated build and all 105 tests (Core 18, Local 23, Azure 26, REST host 21, REST 17).
+- Source integration checked out moving `FSM_API/development` at `960ad5a97096586166a89b8df65ac393f60bd150`. This resolves the immediate downstream compiler failure seen at prior FSM_API commit `46eab8253ad5a3ab2301e24262290b1e6bf3aed3`. The earlier failure and requested upstream validation are recorded in [FSM_API issue #36](https://github.com/TrentBest/FSM_API/issues/36); a downstream success update has been posted there, and the issue remains open for FSM_API's own validation.
+- Package run #466: verification **passed**; publish job **skipped**. Package publication remains disabled.
 - Azure integration tests use Azurite. No live production-account migration is claimed.
 
-The upstream compilation blocker has been reported to FSM_API in [issue #36](https://github.com/TrentBest/FSM_API/issues/36). The source-integration gate must pass against the current upstream development source before this PR can be considered fully validated.
-
-The Sith branch-policy gate also remains blocked because this repository currently has 18 branches rather than exactly `master` and `development`. No branch has been certified ready for deletion by this audit; individual branch content and PR history still require review, followed by the user's explicit authorization for a single deletion batch.
+The filesystem parent-directory metadata durability gap is tracked separately in [issue #34](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/issues/34). The Sith branch-policy gate remains blocked because the repository currently has 18 branches rather than exactly `master` and `development`. No branch has been certified ready for deletion by this audit; individual branch content and PR history still require review, followed by the user's explicit authorization for a single deletion batch.
 
 This PR remains draft and unmerged. No package was published. No merge, release, deployment, `master` change, or branch deletion was performed.
