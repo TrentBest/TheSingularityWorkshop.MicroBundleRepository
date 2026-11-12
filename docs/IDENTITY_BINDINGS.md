@@ -64,12 +64,14 @@ The Azure adapter persists the mapping in one JSON index blob and uses ETag cond
 
 **Important compatibility boundary:** this reservation protocol coordinates writers using the updated Azure adapter. Older processes that write numeric artifacts without creating reservation blobs cannot participate in that protocol; deployments must quiesce those writers or migrate them before relying on concurrent mixed-version writes. The Azure provider is not ready for acceptance until Azurite/live tests prove reservation races, ETag retries, and crash recovery.
 
-### Remaining acceptance work
+### Acceptance coverage and remaining work
 
-- Azure identity-ingestion concurrency and conditional-write failure tests against Azurite or a live test account.
-- Deterministic Azure reservation race tests, including identity-vs-numeric writers and mixed-version deployment constraints.
-- Failure-injection tests at artifact persistence and index-commit boundaries for both providers.
-- Corrupt/truncated index recovery tests for both providers.
-- Explicit tests proving resolution validates stored bytes against the indexed SHA-256, not merely that the artifact path exists.
+Implemented on the current feature branch:
+- Azure identity-ingestion concurrency and conditional-write coverage against Azurite.
+- A deterministic Azure reservation race test that synchronizes an identity allocator and numeric writer after both have observed the same candidate ID but before either conditional reservation.
+- Failure injection after artifact persistence and before identity-index commit for both Azure and filesystem adapters. The tests verify that the artifact remains unbound, the orphan reservation/path is not reused, and a reopened repository can commit a fresh binding.
+- Corrupt-index rejection and byte-integrity checks on resolution.
 
-The current PR-head Package and Build/Test workflows pass, including source-integration builds. CI success does not close the acceptance gaps above. This PR remains draft; it does not authorize merge, package publication, release, deployment, or branch deletion.
+The deterministic race and failure-injection tests were added after the last green head. Their exact-head Build/Test and Package verification are pending; do not infer success from the earlier green runs. Mixed-version Azure deployments still require older numeric writers to be quiesced or migrated because they do not participate in the reservation protocol.
+
+This PR remains draft until the new exact-head workflows pass and the remaining provider recovery/concurrency behavior has been reviewed. It does not authorize merge, package publication, release, deployment, or branch deletion.
