@@ -148,6 +148,36 @@ public sealed class FileSystemMicroBundleIdentityRepositoryTests
         }
     }
 
+    [Fact]
+    public async Task Numeric_put_cannot_alias_an_id_already_bound_to_an_ontology_revision()
+    {
+        var root = NewRoot();
+        try
+        {
+            var repository = new FileSystemMicroBundleIdentityRepository(root);
+            var binding = await repository.PutAsync(
+                "ontology/bound",
+                "1.0.0",
+                "original"u8.ToArray());
+
+            var replacementBytes = "different revision"u8.ToArray();
+            var replacementHash = Convert.ToHexString(SHA256.HashData(replacementBytes)).ToLowerInvariant();
+            var replacement = new MicroBundleArtifact(
+                new MicroBundleArtifactAddress(binding.Address.BundleId, "2.0.0", replacementHash),
+                replacementBytes);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => repository.PutAsync(replacement).AsTask());
+
+            Assert.Equal(binding, await repository.ResolveAsync(binding.Identity));
+            Assert.NotNull(await repository.GetAsync(binding.Address));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     private static string NewRoot()
     {
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
