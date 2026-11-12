@@ -51,3 +51,9 @@ The interface does not move identity allocation into Experiences, MicroBundleDom
 - No global numeric identity service.
 - No dependency resolution, composition, materialization, or runtime policy in this repository.
 - No package publication or cross-repository integration in this change.
+
+## Implementation status
+
+The current change includes the Core identity contract and a filesystem adapter implementation. The filesystem adapter uses an exclusive lock file to serialize writers, writes and flushes immutable artifact bytes before committing the atomically replaced identity index, checks candidate IDs against both indexed bindings and pre-existing numeric artifact directories, and verifies the artifact when resolving a binding. The existing numeric artifact path layout is retained.
+
+The Azure adapter is not yet implemented. The filesystem adapter's current-head CI has not yet been observed, and its crash-recovery/failure-injection behavior still requires additional tests. These are explicit remaining acceptance items; the interface and documentation do not imply that all providers already satisfy the contract.
