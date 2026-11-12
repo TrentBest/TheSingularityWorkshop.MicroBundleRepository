@@ -214,6 +214,29 @@ public sealed class FileSystemMicroBundleIdentityRepositoryTests
         }
     }
 
+    [Theory]
+    [InlineData("null")]
+    [InlineData("[null]")]
+    public async Task Null_identity_index_payloads_fail_closed(string json)
+    {
+        var root = NewRoot();
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(root, "identity-bindings.json"), json);
+            var repository = new FileSystemMicroBundleIdentityRepository(root);
+            var content = "must not replace a null index"u8.ToArray();
+            var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
+            var identity = new MicroBundleArtifactIdentity("ontology.null-index", "1.0.0", hash);
+
+            await Assert.ThrowsAsync<InvalidDataException>(async () => await repository.ResolveAsync(identity));
+            await Assert.ThrowsAsync<InvalidDataException>(async () => await repository.PutAsync(identity.Ontology, identity.Version, content));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     [Fact]
     public async Task Failed_index_commit_leaves_no_binding_and_reopen_can_recover()
     {
