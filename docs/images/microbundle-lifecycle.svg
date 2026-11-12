@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 660" role="img" aria-labelledby="title desc">
   <title id="title">MicroBundle lifecycle and ownership boundaries</title>
-  <desc id="desc">Solid blue boxes represent implemented contract areas; amber dashed boxes represent incomplete consumer flow or decisions. Domain defines what, repository defines where, FSM COS defines how, and hosts manifest the result.</desc>
+  <desc id="desc">Solid blue boxes represent source contracts; amber dashed boxes represent unproven production paths or open decisions. Candidate branch adds paginated artifact discovery and Experience REST routes; host integration and compatibility still need proof.</desc>
   <defs>
     <style>
       .bg{fill:#101820}.heading{font:700 27px system-ui,sans-serif;fill:#f4f7fb}.sub{font:15px system-ui,sans-serif;fill:#c8d2df}
@@ -14,7 +14,7 @@
   </defs>
   <rect class="bg" width="1200" height="660" rx="18"/>
   <text x="44" y="52" class="heading">MicroBundle domain · What → Where → How → Experience</text>
-  <text x="44" y="80" class="sub">Solid = source contract exists · Dashed amber = missing route, proof, or policy · See docs/DOMAIN_MAP.md for evidence links</text>
+  <text x="44" y="80" class="sub">Solid = source exists · Dashed amber = proof/policy gap · See docs/DOMAIN_MAP.md for evidence links</text>
 
   <rect x="42" y="125" width="235" height="126" rx="12" class="box"/>
   <text x="60" y="157" class="label">1 · Author</text>
@@ -33,15 +33,15 @@
   <rect x="588" y="125" width="240" height="126" rx="12" class="box"/>
   <text x="606" y="157" class="label">3 · Store / retrieve</text>
   <text x="606" y="184" class="small">Repository Core</text>
-  <text x="606" y="207" class="small">Local + Azure adapters</text>
-  <text x="606" y="228" class="small">MicroBundle REST routes</text>
+  <text x="606" y="207" class="small">Azure adapter in candidate</text>
+  <text x="606" y="228" class="small">Paginated inventory + exact GET/PUT</text>
 
   <path d="M828 188 H866" class="gapline" marker-end="url(#arrowgap)"/>
   <rect x="871" y="125" width="287" height="126" rx="12" class="gap"/>
   <text x="889" y="157" class="label">4 · Select Experience</text>
   <text x="889" y="184" class="small">Experience artifact + publication</text>
-  <text x="889" y="207" class="small">Contracts / Azure adapters exist</text>
-  <text x="889" y="228" class="small">REST discovery/retrieval missing</text>
+  <text x="889" y="207" class="small">REST routes added in candidate</text>
+  <text x="889" y="228" class="small">Host tests / live flow unproven</text>
 
   <path d="M1014 251 V299 H827" class="gapline" marker-end="url(#arrowgap)"/>
   <rect x="588" y="302" width="240" height="116" rx="12" class="gap"/>
