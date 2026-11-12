@@ -31,7 +31,7 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
     internal AzureMicroBundleIdentityRepository(BlobContainerClient container)
     {
         _container = container ?? throw new ArgumentNullException(nameof(container));
-        _artifacts = new AzureMicroBundleRepository(container);
+        _artifacts = new AzureMicroBundleRepository(container, initializeIdentityRepository: false);
         _index = container.GetBlobClient(IndexBlobName);
     }
 
