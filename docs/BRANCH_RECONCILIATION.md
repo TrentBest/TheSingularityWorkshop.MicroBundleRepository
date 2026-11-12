@@ -50,7 +50,7 @@ existing FSM_COS numeric MicroBundleReference / RuntimeManifestEntry
 | `fix/repository-build-errors` | 4 / 206 | [#19](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/19) merged to `development`. **Ready to delete:** all three changed source/test files have identical blob SHAs to current `development`; the only remaining difference is an older package workflow using outdated action versions. No unique implementation remains. |
 | `forge/experience-publication-catalog` | 8 / 248 | [#5](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/5) merged to `master`. **Ready to delete:** all six implementation/test files in its branch diff have identical blob SHAs to current `development`; its only remaining README difference is older onboarding material superseded by the current Workshop README. |
 | `forge/experience-repository-azure` | 17 / 249 | [#4](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/4) merged to `master`. **Ready to delete:** Core artifact/address/interface and Core tests match `development`; Azure implementation and tests are superseded by the current bounded-read implementation and additional size-limit tests; its unique Experience storage layout/boundary explanation is now in the current README. |
-| `implementation-azure-solidification` | 3 / 250 | [#2](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/2) merged to `master`. Preserve pending comparison of its live-Azure test, setup guide, and workflow against current development. |
+| `implementation-azure-solidification` | 3 / 250 | [#2](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/2) merged to `master`. **Ready to delete:** Azure setup guide and live-Azure test match `development` exactly; its only remaining difference is an obsolete package workflow with old actions and a publish condition lacking the current `&& false` safeguard. |
 | `implementation-core-azure-blob` | 32 / 251 | [#1](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/1) merged to `master`. Historical implementation baseline; preserve until root-template, Core/Azure source, and tests are checked against both canonical branches. |
 | `release-prep/core-1.0.0` | 59 / 231 | [#12](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/12) closed unmerged. Preserve Core theory, contract, federation, package-graph documentation, diagrams, and tests until each is reconciled or explicitly rejected. |
 | `release-prep/rest-1.0.0` | 28 / 231 | [#13](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/13) closed unmerged. Preserve REST release notes/assets and implementation/tests pending review. |
@@ -62,6 +62,7 @@ The following branches have passed a file-level preservation check and can be in
 1. `fix/repository-build-errors` — PR #19 merged; source/test files match `development`; remaining workflow is obsolete.
 2. `forge/experience-publication-catalog` — PR #5 merged; all implementation/test files match `development`; README is superseded.
 3. `forge/experience-repository-azure` — PR #4 merged; current bounded Azure implementation and tests supersede its older adapter; unique Experience storage documentation is preserved in `development`.
+4. `implementation-azure-solidification` — PR #2 merged; Azure setup guide and live test match `development`; only obsolete workflow changes remain.
 
 `feat/local-microbundle-roundtrip` is a **future candidate**, not yet ready: its work is carried by the still-open publisher PR #17.
 
@@ -74,4 +75,4 @@ The following branches have passed a file-level preservation check and can be in
 5. No merge, NuGet publication, release, deployment, or branch deletion is authorized by this inventory.
 6. The user performs branch deletion; present all confirmed-ready branches together for one batch.
 
-**Current result:** 3 branches are ready for the eventual deletion batch; 1 additional branch is a future candidate; all remaining unique work has an explicit preservation/reconciliation disposition.
+**Current result:** 4 branches are ready for the eventual deletion batch; 1 additional branch is a future candidate; all remaining unique work has an explicit preservation/reconciliation disposition.
