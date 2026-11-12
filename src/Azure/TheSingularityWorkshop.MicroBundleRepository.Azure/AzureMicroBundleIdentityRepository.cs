@@ -20,6 +20,7 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Azure;
 public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRepository
 {
     private const string IndexBlobName = "identity/identity-bindings.json";
+    private const string ReservationPrefix = "identity/reservations/";
     private readonly AzureMicroBundleRepository _artifacts;
     private readonly BlobContainerClient _container;
     private readonly BlobClient _index;
@@ -49,11 +50,7 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(artifact);
-        var records = await ReadIndexAsync(cancellationToken);
-        if (records.Any(record => record.BundleId == artifact.Address.BundleId))
-            throw new InvalidOperationException(
-                "A repository-local ID already bound to an ontology revision cannot be written through the unbound numeric API.");
-
+        await ReserveNumericIdAsync(artifact.Address.BundleId, cancellationToken);
         await _artifacts.PutArtifactAsync(artifact, cancellationToken);
     }
 
@@ -163,8 +160,8 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
             if (candidate == 0 || occupied.Contains(candidate))
                 continue;
 
-            // Also protect numeric IDs already used by artifacts written before
-            // identity indexing was introduced.
+            // Protect legacy numeric artifacts, then atomically reserve the ID in
+            // Blob Storage so new numeric writes and identity allocations cannot race.
             await foreach (var _ in _container.GetBlobsAsync(
                 traits: BlobTraits.None,
                 states: BlobStates.None,
@@ -175,9 +172,50 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
                 break;
             }
 
-            if (candidate != 0)
+            if (candidate == 0)
+                continue;
+
+            try
+            {
+                await ReserveIdAsync(candidate, "identity", cancellationToken);
                 return candidate;
+            }
+            catch (RequestFailedException ex) when (ex.Status is 409 or 412)
+            {
+                // A numeric or identity writer already reserved this ID.
+            }
         }
+    }
+
+    private async Task ReserveNumericIdAsync(ulong bundleId, CancellationToken cancellationToken)
+    {
+        var reservation = _container.GetBlobClient($"{ReservationPrefix}{bundleId}");
+        try
+        {
+            await ReserveIdAsync(bundleId, "numeric", cancellationToken);
+        }
+        catch (RequestFailedException ex) when (ex.Status is 409 or 412)
+        {
+            var existing = await reservation.DownloadContentAsync(cancellationToken);
+            var owner = existing.Value.Content.ToString();
+            if (!StringComparer.Ordinal.Equals(owner, "numeric"))
+                throw new InvalidOperationException(
+                    "A repository-local ID is reserved for an ontology revision and cannot be written through the unbound numeric API.");
+        }
+    }
+
+    private async Task ReserveIdAsync(ulong bundleId, string owner, CancellationToken cancellationToken)
+    {
+        var reservation = _container.GetBlobClient($"{ReservationPrefix}{bundleId}");
+        using var content = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(owner));
+        await reservation.UploadAsync(
+            content,
+            new BlobUploadOptions
+            {
+                HttpHeaders = new BlobHttpHeaders { ContentType = "text/plain" },
+                Conditions = new BlobRequestConditions { IfNoneMatch = ETag.All }
+            },
+            cancellationToken);
     }
 
     private async Task<IndexSnapshot> ReadIndexSnapshotAsync(CancellationToken cancellationToken)
