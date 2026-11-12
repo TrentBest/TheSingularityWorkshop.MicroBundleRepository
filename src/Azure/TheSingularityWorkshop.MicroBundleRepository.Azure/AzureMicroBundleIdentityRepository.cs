@@ -189,6 +189,13 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
 
     private async Task ReserveNumericIdAsync(ulong bundleId, CancellationToken cancellationToken)
     {
+        // Preserve protection for identity bindings created before reservation blobs
+        // were introduced, then close the check/write race with the conditional reservation.
+        var records = await ReadIndexAsync(cancellationToken);
+        if (records.Any(record => record.BundleId == bundleId))
+            throw new InvalidOperationException(
+                "A repository-local ID already bound to an ontology revision cannot be written through the unbound numeric API.");
+
         var reservation = _container.GetBlobClient($"{ReservationPrefix}{bundleId}");
         try
         {
