@@ -9,11 +9,12 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Azure;
 /// <summary>
 /// Stores MicroBundle artifacts as deterministic Azure block blobs.
 /// </summary>
-public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroBundleRepositoryObserver
+public sealed class AzureMicroBundleRepository : IMicroBundleIdentityRepository, IMicroBundleRepositoryObserver
 {
     private const string ArtifactPrefix = "artifacts";
 
     private readonly BlobContainerClient _container;
+    private readonly AzureMicroBundleIdentityRepository _identityRepository;
 
     public AzureMicroBundleRepository(AzureMicroBundleRepositoryOptions options)
         : this(CreateContainerClient(options))
@@ -21,8 +22,16 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroB
     }
 
     internal AzureMicroBundleRepository(BlobContainerClient container)
+        : this(container, initializeIdentityRepository: true)
+    {
+    }
+
+    internal AzureMicroBundleRepository(BlobContainerClient container, bool initializeIdentityRepository)
     {
         _container = container ?? throw new ArgumentNullException(nameof(container));
+        _identityRepository = initializeIdentityRepository
+            ? new AzureMicroBundleIdentityRepository(container)
+            : null!;
     }
 
     /// <summary>
@@ -77,7 +86,18 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroB
         return observations;
     }
 
-    public async ValueTask PutAsync(
+    public ValueTask PutAsync(
+        MicroBundleArtifact artifact,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(artifact);
+
+        // Route through the identity adapter so numeric writes acquire the same
+        // conditional per-ID reservation used by ontology identity allocation.
+        return _identityRepository.PutAsync(artifact, cancellationToken);
+    }
+
+    internal async ValueTask PutArtifactAsync(
         MicroBundleArtifact artifact,
         CancellationToken cancellationToken = default)
     {
@@ -97,12 +117,6 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroB
                     {
                         ContentType = "application/octet-stream"
                     },
-                    Metadata = new Dictionary<string, string>
-                    {
-                        ["bundle-id"] = artifact.Address.BundleId.ToString(),
-                        ["version"] = artifact.Address.Version,
-                        ["content-sha256"] = artifact.Address.ContentHash
-                    },
                     Conditions = new BlobRequestConditions
                     {
                         IfNoneMatch = ETag.All
@@ -110,12 +124,47 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroB
                 },
                 cancellationToken);
         }
-        catch (RequestFailedException ex) when (ex.Status == 412)
+        catch (RequestFailedException ex) when (ex.Status is 409 or 412)
         {
-            // Content-addressed writes are immutable. If the exact address already
-            // exists, the repository is already in the requested state.
+            // Azure services/emulators can report conditional-create conflicts as
+            // either 409 (BlobAlreadyExists) or 412 (condition not met).
+            // A pre-existing blob is only idempotent success when its bytes match.
+            // Never publish an identity binding over a corrupt or conflicting object.
+            MicroBundleArtifact? existing;
+            try
+            {
+                existing = await GetAsync(artifact.Address, cancellationToken);
+            }
+            catch (ArgumentException exception)
+            {
+                throw new InvalidDataException(
+                    "An existing artifact at the requested content address does not match its declared hash.",
+                    exception);
+            }
+
+            if (existing is null || !existing.Content.Span.SequenceEqual(artifact.Content.Span))
+                throw new InvalidDataException(
+                    "An existing artifact at the requested content address contains different bytes.");
         }
     }
+
+
+    public ValueTask<MicroBundleIdentityBinding> PutAsync(
+        string ontology,
+        string version,
+        ReadOnlyMemory<byte> content,
+        CancellationToken cancellationToken = default) =>
+        _identityRepository.PutAsync(ontology, version, content, cancellationToken);
+
+    public ValueTask<MicroBundleIdentityBinding?> ResolveAsync(
+        MicroBundleArtifactIdentity identity,
+        CancellationToken cancellationToken = default) =>
+        _identityRepository.ResolveAsync(identity, cancellationToken);
+
+    public ValueTask<MicroBundleIdentityBinding?> ResolveAsync(
+        ulong bundleId,
+        CancellationToken cancellationToken = default) =>
+        _identityRepository.ResolveAsync(bundleId, cancellationToken);
 
     internal static string GetBlobName(MicroBundleArtifactAddress address) =>
         $"{ArtifactPrefix}/{address.BundleId}/{address.Version}/{address.ContentHash}.bundle";
@@ -168,9 +217,12 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroB
         if (string.IsNullOrWhiteSpace(options.ContainerName))
             throw new ArgumentException("Container name is required.", nameof(options));
 
+        // Keep the client protocol version aligned with the Azurite integration-test
+        // baseline while retaining compatibility with current Azure Blob Storage.
         var service = new BlobServiceClient(
             options.StorageAccountUri,
-            new DefaultAzureCredential());
+            new DefaultAzureCredential(),
+            new BlobClientOptions(BlobClientOptions.ServiceVersion.V2025_11_05));
 
         return service.GetBlobContainerClient(options.ContainerName);
     }
