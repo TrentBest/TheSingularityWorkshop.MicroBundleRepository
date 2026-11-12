@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 
 namespace TheSingularityWorkshop.MicroBundleRepository.Local;
@@ -81,10 +80,4 @@ public sealed class FileSystemMicroBundleRepository : IMicroBundleIdentityReposi
                 .ToArray());
     }
 
-    private string GetPath(MicroBundleArtifactAddress address) =>
-        Path.Combine(
-            _root,
-            address.BundleId.ToString(),
-            address.Version,
-            address.ContentHash + ".bundle");
 }
