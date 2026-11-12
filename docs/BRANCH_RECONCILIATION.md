@@ -45,7 +45,7 @@ existing FSM_COS numeric MicroBundleReference / RuntimeManifestEntry
 | `feat/local-microbundle-roundtrip` | 33 / 231 | Ancestor of `feature/microbundle-publisher` (publisher is 14 commits ahead and 0 behind this branch). No separate unique commits remain outside the publisher branch. Candidate for the eventual deletion batch only after PR #17's work is integrated or explicitly superseded. |
 | `architecture/decouple-rest-from-cos` | 63 / 231 | [#14](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/14) merged to `master`. Preserve until its REST/FSM_COS adapter, materializer, tests, and workflow changes are reconciled into `development`; it is not contained by PR #21. |
 | `fix/repository-boundary` | 36 / 231 | [#11](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/11) closed unmerged. Preserve pending comparison with #14; it has boundary/materializer changes not proven to be fully superseded. |
-| `docs/readme-standard` | 2 / 210 | [#18](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/18) open. Visual Studio quick start, minimal dependency guidance, NuGet-version caution, and local Core project-reference example have been reconciled into the current README. The branch still contains older wording and an obsolete package workflow; retain until PR disposition is recorded, then it is a deletion candidate. |
+| `docs/readme-standard` | 2 / 210 | [#18](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/18) closed as superseded after its useful onboarding content was reconciled into the current README. **Ready to delete:** its remaining README wording is outdated and its package workflow is obsolete. |
 | `docs/visual-readme` | 36 / 231 | Preserve. Contains four distinct SVGs: Experience publication model, artifact identity, delivery boundary, and repository boundary, alongside implementation changes. Extract the visuals and review code separately. |
 | `fix/repository-build-errors` | 4 / 206 | [#19](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/19) merged to `development`. **Ready to delete:** all three changed source/test files have identical blob SHAs to current `development`; the only remaining difference is an older package workflow using outdated action versions. No unique implementation remains. |
 | `forge/experience-publication-catalog` | 8 / 248 | [#5](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/5) merged to `master`. **Ready to delete:** all six implementation/test files in its branch diff have identical blob SHAs to current `development`; its only remaining README difference is older onboarding material superseded by the current Workshop README. |
@@ -63,6 +63,7 @@ The following branches have passed a file-level preservation check and can be in
 2. `forge/experience-publication-catalog` — PR #5 merged; all implementation/test files match `development`; README is superseded.
 3. `forge/experience-repository-azure` — PR #4 merged; current bounded Azure implementation and tests supersede its older adapter; unique Experience storage documentation is preserved in `development`.
 4. `implementation-azure-solidification` — PR #2 merged; Azure setup guide and live test match `development`; only obsolete workflow changes remain.
+5. `docs/readme-standard` — PR #18 closed as superseded; all useful onboarding guidance is preserved in the current README; remaining branch files are outdated.
 
 `feat/local-microbundle-roundtrip` is a **future candidate**, not yet ready: its work is carried by the still-open publisher PR #17.
 
@@ -75,4 +76,4 @@ The following branches have passed a file-level preservation check and can be in
 5. No merge, NuGet publication, release, deployment, or branch deletion is authorized by this inventory.
 6. The user performs branch deletion; present all confirmed-ready branches together for one batch.
 
-**Current result:** 4 branches are ready for the eventual deletion batch; 1 additional branch is a future candidate; all remaining unique work has an explicit preservation/reconciliation disposition.
+**Current result:** 5 branches are ready for the eventual deletion batch; 1 additional branch is a future candidate; all remaining unique work has an explicit preservation/reconciliation disposition.
