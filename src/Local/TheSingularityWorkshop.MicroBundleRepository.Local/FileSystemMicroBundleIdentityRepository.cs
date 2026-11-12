@@ -232,12 +232,17 @@ public sealed class FileSystemMicroBundleIdentityRepository : IMicroBundleIdenti
             options: FileOptions.Asynchronous | FileOptions.SequentialScan);
 
         var records = await JsonSerializer.DeserializeAsync<List<BindingRecord>>(
-            stream, JsonOptions, cancellationToken) ?? [];
+            stream, JsonOptions, cancellationToken);
+        if (records is null)
+            throw new InvalidDataException("The persisted identity index must contain a JSON array, not null.");
 
         var identities = new HashSet<MicroBundleArtifactIdentity>();
         var ids = new HashSet<ulong>();
         foreach (var record in records)
         {
+            if (record is null)
+                throw new InvalidDataException("The persisted identity index contains a null binding record.");
+
             var identity = new MicroBundleArtifactIdentity(
                 record.Ontology, record.Version, record.ContentHash);
             if (record.BundleId == 0 ||
