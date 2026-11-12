@@ -24,14 +24,23 @@ public sealed class FileSystemMicroBundleIdentityRepository : IMicroBundleIdenti
     private readonly string _indexPath;
     private readonly string _lockPath;
     private readonly string _artifactRoot;
+    private readonly Func<CancellationToken, Task>? _beforeIndexCommit;
 
     public FileSystemMicroBundleIdentityRepository(string root)
+        : this(root, beforeIndexCommit: null)
+    {
+    }
+
+    internal FileSystemMicroBundleIdentityRepository(
+        string root,
+        Func<CancellationToken, Task>? beforeIndexCommit)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(root);
         _root = Path.GetFullPath(root);
         _artifactRoot = _root;
         _indexPath = Path.Combine(_root, IndexFileName);
         _lockPath = Path.Combine(_root, LockFileName);
+        _beforeIndexCommit = beforeIndexCommit;
         Directory.CreateDirectory(_artifactRoot);
     }
 
@@ -65,6 +74,9 @@ public sealed class FileSystemMicroBundleIdentityRepository : IMicroBundleIdenti
         var address = new MicroBundleArtifactAddress(bundleId, version, hash);
         var artifact = new MicroBundleArtifact(address, content);
         await WriteArtifactDurablyAsync(artifact, cancellationToken);
+
+        if (_beforeIndexCommit is not null)
+            await _beforeIndexCommit(cancellationToken);
 
         records.Add(new BindingRecord(ontology, version, hash, bundleId));
         await WriteIndexDurablyAsync(records, cancellationToken);
