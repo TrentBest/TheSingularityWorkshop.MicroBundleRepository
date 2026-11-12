@@ -62,7 +62,7 @@ The filesystem identity adapter persists the forward/reverse mapping in one atom
 
 The Azure adapter persists the mapping in one JSON index blob and uses ETag conditional writes (`If-Match` / `If-None-Match`) to serialize competing identity-index updates across processes and hosts. It also creates a per-ID reservation blob with `If-None-Match: *` before an identity ID is committed or a new numeric write proceeds. The conditional reservation is the shared allocation boundary: if a numeric writer wins, identity allocation rejects that ID; if identity allocation wins, the numeric API rejects it. Legacy numeric artifact prefixes are checked before identity reservations are created. Immutable artifact blobs are written before the mapping index. A failed conditional index update can leave an unreferenced artifact and a safely unavailable reservation; the retry re-reads the winning index before selecting a binding.
 
-**Important compatibility boundary:** this reservation protocol coordinates writers using the updated Azure adapter. Older processes that write numeric artifacts without creating reservation blobs cannot participate in that protocol; deployments must quiesce those writers or migrate them before relying on concurrent mixed-version writes. The Azure provider is not ready for acceptance until Azurite/live tests prove reservation races, ETag retries, and crash recovery.
+**Important compatibility boundary:** this reservation protocol coordinates writers using the updated Azure adapter. Older processes that write numeric artifacts without creating reservation blobs cannot participate in that protocol; deployments must quiesce those writers or migrate them before relying on concurrent mixed-version writes. The current Azurite acceptance suite covers reservation races, ETag retries, and crash-boundary recovery. A live production-account migration has not been performed.
 
 ### Acceptance coverage and remaining work
 
@@ -74,12 +74,12 @@ Implemented on the current feature branch:
 
 ### Exact-head validation
 
-Head `78bea64ca8243dabc62f604651a1055aca1f6556` passes:
+Head `0b8c0efa44d5db99cc1cf29326da00bd0e0c85ff` passes:
 - Build and Test, including source-integration: **passed**.
 - Package verification: **passed**; publish job skipped.
 - Test suites: Core 17/17, Local 21/21, Azure 23/23, REST 15/15, REST host 21/21 (**97/97 total**).
 
-The deterministic reservation race, conditional-index ETag contention/retry, Azure/filesystem artifact-before-index failure injection, orphan recovery, and corrupt-index fail-closed tests all pass. The tests exercise Azurite for Azure storage; they do not claim a live production-account migration has been performed.
+The deterministic reservation race, conditional-index ETag contention/retry, Azure/filesystem artifact-before-index failure injection, orphan recovery, and corrupt-index fail-closed tests all pass. Build and Test run #467 passed both the regular and source-integrated test jobs; Package run #455 passed verification and skipped publication. The tests exercise Azurite for Azure storage; they do not claim a live production-account migration has been performed.
 
 Mixed-version Azure deployments still require older numeric writers to be quiesced or migrated because they do not participate in the reservation protocol. The Sith branch-policy gate also remains blocked until the repository returns to exactly `master` and `development`; five branches have been certified ready for the user's eventual deletion batch, with the remaining unique work inventoried separately.
 
