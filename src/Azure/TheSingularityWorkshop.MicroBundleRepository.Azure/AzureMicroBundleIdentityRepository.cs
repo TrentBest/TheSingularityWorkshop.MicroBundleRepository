@@ -53,7 +53,7 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
             throw new InvalidOperationException(
                 "A repository-local ID already bound to an ontology revision cannot be written through the unbound numeric API.");
 
-        await _artifacts.PutAsync(artifact, cancellationToken);
+        await _artifacts.PutArtifactAsync(artifact, cancellationToken);
     }
 
     public async ValueTask<MicroBundleIdentityBinding> PutAsync(
@@ -137,6 +137,14 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
         if (await _artifacts.GetAsync(binding.Address, cancellationToken) is null)
             throw new InvalidDataException("The Azure identity index points to a missing artifact.");
         return binding;
+    }
+
+    internal async ValueTask<bool> IsBundleIdBoundAsync(
+        ulong bundleId,
+        CancellationToken cancellationToken = default)
+    {
+        var snapshot = await ReadIndexSnapshotAsync(cancellationToken);
+        return snapshot.Records.Any(record => record.BundleId == bundleId);
     }
 
     private async Task<ulong> AllocateUniqueIdAsync(
