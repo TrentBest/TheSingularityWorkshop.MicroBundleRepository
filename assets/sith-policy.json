@@ -13,17 +13,15 @@
     "feature/ontology-address-mapping",
     "feature/revision-identity-bindings",
     "fix/repository-boundary",
-    "forge/experience-repository-azure",
-    "implementation-azure-solidification",
     "implementation-core-azure-blob",
     "master",
     "release-prep/core-1.0.0",
     "release-prep/rest-1.0.0",
     "work/microbundle-artifact-discovery"
   ],
-  "branch_count": 14,
+  "branch_count": 12,
   "status": "NON-COMPLIANT",
-  "evaluated_at": "2026-11-12T21:32:47Z",
-  "workflow_run": "https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/43311278616",
-  "triggering_commit": "14c2288b0eb43b0c34b23b2bd9f65587a81c74f1"
+  "evaluated_at": "2026-11-12T21:33:04Z",
+  "workflow_run": "https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/43311327873",
+  "triggering_commit": "9a2b70b88c7c32fa132d30284578e01f66a53c2e"
 }
