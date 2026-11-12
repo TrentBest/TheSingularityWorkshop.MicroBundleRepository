@@ -10,31 +10,22 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Rest.Tests;
 public sealed class RestMicroBundleRepositoryTests
 {
     [Fact]
-    public async Task GetAsync_materializes_verified_artifact()
+    public async Task GetAsync_materializes_verified_artifact_using_ontology_route()
     {
         var content = new byte[] { 1, 2, 3, 5, 8 };
         var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
-        var address = new MicroBundleArtifactAddress(42, "1.0.0", hash);
-        var dto = new MicroBundleArtifactDto(42, "1.0.0", hash, Convert.ToBase64String(content));
+        const string ontology = "TheSingularityWorkshop.Renderer";
+        var address = new MicroBundleArtifactAddress(ontology, "1.0.0", hash);
+        var dto = new MicroBundleArtifactDto(ontology, "1.0.0", hash, Convert.ToBase64String(content));
 
         var transport = new StubTransport(request =>
         {
             Assert.Equal("GET", request.Method);
-            Assert.Equal(
-                $"https://repository.test/api/microbundles/42/1.0.0/{hash}",
-                request.Uri.ToString());
-
-            return new RestResponse(
-                200,
-                "OK",
-                new Dictionary<string, string>(),
-                JsonSerializer.Serialize(dto));
+            Assert.Equal($"https://repository.test/api/microbundles/{ontology}/1.0.0/{hash}", request.Uri.ToString());
+            return new RestResponse(200, "OK", new Dictionary<string, string>(), JsonSerializer.Serialize(dto));
         });
 
-        var repository = new RestMicroBundleRepository(
-            new Uri("https://repository.test"),
-            transport);
-
+        var repository = new RestMicroBundleRepository(new Uri("https://repository.test"), transport);
         var artifact = await repository.GetAsync(address);
 
         Assert.NotNull(artifact);
@@ -47,44 +38,36 @@ public sealed class RestMicroBundleRepositoryTests
     {
         var transport = new StubTransport(_ =>
             new RestResponse(404, "Not Found", new Dictionary<string, string>(), string.Empty));
-
-        var repository = new RestMicroBundleRepository(
-            new Uri("https://repository.test/"),
-            transport);
-
+        var repository = new RestMicroBundleRepository(new Uri("https://repository.test/"), transport);
         var content = new byte[] { 1 };
         var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
 
-        var result = await repository.GetAsync(new MicroBundleArtifactAddress(1, "1.0.0", hash));
-
-        Assert.Null(result);
+        Assert.Null(await repository.GetAsync(
+            new MicroBundleArtifactAddress("TheSingularityWorkshop.Renderer", "1.0.0", hash)));
     }
 
     [Fact]
-    public async Task PutAsync_sends_content_addressed_artifact()
+    public async Task PutAsync_sends_portable_ontology_address()
     {
         var content = new byte[] { 13, 21, 34 };
         var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
-        var address = new MicroBundleArtifactAddress(9, "2.0.0", hash);
+        const string ontology = "TheSingularityWorkshop.Renderer";
+        var address = new MicroBundleArtifactAddress(ontology, "2.0.0", hash);
         var artifact = new MicroBundleArtifact(address, content);
 
         var transport = new StubTransport(request =>
         {
             Assert.Equal("PUT", request.Method);
-            Assert.Equal(
-                $"https://repository.test/api/microbundles/9/2.0.0/{hash}",
-                request.Uri.ToString());
+            Assert.Equal($"https://repository.test/api/microbundles/{ontology}/2.0.0/{hash}", request.Uri.ToString());
             Assert.NotNull(request.Headers);
             Assert.Equal("test-write-key", request.Headers!["X-Repository-Write-Key"]);
+            Assert.Contains(ontology, request.Body, StringComparison.Ordinal);
             Assert.Contains(Convert.ToBase64String(content), request.Body, StringComparison.Ordinal);
             return new RestResponse(204, "No Content", new Dictionary<string, string>(), string.Empty);
         });
 
         var repository = new RestMicroBundleRepository(
-            new Uri("https://repository.test"),
-            transport,
-            writeApiKey: "test-write-key");
-
+            new Uri("https://repository.test"), transport, writeApiKey: "test-write-key");
         await repository.PutAsync(artifact);
     }
 
@@ -93,25 +76,16 @@ public sealed class RestMicroBundleRepositoryTests
     {
         var content = new byte[] { 1, 2 };
         var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
-        var address = new MicroBundleArtifactAddress(4, "1.0.0", hash);
-        var dto = new MicroBundleArtifactDto(5, "1.0.0", hash, Convert.ToBase64String(content));
-
+        var address = new MicroBundleArtifactAddress("TheSingularityWorkshop.Renderer", "1.0.0", hash);
+        var dto = new MicroBundleArtifactDto("TheSingularityWorkshop.Visualize", "1.0.0", hash, Convert.ToBase64String(content));
         var transport = new StubTransport(_ =>
-            new RestResponse(
-                200,
-                "OK",
-                new Dictionary<string, string>(),
-                JsonSerializer.Serialize(dto)));
-
-        var repository = new RestMicroBundleRepository(
-            new Uri("https://repository.test"),
-            transport);
+            new RestResponse(200, "OK", new Dictionary<string, string>(), JsonSerializer.Serialize(dto)));
+        var repository = new RestMicroBundleRepository(new Uri("https://repository.test"), transport);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => repository.GetAsync(address).AsTask());
     }
 
-    private sealed class StubTransport(
-        Func<RestRequest, RestResponse> responder) : IRestTransport
+    private sealed class StubTransport(Func<RestRequest, RestResponse> responder) : IRestTransport
     {
         public Task<RestResponse> SendAsync(
             RestRequest request,

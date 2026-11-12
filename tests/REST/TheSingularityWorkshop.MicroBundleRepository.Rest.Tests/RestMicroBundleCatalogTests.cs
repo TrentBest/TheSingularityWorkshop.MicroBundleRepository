@@ -104,7 +104,7 @@ public sealed class RestMicroBundleCatalogTests
         var error = await Assert.ThrowsAsync<InvalidOperationException>(
             () => catalog.PreloadClosureAsync(new[] { 1UL }));
 
-        Assert.Contains("registered for MicroBundle 1 identifies MicroBundle 2", error.Message);
+        Assert.Contains("produced runtime MicroBundle 2, expected 1", error.Message);
         Assert.False(catalog.TryResolve(1, out _));
         Assert.False(catalog.TryResolve(2, out _));
     }
@@ -148,7 +148,7 @@ public sealed class RestMicroBundleCatalogTests
         var dependencyContent = new byte[] { 42 };
         var rootAddress = Address(1, rootContent);
         var dependencyAddress = new MicroBundleArtifactAddress(
-            2,
+            "TheSingularityWorkshop.Bundle2",
             "2.0.0",
             Convert.ToHexString(SHA256.HashData(dependencyContent)).ToLowerInvariant());
         var repository = new RestMicroBundleRepository(
@@ -170,7 +170,7 @@ public sealed class RestMicroBundleCatalogTests
         var error = await Assert.ThrowsAsync<InvalidOperationException>(
             () => catalog.PreloadClosureAsync(new[] { 1UL }));
 
-        Assert.Contains("requires exact version '1.0.0'", error.Message);
+        Assert.Contains("dependency closure requires ontology", error.Message);
         Assert.False(catalog.TryResolve(1, out _));
         Assert.False(catalog.TryResolve(2, out _));
     }
@@ -178,7 +178,7 @@ public sealed class RestMicroBundleCatalogTests
     private sealed class UnpinnedMaterializer : IMicroBundleArtifactMaterializer
     {
         public IMicroBundle Materialize(MicroBundleArtifact artifact) =>
-            new UnpinnedTestBundle(artifact.Address.BundleId);
+            new UnpinnedTestBundle(ulong.Parse(artifact.Address.Ontology[("TheSingularityWorkshop.Bundle".Length)..], System.Globalization.CultureInfo.InvariantCulture));
     }
 
     private sealed class UnpinnedTestBundle(ulong id) : IMicroBundle
@@ -206,12 +206,12 @@ public sealed class RestMicroBundleCatalogTests
     }
 
     private static MicroBundleArtifactAddress Address(ulong id, byte[] content) =>
-        new(id, "1.0.0", Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant());
+        new($"TheSingularityWorkshop.Bundle{id}", "1.0.0", Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant());
 
     private sealed class Materializer : IMicroBundleArtifactMaterializer
     {
         public IMicroBundle Materialize(MicroBundleArtifact artifact) =>
-            artifact.Address.BundleId == 1
+            artifact.Address.Ontology.EndsWith(".Bundle1", StringComparison.Ordinal)
                 ? new TestBundle(1, 2)
                 : new TestBundle(2);
     }
@@ -237,7 +237,7 @@ public sealed class RestMicroBundleCatalogTests
         {
             var parts = request.Uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
             var address = new MicroBundleArtifactAddress(
-                ulong.Parse(parts[^3]),
+                parts[^3],
                 parts[^2],
                 parts[^1]);
 
@@ -250,7 +250,7 @@ public sealed class RestMicroBundleCatalogTests
                         string.Empty));
 
             var dto = new MicroBundleArtifactDto(
-                artifact.Address.BundleId,
+                artifact.Address.Ontology,
                 artifact.Address.Version,
                 artifact.Address.ContentHash,
                 Convert.ToBase64String(artifact.Content.ToArray()));

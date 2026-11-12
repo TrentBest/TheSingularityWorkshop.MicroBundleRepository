@@ -7,6 +7,8 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Local.Tests;
 
 public sealed class CachingMicroBundleRepositoryTests
 {
+    private const string Ontology = "TheSingularityWorkshop.Renderer";
+
     [Fact]
     public async Task Cold_read_fetches_origin_and_persists_for_next_instance()
     {
@@ -14,27 +16,19 @@ public sealed class CachingMicroBundleRepositoryTests
         try
         {
             var origin = new InMemoryRepository();
-            var artifact = CreateArtifact(42, "1.0.0", "cold-read"u8.ToArray());
+            var artifact = CreateArtifact("1.0.0", "cold-read"u8.ToArray());
             origin.Artifacts[artifact.Address] = artifact;
 
-            var firstRun = new CachingMicroBundleRepository(root, origin);
-            var first = await firstRun.GetAsync(artifact.Address);
-
+            var first = await new CachingMicroBundleRepository(root, origin).GetAsync(artifact.Address);
             Assert.NotNull(first);
             Assert.Equal(1, origin.GetCount);
 
-            // A new adapter instance models a later application process.
-            var secondRun = new CachingMicroBundleRepository(root, origin);
-            var second = await secondRun.GetAsync(artifact.Address);
-
+            var second = await new CachingMicroBundleRepository(root, origin).GetAsync(artifact.Address);
             Assert.NotNull(second);
             Assert.Equal(1, origin.GetCount);
             Assert.Equal(artifact.Content.ToArray(), second.Content.ToArray());
         }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
-        }
+        finally { Directory.Delete(root, recursive: true); }
     }
 
     [Fact]
@@ -44,17 +38,14 @@ public sealed class CachingMicroBundleRepositoryTests
         try
         {
             var origin = new InMemoryRepository();
-            var artifact = CreateArtifact(42, "1.0.0", "missing"u8.ToArray());
+            var artifact = CreateArtifact("1.0.0", "missing"u8.ToArray());
             var cache = new CachingMicroBundleRepository(root, origin);
 
             Assert.Null(await cache.GetAsync(artifact.Address));
             Assert.Equal(1, origin.GetCount);
-            Assert.False(File.Exists(ArtifactPath(root, artifact.Address)));
+            Assert.Empty(Directory.EnumerateFiles(root, "*.bundle", SearchOption.AllDirectories));
         }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
-        }
+        finally { Directory.Delete(root, recursive: true); }
     }
 
     [Fact]
@@ -64,29 +55,23 @@ public sealed class CachingMicroBundleRepositoryTests
         try
         {
             var origin = new InMemoryRepository();
-            var artifact = CreateArtifact(42, "1.0.0", "trusted-origin"u8.ToArray());
+            var artifact = CreateArtifact("1.0.0", "trusted-origin"u8.ToArray());
             origin.Artifacts[artifact.Address] = artifact;
-
-            var path = ArtifactPath(root, artifact.Address);
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            var local = new FileSystemMicroBundleRepository(root);
+            await local.PutAsync(artifact);
+            var path = Directory.EnumerateFiles(root, "*.bundle", SearchOption.AllDirectories).Single();
             await File.WriteAllBytesAsync(path, "tampered"u8.ToArray());
 
-            var cache = new CachingMicroBundleRepository(root, origin);
-            var retrieved = await cache.GetAsync(artifact.Address);
-
+            var retrieved = await new CachingMicroBundleRepository(root, origin).GetAsync(artifact.Address);
             Assert.NotNull(retrieved);
             Assert.Equal(artifact.Content.ToArray(), retrieved.Content.ToArray());
             Assert.Equal(1, origin.GetCount);
 
-            var subsequent = await new CachingMicroBundleRepository(root, origin)
-                .GetAsync(artifact.Address);
+            var subsequent = await new CachingMicroBundleRepository(root, origin).GetAsync(artifact.Address);
             Assert.NotNull(subsequent);
             Assert.Equal(1, origin.GetCount);
         }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
-        }
+        finally { Directory.Delete(root, recursive: true); }
     }
 
     [Fact]
@@ -96,8 +81,8 @@ public sealed class CachingMicroBundleRepositoryTests
         try
         {
             var origin = new InMemoryRepository();
-            var v1 = CreateArtifact(42, "1.0.0", "version-one"u8.ToArray());
-            var v2 = CreateArtifact(42, "2.0.0", "version-two"u8.ToArray());
+            var v1 = CreateArtifact("1.0.0", "version-one"u8.ToArray());
+            var v2 = CreateArtifact("2.0.0", "version-two"u8.ToArray());
             origin.Artifacts[v1.Address] = v1;
             origin.Artifacts[v2.Address] = v2;
 
@@ -105,14 +90,10 @@ public sealed class CachingMicroBundleRepositoryTests
             await cache.GetAsync(v1.Address);
             await cache.GetAsync(v2.Address);
 
-            Assert.True(File.Exists(ArtifactPath(root, v1.Address)));
-            Assert.True(File.Exists(ArtifactPath(root, v2.Address)));
+            Assert.Equal(2, Directory.EnumerateFiles(root, "*.bundle", SearchOption.AllDirectories).Count());
             Assert.Equal(2, origin.GetCount);
         }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
-        }
+        finally { Directory.Delete(root, recursive: true); }
     }
 
     [Fact]
@@ -122,19 +103,16 @@ public sealed class CachingMicroBundleRepositoryTests
         try
         {
             var origin = new InMemoryRepository();
-            var artifact = CreateArtifact(42, "1.0.0", "cancelled"u8.ToArray());
+            var artifact = CreateArtifact("1.0.0", "cancelled"u8.ToArray());
             using var cancellation = new CancellationTokenSource();
             cancellation.Cancel();
 
-            var cache = new CachingMicroBundleRepository(root, origin);
             await Assert.ThrowsAnyAsync<OperationCanceledException>(
-                () => cache.GetAsync(artifact.Address, cancellation.Token).AsTask());
+                () => new CachingMicroBundleRepository(root, origin)
+                    .GetAsync(artifact.Address, cancellation.Token).AsTask());
             Assert.Equal(0, origin.GetCount);
         }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
-        }
+        finally { Directory.Delete(root, recursive: true); }
     }
 
     [Fact]
@@ -144,19 +122,15 @@ public sealed class CachingMicroBundleRepositoryTests
         try
         {
             var origin = new InMemoryRepository { ThrowOnPut = true };
-            var artifact = CreateArtifact(42, "1.0.0", "not-published"u8.ToArray());
-            var cache = new CachingMicroBundleRepository(root, origin);
+            var artifact = CreateArtifact("1.0.0", "not-published"u8.ToArray());
 
             await Assert.ThrowsAsync<IOException>(
-                () => cache.PutAsync(artifact).AsTask());
+                () => new CachingMicroBundleRepository(root, origin).PutAsync(artifact).AsTask());
 
-            Assert.False(File.Exists(ArtifactPath(root, artifact.Address)));
+            Assert.Empty(Directory.EnumerateFiles(root, "*.bundle", SearchOption.AllDirectories));
             Assert.Equal(0, origin.GetCount);
         }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
-        }
+        finally { Directory.Delete(root, recursive: true); }
     }
 
     private static string NewRoot()
@@ -166,13 +140,10 @@ public sealed class CachingMicroBundleRepositoryTests
         return path;
     }
 
-    private static string ArtifactPath(string root, MicroBundleArtifactAddress address) =>
-        Path.Combine(root, address.BundleId.ToString(), address.Version, address.ContentHash + ".bundle");
-
-    private static MicroBundleArtifact CreateArtifact(ulong bundleId, string version, byte[] content)
+    private static MicroBundleArtifact CreateArtifact(string version, byte[] content)
     {
         var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
-        return new MicroBundleArtifact(new MicroBundleArtifactAddress(bundleId, version, hash), content);
+        return new MicroBundleArtifact(new MicroBundleArtifactAddress(Ontology, version, hash), content);
     }
 
     private sealed class InMemoryRepository : IMicroBundleRepository
@@ -198,7 +169,6 @@ public sealed class CachingMicroBundleRepositoryTests
             cancellationToken.ThrowIfCancellationRequested();
             if (ThrowOnPut)
                 throw new IOException("Simulated origin write failure.");
-
             Artifacts[artifact.Address] = artifact;
             return ValueTask.CompletedTask;
         }

@@ -109,7 +109,7 @@ public sealed class RestMicroBundleCatalogCancellationTests
     }
 
     private static MicroBundleArtifactAddress Address(ulong id, byte[] bytes) =>
-        new(id, "1.0.0", Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant());
+        new($"TheSingularityWorkshop.Bundle{id}", "1.0.0", Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant());
 
     private sealed class Materializer(
         TaskCompletionSource? materialized = null,
@@ -121,7 +121,7 @@ public sealed class RestMicroBundleCatalogCancellationTests
             materialized?.TrySetResult();
             allowReturn?.Task.GetAwaiter().GetResult();
             materializerReturningThread?.TrySetResult(Thread.CurrentThread);
-            return new TestBundle(artifact.Address.BundleId, artifact.Address.Version);
+            return new TestBundle(ulong.Parse(artifact.Address.Ontology[("TheSingularityWorkshop.Bundle".Length)..], System.Globalization.CultureInfo.InvariantCulture), artifact.Address.Version);
         }
     }
 
@@ -139,7 +139,7 @@ public sealed class RestMicroBundleCatalogCancellationTests
     private static RestResponse CreateResponse(MicroBundleArtifactAddress address, byte[] bytes)
     {
         var dto = new MicroBundleArtifactDto(
-            address.BundleId,
+            address.Ontology,
             address.Version,
             address.ContentHash,
             Convert.ToBase64String(bytes));

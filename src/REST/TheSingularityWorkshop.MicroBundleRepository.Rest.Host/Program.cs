@@ -183,7 +183,7 @@ app.MapGet(
 
         return Results.Ok(observations.Select(observation =>
             new MicroBundleArtifactObservationDto(
-                observation.Address.BundleId,
+                observation.Address.Ontology,
                 observation.Address.Version,
                 observation.Address.ContentHash,
                 observation.ContentLength,
@@ -191,9 +191,9 @@ app.MapGet(
     });
 
 app.MapGet(
-    "/api/microbundles/{bundleId}/{version}/{contentHash}",
+    "/api/microbundles/{ontology}/{version}/{contentHash}",
     async (
-        ulong bundleId,
+        string ontology,
         string version,
         string contentHash,
         IMicroBundleRepository repository,
@@ -202,7 +202,7 @@ app.MapGet(
         MicroBundleArtifactAddress address;
         try
         {
-            address = new MicroBundleArtifactAddress(bundleId, version, contentHash);
+            address = new MicroBundleArtifactAddress(ontology, version, contentHash);
         }
         catch (ArgumentException ex)
         {
@@ -214,23 +214,23 @@ app.MapGet(
             return Results.NotFound();
 
         return Results.Ok(new MicroBundleArtifactDto(
-            artifact.Address.BundleId,
+            artifact.Address.Ontology,
             artifact.Address.Version,
             artifact.Address.ContentHash,
             Convert.ToBase64String(artifact.Content.ToArray())));
     });
 
 app.MapPut(
-    "/api/microbundles/{bundleId}/{version}/{contentHash}",
+    "/api/microbundles/{ontology}/{version}/{contentHash}",
     async (
-        ulong bundleId,
+        string ontology,
         string version,
         string contentHash,
         MicroBundleArtifactDto dto,
         IMicroBundleRepository repository,
         CancellationToken cancellationToken) =>
     {
-        if (dto.BundleId != bundleId ||
+        if (!string.Equals(dto.Ontology, ontology, StringComparison.Ordinal) ||
             !string.Equals(dto.Version, version, StringComparison.Ordinal) ||
             !string.Equals(dto.ContentHash, contentHash, StringComparison.OrdinalIgnoreCase))
         {
@@ -239,7 +239,7 @@ app.MapPut(
 
         try
         {
-            var address = new MicroBundleArtifactAddress(bundleId, version, contentHash);
+            var address = new MicroBundleArtifactAddress(ontology, version, contentHash);
             var content = Convert.FromBase64String(dto.ContentBase64);
             await repository.PutAsync(new MicroBundleArtifact(address, content), cancellationToken);
             return Results.NoContent();

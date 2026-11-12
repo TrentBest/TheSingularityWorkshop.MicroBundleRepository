@@ -7,7 +7,7 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Core;
 public static class MicroBundleArtifactResolver
 {
     /// <summary>
-    /// Resolves every requested (bundle ID, exact version) to exactly one immutable address.
+    /// Resolves every requested (ontology, exact version) to exactly one immutable address.
     /// Missing and ambiguous requests fail closed. Duplicate observations of the same address
     /// are harmless; distinct content hashes for the same ID and version are ambiguous.
     /// </summary>
@@ -26,7 +26,7 @@ public static class MicroBundleArtifactResolver
         {
             var matches = inventory
                 .Where(observation =>
-                    observation.Address.BundleId == request.BundleId &&
+                    string.Equals(observation.Address.Ontology, request.Ontology, StringComparison.Ordinal) &&
                     string.Equals(observation.Address.Version, request.Version, StringComparison.Ordinal))
                 .Select(observation => observation.Address)
                 .Distinct()
@@ -34,11 +34,11 @@ public static class MicroBundleArtifactResolver
 
             if (matches.Length == 0)
                 throw new InvalidOperationException(
-                    $"No immutable artifact exists for MicroBundle {request.BundleId} version '{request.Version}'.");
+                    $"No immutable artifact exists for MicroBundle ontology '{request.Ontology}' version '{request.Version}'.");
 
             if (matches.Length > 1)
                 throw new InvalidOperationException(
-                    $"MicroBundle {request.BundleId} version '{request.Version}' is ambiguous: " +
+                    $"MicroBundle ontology '{request.Ontology}' version '{request.Version}' is ambiguous: " +
                     $"{matches.Length} distinct content hashes are present.");
 
             resolved.Add(request, matches[0]);

@@ -93,27 +93,29 @@ The architectural invariant is simple:
 
 ## Artifact identity
 
-An artifact is addressed by three values:
+An artifact has a portable address composed of three values:
 
 ~~~text
-MicroBundle ID
-      +
+canonical ontology string
+          +
 explicit version
-      +
+          +
 SHA-256 content identity
 ~~~
+
+A repository may assign an opaque numeric handle to the ontology string for its own storage layout. That mapping is persisted inside the repository and is not part of the portable address, REST contract, manifest, or CLI. Two repositories may assign different local handles to the same ontology.
 
 The physical Azure location is deterministic:
 
 ~~~text
 microbundles/
 └── artifacts/
-    └── {bundleId}/
+    └── {repositoryLocalHandle}/
         └── {version}/
             └── {sha256}.bundle
 ~~~
 
-No database lookup is required to locate a complete artifact address.
+The repository resolves the ontology string through its persisted ontology-to-local-handle index (`ontology-index/{sha256(ontology)}.json` in Azure and `.ontology-index/{sha256(ontology)}.json` locally). The resulting numeric handle is private to that repository; clients address the artifact by ontology, version, and SHA-256.
 
 The repository verifies the SHA-256 before materializing the immutable artifact object. Storage metadata repeats the identity for inspection, but the bytes remain authoritative.
 
@@ -188,7 +190,7 @@ public interface IMicroBundleRepository
 Storage is deterministic:
 
 ~~~text
-{root}/{bundleId}/{version}/{sha256}.bundle
+{root}/{repositoryLocalHandle}/{version}/{sha256}.bundle
 ~~~
 
 The adapter verifies bytes against the supplied SHA-256 address when retrieving an artifact. The local adapter is for development and testing; it is not itself a network server. The REST host can select a local provider separately from Azure storage.
@@ -237,13 +239,13 @@ dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli --
 Publish a local artifact:
 
 ~~~powershell
-dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- put 2110 1.0.0 .undle.bin
+dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- put TheSingularityWorkshop.Renderer 1.0.0 ./bundle.bin
 ~~~
 
 Retrieve a known artifact:
 
 ~~~powershell
-dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- get 2110 1.0.0 <sha256> .undle.bin
+dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- get TheSingularityWorkshop.Renderer 1.0.0 <sha256> ./bundle.bin
 ~~~
 
 The CLI computes the SHA-256 from the supplied bytes and the existing Core artifact contract verifies the identity before the request is sent. That gives us a simple human-operated path for publishing and inspecting the small MicroBundles that will eventually compose the zeroth ontology:

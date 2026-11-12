@@ -35,7 +35,6 @@ public sealed class RestMicroBundleRepository : IMicroBundleRepository
 
         if (response.StatusCode == (int)HttpStatusCode.NotFound)
             return null;
-
         EnsureSuccess(response);
 
         var dto = JsonSerializer.Deserialize<MicroBundleArtifactDto>(response.Body, JsonOptions)
@@ -51,9 +50,8 @@ public sealed class RestMicroBundleRepository : IMicroBundleRepository
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(artifact);
-
         var dto = new MicroBundleArtifactDto(
-            artifact.Address.BundleId,
+            artifact.Address.Ontology,
             artifact.Address.Version,
             artifact.Address.ContentHash,
             Convert.ToBase64String(artifact.Content.ToArray()));
@@ -68,14 +66,13 @@ public sealed class RestMicroBundleRepository : IMicroBundleRepository
                 ContentType: "application/json",
                 Body: JsonSerializer.Serialize(dto, JsonOptions)),
             cancellationToken);
-
         EnsureSuccess(response);
     }
 
     private Uri CreateArtifactUri(MicroBundleArtifactAddress address) =>
         new(
             _baseUri,
-            $"api/microbundles/{address.BundleId}/{Uri.EscapeDataString(address.Version)}/{address.ContentHash}");
+            $"api/microbundles/{Uri.EscapeDataString(address.Ontology)}/{Uri.EscapeDataString(address.Version)}/{address.ContentHash}");
 
     private static Uri EnsureTrailingSlash(Uri uri) =>
         uri.AbsoluteUri.EndsWith("/", StringComparison.Ordinal)
@@ -89,15 +86,11 @@ public sealed class RestMicroBundleRepository : IMicroBundleRepository
                 $"MicroBundle Repository REST request failed with HTTP {response.StatusCode}: {response.Body}");
     }
 
-    private static void ValidateIdentity(
-        MicroBundleArtifactDto dto,
-        MicroBundleArtifactAddress expected)
+    private static void ValidateIdentity(MicroBundleArtifactDto dto, MicroBundleArtifactAddress expected)
     {
-        if (dto.BundleId != expected.BundleId ||
+        if (!string.Equals(dto.Ontology, expected.Ontology, StringComparison.Ordinal) ||
             !string.Equals(dto.Version, expected.Version, StringComparison.Ordinal) ||
             !string.Equals(dto.ContentHash, expected.ContentHash, StringComparison.OrdinalIgnoreCase))
-        {
             throw new InvalidOperationException("The repository REST API returned an artifact with a different identity.");
-        }
     }
 }

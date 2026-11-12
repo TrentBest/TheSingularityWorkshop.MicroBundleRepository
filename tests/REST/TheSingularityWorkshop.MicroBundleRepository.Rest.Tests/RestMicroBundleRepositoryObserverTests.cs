@@ -15,7 +15,7 @@ public sealed class RestMicroBundleRepositoryObserverTests
         {
             new
             {
-                bundleId = 42UL,
+                ontology = "TheSingularityWorkshop.Renderer",
                 version = "1.0.0",
                 contentHash = hash,
                 contentLength = 128L,
@@ -44,7 +44,7 @@ public sealed class RestMicroBundleRepositoryObserverTests
         var observations = await observer.ListAsync();
 
         var observation = Assert.Single(observations);
-        Assert.Equal(42UL, observation.Address.BundleId);
+        Assert.Equal("TheSingularityWorkshop.Renderer", observation.Address.Ontology);
         Assert.Equal("1.0.0", observation.Address.Version);
         Assert.Equal(hash, observation.Address.ContentHash);
         Assert.Equal(128L, observation.ContentLength);

@@ -10,16 +10,16 @@ WebForge / host -> FSM_REST transport -> MicroBundle Repository REST API -> IMic
 
 Endpoint:
 
-GET /api/microbundles/{bundleId}/{version}/{sha256}
-PUT /api/microbundles/{bundleId}/{version}/{sha256}
+GET /api/microbundles/{ontology}/{version}/{sha256}
+PUT /api/microbundles/{ontology}/{version}/{sha256}
 GET /api/experiences/{experienceId}/publication
 GET /api/experiences/{experienceId}/{version}/{sha256}
 
-The MVP wire representation is JSON with base64 artifact bytes. The repository remains content-addressed and verifies the SHA-256 when materializing MicroBundleArtifact.
+The MVP wire representation is JSON with base64 artifact bytes. The portable artifact address is `(ontology, version, SHA-256)`. Numeric repository-local handles are private storage locators and are never exposed in REST routes or DTOs. The repository remains content-addressed and verifies the SHA-256 when materializing MicroBundleArtifact.
 
 MicroBundle writes are disabled by default at the host unless `Repository:WriteApiKey` is configured. When configured, the REST host requires `X-Repository-Write-Key`; pass the same secret as the optional third constructor argument `writeApiKey` to `RestMicroBundleRepository`. Keep this value in deployment secret configuration, never source control. GET requests do not send the write key. The host bounds PUT request bodies with `Repository:MaxMicroBundleRequestBytes` (default 16 MiB). Cross-origin browser access is denied by default. Configure `Repository:AllowedCorsOrigins` as an explicit array of trusted origins (for example, `https://your-webpage.example`) when a browser consumer needs cross-origin access; do not use a wildcard in production. CORS is separate from write authorization.
 
-A later binary endpoint can replace the wire encoding without changing IMicroBundleRepository.
+The runtime catalog adapter may still map a runtime/domain bundle handle to a portable ontology address before retrieval; that runtime handle is not the artifact's portable identity. A later binary endpoint can replace the wire encoding without changing IMicroBundleRepository.
 
 The REST client package also includes `RestExperienceClient` for resolving a publication address and retrieving/locally verifying an immutable Experience artifact through `IRestTransport`. It is read-only and does not publish/unpublish, parse manifests, or compose bundles.
 

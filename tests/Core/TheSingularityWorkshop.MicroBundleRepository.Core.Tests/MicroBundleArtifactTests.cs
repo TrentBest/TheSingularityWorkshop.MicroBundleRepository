@@ -6,10 +6,20 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Core.Tests;
 public sealed class MicroBundleArtifactTests
 {
     [Fact]
+    public void Address_requires_canonical_ontology_identity()
+    {
+        var hash = new string('0', 64);
+
+        Assert.Throws<ArgumentException>(() => new MicroBundleArtifactAddress(" ", "1.0.0", hash));
+        Assert.Throws<ArgumentException>(() => new MicroBundleArtifactAddress(" ontology ", "1.0.0", hash));
+        Assert.Throws<ArgumentException>(() => new MicroBundleArtifactAddress("ontology/child", "1.0.0", hash));
+    }
+
+    [Fact]
     public void Address_requires_valid_sha256_identity()
     {
         Assert.Throws<ArgumentException>(() =>
-            new MicroBundleArtifactAddress(100, "1.0.0", "not-a-hash"));
+            new MicroBundleArtifactAddress("TheSingularityWorkshop.Renderer", "1.0.0", "not-a-hash"));
     }
 
     [Fact]
@@ -18,14 +28,28 @@ public sealed class MicroBundleArtifactTests
         var hash = new string('0', 64);
 
         Assert.Throws<ArgumentException>(() =>
-            new MicroBundleArtifactAddress(100, "1.0/0", hash));
+            new MicroBundleArtifactAddress("TheSingularityWorkshop.Renderer", "1.0/0", hash));
+    }
+
+    [Fact]
+    public void Address_preserves_portable_ontology_identity()
+    {
+        var hash = new string('A', 64);
+        var address = new MicroBundleArtifactAddress(
+            "TheSingularityWorkshop.Renderer",
+            "1.2.0",
+            hash);
+
+        Assert.Equal("TheSingularityWorkshop.Renderer", address.Ontology);
+        Assert.Equal(hash.ToLowerInvariant(), address.ContentHash);
+        Assert.Equal($"TheSingularityWorkshop.Renderer/1.2.0/{hash.ToLowerInvariant()}", address.ToString());
     }
 
     [Fact]
     public void Artifact_rejects_content_that_does_not_match_address()
     {
         var address = new MicroBundleArtifactAddress(
-            100,
+            "TheSingularityWorkshop.Renderer",
             "1.0.0",
             new string('0', 64));
 
@@ -38,7 +62,7 @@ public sealed class MicroBundleArtifactTests
     {
         var content = "weapon"u8.ToArray();
         var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
-        var address = new MicroBundleArtifactAddress(100, "1.0.0", hash);
+        var address = new MicroBundleArtifactAddress("TheSingularityWorkshop.Renderer", "1.0.0", hash);
 
         var artifact = new MicroBundleArtifact(address, content);
         content[0] = 0;

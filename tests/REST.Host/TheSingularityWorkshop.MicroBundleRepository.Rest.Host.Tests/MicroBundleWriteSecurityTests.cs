@@ -17,8 +17,8 @@ public sealed class MicroBundleWriteSecurityTests
         using var client = factory.CreateClient();
 
         using var response = await client.PutAsync(
-            "/api/microbundles/42/1.0.0/" + new string('a', 64),
-            new StringContent("{\"bundleId\":42,\"version\":\"1.0.0\",\"contentHash\":\""
+            "/api/microbundles/TheSingularityWorkshop.Renderer/1.0.0/" + new string('a', 64),
+            new StringContent("{\"ontology\":\"TheSingularityWorkshop.Renderer\",\"version\":\"1.0.0\",\"contentHash\":\""
                 + new string('a', 64) + "\",\"contentBase64\":\"\"}"));
 
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
@@ -31,8 +31,8 @@ public sealed class MicroBundleWriteSecurityTests
         using var client = factory.CreateClient();
 
         using var response = await client.PutAsync(
-            "/api/microbundles/42/1.0.0/" + new string('a', 64),
-            new StringContent("{\"bundleId\":42,\"version\":\"1.0.0\",\"contentHash\":\""
+            "/api/microbundles/TheSingularityWorkshop.Renderer/1.0.0/" + new string('a', 64),
+            new StringContent("{\"ontology\":\"TheSingularityWorkshop.Renderer\",\"version\":\"1.0.0\",\"contentHash\":\""
                 + new string('a', 64) + "\",\"contentBase64\":\"\"}"));
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -47,7 +47,7 @@ public sealed class MicroBundleWriteSecurityTests
         client.DefaultRequestHeaders.Add("X-Repository-Write-Key", "incorrect-key");
 
         using var response = await client.PutAsync(
-            "/api/microbundles/42/1.0.0/" + new string('a', 64),
+            "/api/microbundles/TheSingularityWorkshop.Renderer/1.0.0/" + new string('a', 64),
             new StringContent("{}"));
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -62,7 +62,7 @@ public sealed class MicroBundleWriteSecurityTests
 
         using var content = new StringContent(new string('x', 1024), Encoding.UTF8, "application/json");
         using var response = await client.PutAsync(
-            "/api/microbundles/42/1.0.0/" + new string('a', 64),
+            "/api/microbundles/TheSingularityWorkshop.Renderer/1.0.0/" + new string('a', 64),
             content);
 
         Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
@@ -80,19 +80,19 @@ public sealed class MicroBundleWriteSecurityTests
         var contentBase64 = Convert.ToBase64String(bytes);
         var body = System.Text.Json.JsonSerializer.Serialize(new
         {
-            bundleId = 42,
+            ontology = "TheSingularityWorkshop.Renderer",
             version = "1.0.0",
             contentHash = hash,
             contentBase64
         });
 
         using var response = await client.PutAsync(
-            $"/api/microbundles/42/1.0.0/{hash}",
+            $"/api/microbundles/TheSingularityWorkshop.Renderer/1.0.0/{hash}",
             new StringContent(body, Encoding.UTF8, "application/json"));
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
-        using var getResponse = await client.GetAsync($"/api/microbundles/42/1.0.0/{hash}");
+        using var getResponse = await client.GetAsync($"/api/microbundles/TheSingularityWorkshop.Renderer/1.0.0/{hash}");
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
         var responseBody = await getResponse.Content.ReadAsStringAsync();
         Assert.Contains(contentBase64, responseBody, StringComparison.Ordinal);

@@ -69,12 +69,12 @@ public sealed class RestMicroBundleCatalogConcurrencyTests
     }
 
     private static MicroBundleArtifactAddress Address(ulong id, byte[] bytes) =>
-        new(id, "1.0.0", Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant());
+        new($"TheSingularityWorkshop.Bundle{id}", "1.0.0", Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant());
 
     private sealed class Materializer : IMicroBundleArtifactMaterializer
     {
         public IMicroBundle Materialize(MicroBundleArtifact artifact) =>
-            artifact.Address.BundleId == 1
+            artifact.Address.Ontology.EndsWith(".Bundle1", StringComparison.Ordinal)
                 ? new TestBundle(1, 2)
                 : new TestBundle(2);
     }
@@ -103,22 +103,22 @@ public sealed class RestMicroBundleCatalogConcurrencyTests
         {
             var parts = request.Uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
             var address = new MicroBundleArtifactAddress(
-                ulong.Parse(parts[^3]),
+                parts[^3],
                 parts[^2],
                 parts[^1]);
 
-            if (address.BundleId == 1 &&
+            if (address.Ontology.EndsWith(".Bundle1", StringComparison.Ordinal) &&
                 Interlocked.Increment(ref _rootRequestCount) == 2)
                 _bothRootRequests.TrySetResult();
 
-            if (address.BundleId == 1)
+            if (address.Ontology.EndsWith(".Bundle1", StringComparison.Ordinal))
                 await _bothRootRequests.Task.WaitAsync(cancellationToken);
 
             if (!artifacts.TryGetValue(address.ToString(), out var artifact))
                 return new RestResponse(404, "Not Found", new Dictionary<string, string>(), string.Empty);
 
             var dto = new MicroBundleArtifactDto(
-                artifact.Address.BundleId,
+                artifact.Address.Ontology,
                 artifact.Address.Version,
                 artifact.Address.ContentHash,
                 Convert.ToBase64String(artifact.Content.ToArray()));

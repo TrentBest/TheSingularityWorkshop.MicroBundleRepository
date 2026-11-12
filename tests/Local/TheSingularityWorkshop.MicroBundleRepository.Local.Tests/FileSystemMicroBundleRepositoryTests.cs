@@ -1,21 +1,22 @@
 using System.Security.Cryptography;
-using Xunit;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 using TheSingularityWorkshop.MicroBundleRepository.Local;
+using Xunit;
 
 namespace TheSingularityWorkshop.MicroBundleRepository.Local.Tests;
 
 public sealed class FileSystemMicroBundleRepositoryTests
 {
+    private const string Ontology = "TheSingularityWorkshop.Renderer";
+
     [Fact]
-    public async Task Put_and_get_round_trip_preserves_content_and_address()
+    public async Task Put_and_get_round_trip_preserves_portable_identity_and_content()
     {
-        var rootPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(rootPath);
+        var root = CreateRoot();
         try
         {
-            var repository = new FileSystemMicroBundleRepository(rootPath);
-            var artifact = CreateArtifact(42, "1.2.3", "stress-microbundle"u8.ToArray());
+            var repository = new FileSystemMicroBundleRepository(root);
+            var artifact = CreateArtifact("1.2.3", "stress-microbundle"u8.ToArray());
 
             await repository.PutAsync(artifact);
             var retrieved = await repository.GetAsync(artifact.Address);
@@ -24,140 +25,127 @@ public sealed class FileSystemMicroBundleRepositoryTests
             Assert.Equal(artifact.Address, retrieved.Address);
             Assert.Equal(artifact.Content.ToArray(), retrieved.Content.ToArray());
         }
-        finally
-        {
-            Directory.Delete(rootPath, recursive: true);
-        }
+        finally { Directory.Delete(root, recursive: true); }
     }
 
     [Fact]
-    public async Task Artifact_is_stored_at_deterministic_content_address()
+    public async Task Ontology_mapping_survives_repository_recreation()
     {
-        var rootPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(rootPath);
+        var root = CreateRoot();
         try
         {
-            var repository = new FileSystemMicroBundleRepository(rootPath);
-            var artifact = CreateArtifact(42, "1.2.3", "bundle"u8.ToArray());
+            var artifact = CreateArtifact("1.2.3", "persistent-map"u8.ToArray());
+            await new FileSystemMicroBundleRepository(root).PutAsync(artifact);
 
-            await repository.PutAsync(artifact);
+            var restarted = new FileSystemMicroBundleRepository(root);
+            var retrieved = await restarted.GetAsync(artifact.Address);
 
-            var expected = Path.Combine(rootPath, "42", "1.2.3", artifact.Address.ContentHash + ".bundle");
-            Assert.True(File.Exists(expected));
+            Assert.NotNull(retrieved);
+            Assert.Equal(artifact.Content.ToArray(), retrieved.Content.ToArray());
+            Assert.Single(Directory.EnumerateFiles(Path.Combine(root, ".ontology-index"), "*.json"));
         }
-        finally
-        {
-            Directory.Delete(rootPath, recursive: true);
-        }
+        finally { Directory.Delete(root, recursive: true); }
     }
 
     [Fact]
-    public async Task Get_returns_null_when_artifact_is_missing()
+    public async Task Different_repository_roots_resolve_same_portable_address_independently()
     {
-        var rootPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(rootPath);
+        var firstRoot = CreateRoot();
+        var secondRoot = CreateRoot();
         try
         {
-            var repository = new FileSystemMicroBundleRepository(rootPath);
-            var artifact = CreateArtifact(42, "1.2.3", "missing"u8.ToArray());
+            var artifact = CreateArtifact("1.2.3", "portable-address"u8.ToArray());
+            await new FileSystemMicroBundleRepository(firstRoot).PutAsync(artifact);
 
-            Assert.Null(await repository.GetAsync(artifact.Address));
+            var otherRepository = new FileSystemMicroBundleRepository(secondRoot);
+            Assert.Null(await otherRepository.GetAsync(artifact.Address));
+            await otherRepository.PutAsync(artifact);
+            var retrieved = await otherRepository.GetAsync(artifact.Address);
+
+            Assert.NotNull(retrieved);
+            Assert.Equal(artifact.Address, retrieved.Address);
+
+            var firstFile = Directory.EnumerateFiles(firstRoot, "*.bundle", SearchOption.AllDirectories).Single();
+            var secondFile = Directory.EnumerateFiles(secondRoot, "*.bundle", SearchOption.AllDirectories).Single();
+            var firstHandle = Path.GetRelativePath(firstRoot, firstFile).Split(Path.DirectorySeparatorChar)[0];
+            var secondHandle = Path.GetRelativePath(secondRoot, secondFile).Split(Path.DirectorySeparatorChar)[0];
+            Assert.NotEqual(firstHandle, secondHandle);
         }
         finally
         {
-            Directory.Delete(rootPath, recursive: true);
+            Directory.Delete(firstRoot, recursive: true);
+            Directory.Delete(secondRoot, recursive: true);
         }
     }
 
     [Fact]
     public async Task Get_rejects_corrupted_bytes_at_a_valid_address()
     {
-        var rootPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(rootPath);
+        var root = CreateRoot();
         try
         {
-            var repository = new FileSystemMicroBundleRepository(rootPath);
-            var artifact = CreateArtifact(42, "1.2.3", "original"u8.ToArray());
-            var path = Path.Combine(rootPath, "42", "1.2.3", artifact.Address.ContentHash + ".bundle");
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            await File.WriteAllBytesAsync(path, "corrupted"u8.ToArray());
+            var repository = new FileSystemMicroBundleRepository(root);
+            var artifact = CreateArtifact("1.2.3", "original"u8.ToArray());
+            await repository.PutAsync(artifact);
+            var file = Directory.EnumerateFiles(root, "*.bundle", SearchOption.AllDirectories).Single();
+            await File.WriteAllBytesAsync(file, "corrupted"u8.ToArray());
 
             await Assert.ThrowsAsync<ArgumentException>(() => repository.GetAsync(artifact.Address).AsTask());
         }
-        finally
-        {
-            Directory.Delete(rootPath, recursive: true);
-        }
+        finally { Directory.Delete(root, recursive: true); }
     }
 
     [Fact]
-    public async Task Get_honors_pre_cancelled_token_even_when_artifact_is_missing()
+    public async Task Get_honors_pre_cancelled_token()
     {
-        var rootPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(rootPath);
+        var root = CreateRoot();
         try
         {
-            var repository = new FileSystemMicroBundleRepository(rootPath);
-            var artifact = CreateArtifact(42, "1.2.3", "cancelled-read"u8.ToArray());
+            var repository = new FileSystemMicroBundleRepository(root);
             using var cancellation = new CancellationTokenSource();
             cancellation.Cancel();
+            var address = CreateArtifact("1.0.0", "cancelled"u8.ToArray()).Address;
 
             await Assert.ThrowsAnyAsync<OperationCanceledException>(
-                () => repository.GetAsync(artifact.Address, cancellation.Token).AsTask());
+                () => repository.GetAsync(address, cancellation.Token).AsTask());
         }
-        finally
-        {
-            Directory.Delete(rootPath, recursive: true);
-        }
+        finally { Directory.Delete(root, recursive: true); }
     }
 
     [Fact]
-    public async Task Put_honors_pre_cancelled_token()
+    public async Task Observer_lists_artifacts_by_portable_ontology_identity()
     {
-        var rootPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(rootPath);
+        var root = CreateRoot();
         try
         {
-            var repository = new FileSystemMicroBundleRepository(rootPath);
-            var artifact = CreateArtifact(42, "1.2.3", "cancelled"u8.ToArray());
-            using var cancellation = new CancellationTokenSource();
-            cancellation.Cancel();
-
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(
-                () => repository.PutAsync(artifact, cancellation.Token).AsTask());
-        }
-        finally
-        {
-            Directory.Delete(rootPath, recursive: true);
-        }
-    }
-
-    [Fact]
-    public async Task Observer_lists_artifact_addresses_in_stable_order()
-    {
-        var rootPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(rootPath);
-        try
-        {
-            var repository = new FileSystemMicroBundleRepository(rootPath);
-            var second = CreateArtifact(8, "1.0.0", "second"u8.ToArray());
-            var first = CreateArtifact(3, "1.0.0", "first"u8.ToArray());
-            await repository.PutAsync(second);
-            await repository.PutAsync(first);
+            var repository = new FileSystemMicroBundleRepository(root);
+            var renderer = CreateArtifact("1.0.0", "renderer"u8.ToArray());
+            var visualize = CreateArtifact("1.0.0", "visualize"u8.ToArray(), "TheSingularityWorkshop.Visualize");
+            await repository.PutAsync(visualize);
+            await repository.PutAsync(renderer);
 
             var inventory = await repository.ListAsync();
 
-            Assert.Equal(new ulong[] { 3, 8 }, inventory.Select(item => item.Address.BundleId));
+            Assert.Equal(
+                new[] { "TheSingularityWorkshop.Renderer", "TheSingularityWorkshop.Visualize" },
+                inventory.Select(item => item.Address.Ontology));
         }
-        finally
-        {
-            Directory.Delete(rootPath, recursive: true);
-        }
+        finally { Directory.Delete(root, recursive: true); }
     }
 
-    private static MicroBundleArtifact CreateArtifact(ulong bundleId, string version, byte[] content)
+    private static string CreateRoot()
+    {
+        var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(path);
+        return path;
+    }
+
+    private static MicroBundleArtifact CreateArtifact(
+        string version,
+        byte[] content,
+        string ontology = Ontology)
     {
         var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
-        return new MicroBundleArtifact(new MicroBundleArtifactAddress(bundleId, version, hash), content);
+        return new MicroBundleArtifact(new MicroBundleArtifactAddress(ontology, version, hash), content);
     }
 }
