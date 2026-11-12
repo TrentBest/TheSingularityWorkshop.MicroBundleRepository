@@ -6,7 +6,6 @@
     "master"
   ],
   "actual_branches": [
-    "architecture/decouple-rest-from-cos",
     "development",
     "docs/readme-standard",
     "docs/visual-readme",
@@ -24,9 +23,9 @@
     "release-prep/rest-1.0.0",
     "work/microbundle-artifact-discovery"
   ],
-  "branch_count": 17,
+  "branch_count": 16,
   "status": "NON-COMPLIANT",
-  "evaluated_at": "2026-11-12T20:14:57Z",
-  "workflow_run": "https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/43298352310",
-  "triggering_commit": "a7955a395ce8047d51a1ca4a291d746c55289fc1"
+  "evaluated_at": "2026-11-12T21:32:18Z",
+  "workflow_run": "https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/43311203816",
+  "triggering_commit": "1078bb7a3260097cb968603bc9b19118138b4fc6"
 }
