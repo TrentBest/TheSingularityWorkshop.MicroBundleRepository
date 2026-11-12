@@ -122,6 +122,49 @@ public sealed class AzureMicroBundleIdentityRepositoryIntegrationTests
     }
 
     [Fact]
+    public async Task Identity_ingestion_rejects_preexisting_artifact_bytes_that_conflict_with_the_content_address()
+    {
+        var (container, _) = await CreateRepositoryAsync();
+        try
+        {
+            const ulong candidateId = 7_500_001;
+            var content = "expected immutable artifact bytes"u8.ToArray();
+            var hash = Convert.ToHexString(
+                System.Security.Cryptography.SHA256.HashData(content)).ToLowerInvariant();
+            var address = new MicroBundleArtifactAddress(candidateId, "1.0.0", hash);
+            var artifactBlob = container.GetBlobClient(AzureMicroBundleRepository.GetBlobName(address));
+
+            async Task CreateConflictingBlob(
+                ulong bundleId,
+                string owner,
+                CancellationToken cancellationToken)
+            {
+                if (bundleId == candidateId && owner == "identity")
+                {
+                    await artifactBlob.UploadAsync(
+                        BinaryData.FromBytes("conflicting preexisting bytes"u8.ToArray()),
+                        cancellationToken);
+                }
+            }
+
+            var repository = new AzureMicroBundleIdentityRepository(
+                container,
+                () => candidateId,
+                CreateConflictingBlob);
+
+            await Assert.ThrowsAsync<InvalidDataException>(
+                async () => await repository.PutAsync("sample.preexisting-corruption", "1.0.0", content));
+
+            var identity = new MicroBundleArtifactIdentity("sample.preexisting-corruption", "1.0.0", hash);
+            Assert.Null(await repository.ResolveAsync(identity));
+        }
+        finally
+        {
+            await container.DeleteIfExistsAsync();
+        }
+    }
+
+    [Fact]
     public async Task Corrupt_identity_index_fails_closed()
     {
         var (container, repository) = await CreateRepositoryAsync();
