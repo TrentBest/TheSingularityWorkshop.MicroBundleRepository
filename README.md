@@ -277,6 +277,8 @@ See [architecture](docs/ARCHITECTURE.md) for the full repository boundary.
 
 The REST host also exposes a separate Experience artifact store and mutable publication pointer. These writes use the same `X-Repository-Write-Key` authorization as MicroBundle writes; if `Repository:WriteApiKey` is absent, all write routes fail closed with `503`.
 
+Experience artifacts are stored as immutable serialized bytes at `experiences/artifacts/{experienceId}/{version}/{sha256}.experience`. The repository verifies the content hash and remains independent of WebPage or any specific Experience implementation; the host retrieves the verified artifact, deserializes its definition, and passes its MicroBundle requirements to FSM_COS. Artifact storage and the mutable publication pointer remain separate concerns.
+
 | Method and route | Purpose |
 |---|---|
 | `PUT /api/experiences/{experienceId}/{version}/{contentHash}` | Upload immutable bytes as JSON `{ experienceId, version, contentHash, contentBase64 }`. The host verifies SHA-256, stores the artifact, and reads it back before returning `204`. |
