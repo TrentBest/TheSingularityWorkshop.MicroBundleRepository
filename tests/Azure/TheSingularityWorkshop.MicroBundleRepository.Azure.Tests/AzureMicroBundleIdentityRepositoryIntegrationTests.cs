@@ -102,6 +102,25 @@ public sealed class AzureMicroBundleIdentityRepositoryIntegrationTests
     }
 
     [Fact]
+    public async Task Resolution_rejects_artifact_bytes_that_do_not_match_the_indexed_hash()
+    {
+        var (container, repository) = await CreateRepositoryAsync();
+        try
+        {
+            var binding = await repository.PutAsync("sample.ontology", "1.0.0", "original bytes"u8.ToArray());
+            var artifactBlob = container.GetBlobClient(AzureMicroBundleRepository.GetBlobName(binding.Address));
+            await artifactBlob.UploadAsync(BinaryData.FromBytes("tampered bytes"u8.ToArray()), overwrite: true);
+
+            await Assert.ThrowsAsync<ArgumentException>(
+                async () => await repository.ResolveAsync(binding.Identity));
+        }
+        finally
+        {
+            await container.DeleteIfExistsAsync();
+        }
+    }
+
+    [Fact]
     public async Task Corrupt_identity_index_fails_closed()
     {
         var (container, repository) = await CreateRepositoryAsync();
