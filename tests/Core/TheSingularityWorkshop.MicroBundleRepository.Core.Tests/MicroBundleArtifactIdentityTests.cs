@@ -30,6 +30,20 @@ public sealed class MicroBundleArtifactIdentityTests
     }
 
     [Fact]
+    public void Identity_and_address_reject_nonportable_version_segments()
+    {
+        string[] invalidVersions = [".", "..", "1:0.0", "1.0.0?", "1.0.0\n"];
+
+        foreach (var version in invalidVersions)
+        {
+            Assert.Throws<ArgumentException>(() =>
+                new MicroBundleArtifactIdentity("ontology", version, Hash));
+            Assert.Throws<ArgumentException>(() =>
+                new MicroBundleArtifactAddress(42, version, Hash));
+        }
+    }
+
+    [Fact]
     public void Different_versions_and_hashes_are_distinct_revision_identities()
     {
         var original = new MicroBundleArtifactIdentity("ontology", "1.0.0", Hash);
