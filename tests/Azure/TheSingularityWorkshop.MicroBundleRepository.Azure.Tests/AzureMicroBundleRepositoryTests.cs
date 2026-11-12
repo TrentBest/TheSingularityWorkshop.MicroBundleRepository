@@ -19,6 +19,19 @@ public sealed class AzureMicroBundleRepositoryTests
     }
 
     [Fact]
+    public void Existing_azure_adapter_exposes_the_identity_repository_contract()
+    {
+        var options = new AzureMicroBundleRepositoryOptions
+        {
+            StorageAccountUri = new Uri("https://example.blob.core.windows.net")
+        };
+
+        var repository = new AzureMicroBundleRepository(options);
+
+        Assert.IsAssignableFrom<IMicroBundleIdentityRepository>(repository);
+    }
+
+    [Fact]
     public void Default_container_name_is_microbundles()
     {
         var options = new AzureMicroBundleRepositoryOptions
