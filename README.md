@@ -48,7 +48,7 @@ These commands validate the source and test projects. They do not publish an art
 
 ## 🟪 05 Documentation and theory
 
-[CiAi-assisted deployment vision](docs/CIAI_DEPLOYMENT_VISION.md) · [Complete domain map and coverage gaps](docs/DOMAIN_MAP.md) · [REST package release checklist](docs/REST_RELEASE_READINESS.md) · [Living lifecycle diagram](docs/images/microbundle-lifecycle.svg) · [Artifact delivery at simulation scale](docs/SIMULATION_SCALE.md) · [Projects and boundaries](#projects) · [Azure configuration](#azure-configuration) · [Development](#development)
+[CiAi-assisted deployment vision](docs/CIAI_DEPLOYMENT_VISION.md) · [Complete domain map and coverage gaps](docs/DOMAIN_MAP.md) · [REST package release checklist](docs/REST_RELEASE_READINESS.md) · [Living lifecycle diagram](docs/images/microbundle-lifecycle.svg) · [Artifact delivery at simulation scale](docs/SIMULATION_SCALE.md) · [Experience publication model](docs/images/experience-publication-model.svg) · [Artifact identity](docs/images/microbundle-artifact-identity.svg) · [Delivery boundary](docs/images/microbundle-delivery-boundary.svg) · [Repository boundary](docs/images/microbundle-repository-boundary.svg) · [Projects and boundaries](#projects) · [Azure configuration](#azure-configuration) · [Development](#development)
 
 ---
 
