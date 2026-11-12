@@ -124,6 +124,13 @@ public sealed class FileSystemMicroBundleIdentityRepository : IMicroBundleIdenti
     {
         ArgumentNullException.ThrowIfNull(artifact);
         cancellationToken.ThrowIfCancellationRequested();
+
+        await using var repositoryLock = await AcquireLockAsync(cancellationToken);
+        var records = await ReadIndexAsync(cancellationToken);
+        if (records.Any(record => record.BundleId == artifact.Address.BundleId))
+            throw new InvalidOperationException(
+                "A repository-local ID already bound to a portable ontology revision cannot be written through the unbound numeric API.");
+
         await WriteArtifactDurablyAsync(artifact, cancellationToken);
     }
 
@@ -259,18 +266,24 @@ public sealed class FileSystemMicroBundleIdentityRepository : IMicroBundleIdenti
             address.Version,
             address.ContentHash + ".bundle");
 
-    private static ulong AllocateUniqueId(IReadOnlyCollection<BindingRecord> records)
+    private ulong AllocateUniqueId(IReadOnlyCollection<BindingRecord> records)
     {
         Span<byte> bytes = stackalloc byte[sizeof(ulong)];
         var occupied = records.Select(record => record.BundleId).ToHashSet();
 
         // Collision handling is an enforced uniqueness check under the cross-process
-        // repository lock, not an assumption about random-number probability.
+        // repository lock, including legacy numeric artifacts that predate this index.
         while (true)
         {
             RandomNumberGenerator.Fill(bytes);
             var candidate = BinaryPrimitives.ReadUInt64LittleEndian(bytes);
-            if (candidate != 0 && !occupied.Contains(candidate))
+            var legacyArtifactDirectory = Path.Combine(
+                _artifactRoot,
+                candidate.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+            if (candidate != 0 &&
+                !occupied.Contains(candidate) &&
+                !Directory.Exists(legacyArtifactDirectory))
                 return candidate;
         }
     }
