@@ -143,6 +143,128 @@ public sealed class AzureMicroBundleIdentityRepositoryIntegrationTests
         }
     }
 
+    [Fact]
+    public async Task Identity_and_numeric_writers_cannot_claim_the_same_id_under_a_forced_reservation_race()
+    {
+        var (container, _) = await CreateRepositoryAsync();
+        try
+        {
+            const ulong contestedId = 7_300_001;
+            var arrivals = 0;
+            var bothReady = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            async Task BeforeReservation(ulong bundleId, string owner, CancellationToken cancellationToken)
+            {
+                if (bundleId != contestedId)
+                    return;
+
+                if (Interlocked.Increment(ref arrivals) == 2)
+                    bothReady.TrySetResult(true);
+
+                await bothReady.Task.WaitAsync(cancellationToken);
+            }
+
+            var candidateCalls = 0;
+            ulong CandidateId()
+            {
+                if (Interlocked.Increment(ref candidateCalls) == 1)
+                    return contestedId;
+
+                return BitConverter.ToUInt64(System.Security.Cryptography.RandomNumberGenerator.GetBytes(sizeof(ulong)));
+            }
+
+            var repository = new AzureMicroBundleIdentityRepository(
+                container,
+                CandidateId,
+                BeforeReservation);
+
+            var identityBytes = "identity writer"u8.ToArray();
+            var numericBytes = "numeric writer"u8.ToArray();
+            var numericHash = Convert.ToHexString(
+                System.Security.Cryptography.SHA256.HashData(numericBytes)).ToLowerInvariant();
+            var numericArtifact = new MicroBundleArtifact(
+                new MicroBundleArtifactAddress(contestedId, "1.0.0", numericHash),
+                numericBytes);
+
+            var identityTask = repository.PutAsync(
+                "sample.reservation-race",
+                "1.0.0",
+                identityBytes).AsTask();
+            var numericTask = repository.PutAsync(numericArtifact).AsTask();
+
+            var identityBinding = await identityTask;
+            Exception? numericFailure = null;
+            try
+            {
+                await numericTask;
+            }
+            catch (Exception exception)
+            {
+                numericFailure = exception;
+            }
+
+            if (identityBinding.Address.BundleId == contestedId)
+            {
+                Assert.IsType<InvalidOperationException>(numericFailure);
+                Assert.Equal(identityBinding, await repository.ResolveAsync(contestedId));
+                Assert.Null(await repository.GetAsync(numericArtifact.Address));
+            }
+            else
+            {
+                Assert.Null(numericFailure);
+                Assert.NotEqual(contestedId, identityBinding.Address.BundleId);
+                Assert.Null(await repository.ResolveAsync(contestedId));
+                var storedNumeric = await repository.GetAsync(numericArtifact.Address);
+                Assert.NotNull(storedNumeric);
+                Assert.Equal(numericBytes, storedNumeric.Content.ToArray());
+            }
+        }
+        finally
+        {
+            await container.DeleteIfExistsAsync();
+        }
+    }
+
+    [Fact]
+    public async Task Failed_index_commit_leaves_an_unbound_orphan_and_reopen_can_recover()
+    {
+        var (container, _) = await CreateRepositoryAsync();
+        try
+        {
+            var content = "artifact committed before injected index failure"u8.ToArray();
+            var hash = Convert.ToHexString(
+                System.Security.Cryptography.SHA256.HashData(content)).ToLowerInvariant();
+            var identity = new MicroBundleArtifactIdentity("sample.failed-index-commit", "1.0.0", hash);
+            var failingRepository = new AzureMicroBundleIdentityRepository(
+                container,
+                beforeIndexCommit: _ => Task.FromException(new IOException("Injected index-commit failure.")));
+
+            await Assert.ThrowsAsync<IOException>(
+                async () => await failingRepository.PutAsync(identity.Ontology, identity.Version, content));
+
+            Assert.Null(await failingRepository.ResolveAsync(identity));
+
+            var artifactNames = new List<string>();
+            await foreach (var blob in container.GetBlobsAsync(prefix: "artifacts/"))
+                artifactNames.Add(blob.Name);
+            var orphanName = Assert.Single(artifactNames);
+            var orphanId = ulong.Parse(
+                orphanName.Split('/')[1],
+                System.Globalization.CultureInfo.InvariantCulture);
+            Assert.True((await container.GetBlobClient($"identity/reservations/{orphanId}").ExistsAsync()).Value);
+
+            var reopened = new AzureMicroBundleIdentityRepository(container);
+            var recovered = await reopened.PutAsync(identity.Ontology, identity.Version, content);
+
+            Assert.NotEqual(orphanId, recovered.Address.BundleId);
+            Assert.Equal(recovered, await reopened.ResolveAsync(identity));
+        }
+        finally
+        {
+            await container.DeleteIfExistsAsync();
+        }
+    }
+
     private static async Task<(BlobContainerClient Container, AzureMicroBundleIdentityRepository Repository)> CreateRepositoryAsync()
     {
         var connectionString = Environment.GetEnvironmentVariable("AZURITE_CONNECTION_STRING");
