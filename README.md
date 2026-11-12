@@ -32,6 +32,20 @@ A host requests an artifact through the repository contract; storage supplies by
 
 Follow the documented local configuration and build steps below; test the Core contract first, then the Azure adapter with explicitly configured storage.
 
+### Visual Studio-first source quick start
+
+1. Clone the repository and open `TheSingularityWorkshop.MicroBundleRepository.slnx` in Visual Studio.
+2. Open **View → Terminal** and confirm the terminal is at the repository root.
+3. Restore, build, and test the current source:
+
+```powershell
+dotnet restore TheSingularityWorkshop.MicroBundleRepository.slnx
+dotnet build TheSingularityWorkshop.MicroBundleRepository.slnx --configuration Release --no-restore
+dotnet test TheSingularityWorkshop.MicroBundleRepository.slnx --configuration Release --no-build
+```
+
+These commands validate the source and test projects. They do not publish an artifact or require production storage credentials.
+
 ## 🟪 05 Documentation and theory
 
 [CiAi-assisted deployment vision](docs/CIAI_DEPLOYMENT_VISION.md) · [Complete domain map and coverage gaps](docs/DOMAIN_MAP.md) · [REST package release checklist](docs/REST_RELEASE_READINESS.md) · [Living lifecycle diagram](docs/images/microbundle-lifecycle.svg) · [Artifact delivery at simulation scale](docs/SIMULATION_SCALE.md) · [Projects and boundaries](#projects) · [Azure configuration](#azure-configuration) · [Development](#development)
@@ -130,6 +144,17 @@ tests/
 └── REST/
     └── REST boundary tests
 ~~~
+
+### Add it to an existing project
+
+Choose the smallest dependency that matches the host's responsibility:
+
+- **Artifact contract only:** reference `TheSingularityWorkshop.MicroBundleRepository.Core`.
+- **Azure Blob persistence:** add the Azure adapter and authenticate through `DefaultAzureCredential`; keep account keys out of source control.
+- **HTTP delivery:** add the REST adapter/host only when the deployment needs that transport.
+- **Runtime composition/materialization:** keep the adapter that binds verified artifact bytes to FSM_COS outside the repository Core and storage packages. The repository must not depend upward on the composition engine.
+
+The project files declare source package versions, not proof of publication. Verify the exact package/version on NuGet before depending on it; until then, use a local project reference from the host solution.
 
 ### Core
 
