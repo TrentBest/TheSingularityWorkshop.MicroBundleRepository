@@ -64,7 +64,7 @@ The former `feat/local-microbundle-roundtrip` branch is absent from the current 
 
 ### `fix/repository-boundary` — selective salvage only
 
-The branch is highly divergent from current integration: at the 2026-11-12 audit it is 36 commits ahead and 250 behind `development` (merge base `a7b3632b33215fbdceeca1b7e056142793e9a7cb`). Its remaining distinct contributions are primarily boundary documentation and a proposed published-Experience listing surface.
+The branch is highly divergent from current integration: at the 2026-11-12 audit it is 36 commits ahead and 251 behind `development` (merge base `a7b3632b33215fbdceeca1b7e056142793e9a7cb`). Its remaining distinct contributions are primarily boundary documentation and a proposed published-Experience listing surface.
 
 - **Documentation worth preserving:** the branch states explicitly that the repository returns verified opaque bytes and does not define or interpret the executable representation. The current README already expresses this boundary, but the branch's architecture explanation can inform future refinements.
 - **Potential API contribution, not accepted:** the branch adds `IExperienceCatalog.ListPublishedAsync`, an Azure Blob enumeration implementation, and `GET /api/experiences`. This is a catalog/discovery capability, not part of immutable artifact retrieval. Before adopting it, define pagination, ordering guarantees, listing cost, and whether a mutable publication catalog is the right source for discovery.
@@ -87,7 +87,7 @@ The candidate list is a recommendation, not a deletion action. Recheck the branc
 
 ### `release-prep/core-1.0.0` — preserve theory, do not revive the release snapshot
 
-The branch is 59 commits ahead and 251 behind `development` (merge base `a7b3632b33215fbdceeca1b7e056142793e9a7cb`). It contains substantial unique documentation, but its implementation and release assumptions predate current integration and PR #33.
+The branch is 59 commits ahead and 252 behind `development` (merge base `a7b3632b33215fbdceeca1b7e056142793e9a7cb`). It contains substantial unique documentation, but its implementation and release assumptions predate current integration and PR #33.
 
 - **Documentation worth reconciling:** `docs/CORE_CONTRACT.md` and `docs/REPOSITORY_THEORY.md` explain the immutable artifact/delivery boundary, separation of artifact bytes from publication pointers, and the boundary between MicroBundleDomain, repository storage, and FSM_COS composition. These are useful source material, not ready-to-publish current contracts: their identity examples still use numeric BundleId as the portable semantic identity and need updating to the current dual-identity model (portable `(ontology, version, SHA-256)`; repository-local numeric address/binding retained for existing runtime-facing APIs).
 - **Federation theory:** `docs/FEDERATED_HOSTING.md` adds useful third-party repository custody/admission concepts. Reconcile against current security/admission ownership before presenting it as implemented behavior; keep the distinction between documented architecture and shipped capability explicit.
@@ -100,7 +100,7 @@ Disposition: retain until the unique theory/federation/release-governance materi
 
 ### `release-prep/rest-1.0.0` — salvage checklist, refresh dependency frontier
 
-The branch is 28 commits ahead and 251 behind `development` (same merge base `a7b3632b33215fbdceeca1b7e056142793e9a7cb`). It contains a unique `docs/REST_RELEASE_1_0.md`, a release-frontier SVG, package/workflow changes, and an older REST host revision.
+The branch is 28 commits ahead and 252 behind `development` (same merge base `a7b3632b33215fbdceeca1b7e056142793e9a7cb`). It contains a unique `docs/REST_RELEASE_1_0.md`, a release-frontier SVG, package/workflow changes, and an older REST host revision.
 
 - **Documentation worth preserving:** the release contract correctly distinguishes REST transport, repository delivery, and FSM_COS composition, and it explicitly keeps package publication manual. The checklist is useful as a starting point for a future release-readiness document.
 - **Refresh dependency claims:** the document names MicroBundleRepository.Core 1.0.0, FSM_REST 1.0.0, and FSM_COS 1.0.0 as the stable dependency closure. That is a historical release plan, not the current state: development's REST project references FSM_REST 0.1.0-alpha.4, FSM_COS 0.1.0-alpha.6, MicroBundleDomain 1.0.1, and the repository Core project. Recalculate the complete graph from current project metadata and the actual intended package boundaries before any release work.
@@ -113,6 +113,6 @@ Disposition: retain until its checklist and visual are either updated into curre
 
 ## Release-prep audit result
 
-- `release-prep/core-1.0.0`: 59 ahead / 251 behind; retain for selective documentation reconciliation and the unresolved assembly-payload boundary.
-- `release-prep/rest-1.0.0`: 28 ahead / 251 behind; retain for selective release-checklist/visual reconciliation only.
+- `release-prep/core-1.0.0`: 59 ahead / 252 behind; retain for selective documentation reconciliation and the unresolved assembly-payload boundary.
+- `release-prep/rest-1.0.0`: 28 ahead / 252 behind; retain for selective release-checklist/visual reconciliation only.
 - Neither branch is a current release candidate. Both contain historical package versions and host/identity assumptions; neither was merged or cherry-picked.
