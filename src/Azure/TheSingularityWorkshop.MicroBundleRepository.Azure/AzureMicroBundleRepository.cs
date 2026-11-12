@@ -91,6 +91,18 @@ public sealed class AzureMicroBundleRepository : IMicroBundleIdentityRepository,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(artifact);
+        if (_identityRepository is not null &&
+            await _identityRepository.IsBundleIdBoundAsync(artifact.Address.BundleId, cancellationToken))
+            throw new InvalidOperationException("A repository-local ID already bound to an ontology revision cannot be overwritten through the unbound numeric API.");
+
+        await PutArtifactAsync(artifact, cancellationToken);
+    }
+
+    internal async ValueTask PutArtifactAsync(
+        MicroBundleArtifact artifact,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(artifact);
 
         var blob = _container.GetBlobClient(GetBlobName(artifact.Address));
 
