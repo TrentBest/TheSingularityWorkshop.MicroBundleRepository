@@ -189,6 +189,32 @@ public sealed class FileSystemMicroBundleIdentityRepositoryTests
     }
 
     [Fact]
+    public async Task Corrupt_identity_index_fails_closed_for_reads_and_new_writes()
+    {
+        var root = NewRoot();
+        try
+        {
+            await File.WriteAllTextAsync(
+                Path.Combine(root, "identity-bindings.json"),
+                "{ invalid json");
+
+            var repository = new FileSystemMicroBundleIdentityRepository(root);
+            var content = "must not overwrite a corrupt index"u8.ToArray();
+            var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
+            var identity = new MicroBundleArtifactIdentity("ontology.corrupt-index", "1.0.0", hash);
+
+            await Assert.ThrowsAsync<System.Text.Json.JsonException>(
+                async () => await repository.ResolveAsync(identity));
+            await Assert.ThrowsAsync<System.Text.Json.JsonException>(
+                async () => await repository.PutAsync(identity.Ontology, identity.Version, content));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Failed_index_commit_leaves_no_binding_and_reopen_can_recover()
     {
         var root = NewRoot();
