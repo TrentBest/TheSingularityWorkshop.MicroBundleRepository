@@ -124,8 +124,10 @@ public sealed class AzureMicroBundleRepository : IMicroBundleIdentityRepository,
                 },
                 cancellationToken);
         }
-        catch (RequestFailedException ex) when (ex.Status == 412)
+        catch (RequestFailedException ex) when (ex.Status is 409 or 412)
         {
+            // Azure services/emulators can report conditional-create conflicts as
+            // either 409 (BlobAlreadyExists) or 412 (condition not met).
             // A pre-existing blob is only idempotent success when its bytes match.
             // Never publish an identity binding over a corrupt or conflicting object.
             MicroBundleArtifact? existing;
