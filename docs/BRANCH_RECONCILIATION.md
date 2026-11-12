@@ -3,7 +3,7 @@
 **Purpose:** preserve every unique implementation, test, document, visual, and release artifact; then reduce this repository to exactly `master` and `development`.
 
 **Audit date:** 2026-11-12  
-**Inventory:** 17 branches on the live remote at the time of this update. The former `feat/local-microbundle-roundtrip` ref is no longer present; its commits remain reachable from the active publisher branch. This is a content/PR audit, not authorization to delete branches.
+**Inventory:** 10 branches returned by the live remote branch search on 2026-11-12: `master`, `development`, four active PR branches, and four retained reconciliation branches. The seven previously identified cleanup candidates were each queried by name and none is currently returned by GitHub's branch search. Their absence was observed, not caused by this audit; no branch deletion was performed here. The former `feat/local-microbundle-roundtrip` ref is also absent, with its commits previously verified reachable from the active publisher branch. This is a content/PR audit, not authorization to delete branches.
 
 ## Active work and dependency boundaries
 
@@ -32,22 +32,22 @@ The repository identity work is consumed downstream by Experiences, but the repo
 - `feature/microbundle-publisher` — PR #17; retain.
 - `work/microbundle-artifact-discovery` — PR #21; retain.
 
-### Ready for the single deletion batch — 7
+### Previously flagged cleanup candidates — 7 refs absent from current search
 
-These are candidates whose useful work has a surviving home or whose PR is merged/superseded. They have **not** been deleted.
+Each name below was queried against the live branch search on 2026-11-12 and returned no matching branch. Their PR/history dispositions remain useful audit evidence, but they are **not current deletion candidates** because the refs are already absent from the returned remote inventory. This audit did not delete them, and their disappearance must not be attributed to this work.
 
-1. `architecture/decouple-rest-from-cos` — PR #14 merged; the branch's remaining history is represented by the merged integration and subsequent work.
-2. `fix/repository-build-errors` — PR #19 merged; source/test changes are represented in `development`; remaining workflow is obsolete.
-3. `forge/experience-publication-catalog` — PR #5 merged; implementation/tests are represented in `development`; README content is superseded.
-4. `forge/experience-repository-azure` — PR #4 merged; current bounded Azure implementation/tests supersede the older adapter; Experience storage boundary documentation is represented in current docs.
-5. `implementation-azure-solidification` — PR #2 merged; Azure setup/live-test work is represented in `development`; remaining workflow is obsolete.
-6. `implementation-core-azure-blob` — PR #1 merged; historical implementation baseline is superseded by the current Core/Azure implementation and tests.
-7. `docs/readme-standard` — PR #18 closed as superseded; useful Visual Studio-first onboarding and package-boundary guidance is present in the current README; old workflow changes are intentionally not carried forward.
-The former `feat/local-microbundle-roundtrip` branch is absent from the current remote inventory. Its complete history had been contained in `feature/microbundle-publisher` (PR #17), so its commits remain reachable there; no additional cleanup action is needed for that ref.
+1. `architecture/decouple-rest-from-cos` — PR #14 merged.
+2. `fix/repository-build-errors` — PR #19 merged.
+3. `forge/experience-publication-catalog` — PR #5 merged.
+4. `forge/experience-repository-azure` — PR #4 merged.
+5. `implementation-azure-solidification` — PR #2 merged.
+6. `implementation-core-azure-blob` — PR #1 merged.
+7. `docs/readme-standard` — PR #18 closed as superseded.
+The former `feat/local-microbundle-roundtrip` branch is also absent. Its complete history had been contained in `feature/microbundle-publisher` (PR #17), so its commits remain reachable there.
 
 ### Retain pending reconciliation — 4
 
-- `docs/visual-readme` — retain pending reconciliation; it is not documentation-only. Its long-form README contains useful distinct explanations of optional semantic metadata, REST discovery as a catalog boundary, explicit non-goals, and a documentation map. The current `development` README follows the Workshop 5-section standard and already covers much of the architecture, but not all of those topics. Its compiled-assembly payload (`MicroBundleAssemblyPayload.cs`, blob `c827692...`), FSM_COS materializer/catalog adapter and tests are also absent from `development`; the newer payload implementation and matching adapter/tests are present on active PR #21 (`work/microbundle-artifact-discovery`). The branch's `AzureExperienceCatalog.cs` is older than both PR #21 and `development`. Its four architecture SVGs were previously verified present in `development`. Before retiring this branch, reconcile the unique README explanations into the current structure and verify PR #21's current-head implementation/test coverage; do not copy its stale source wholesale.
+- `docs/visual-readme` — retain only pending reconciliation of its older FSM_COS materializer/catalog integration and assembly-payload/test history against active draft PR #21. Its valid README concepts (warehouse-door mental model, artifact lifecycle, what/where/how boundaries, and explicit non-goals) are already represented in the current README, so no README transplant is needed. Do not copy its unsupported claims about an FSM_Serialization assembly envelope, optional semantic metadata stored by this repository, or `GET /api/experiences`; these are not current `development` capabilities. Its four architecture SVGs are already present. PR #21 has newer overlapping integration/materializer/test work, but its exact-head CI was not confirmed; recheck compatibility and fresh CI before retiring this branch.
 - `fix/repository-boundary` — its README and architecture document sharpen the opaque-artifact/composition-host boundary. Its diff removes payload/materializer/catalog code from the REST package and differs from the integration-package direction in PR #14 and PR #21. Preserve until the intended boundary is resolved; do not merge it wholesale.
 - `release-prep/core-1.0.0` — contains four substantial documents absent from `development`: `CORE_CONTRACT.md`, `REPOSITORY_THEORY.md`, `FEDERATED_HOSTING.md`, and `PACKAGE_BUILD_GRAPH.md`. Preserve and reconcile their useful contract, federation, and release-governance theory. Update old payload/identity assumptions against PR #33 before publishing these as current guidance.
 - `release-prep/rest-1.0.0` — contains `REST_RELEASE_1_0.md` and release work absent from `development`. Its stated dependency closure includes FSM_COS, which conflicts with the later REST/composition transport-boundary separation. Preserve the useful transport/release checklist, but rewrite the dependency closure and recheck implementation/tests before retiring the branch.
@@ -73,16 +73,16 @@ The branch is highly divergent from current integration: at the 2026-11-12 audit
 
 Disposition: retain pending a deliberate decision on whether published-Experience listing belongs in this repository and, if so, a paginated, secured design with tests against current development. No branch-wide merge or cherry-pick is recommended.
 
-## Current result
+## Current result — 2026-11-12 live search
 
-- **17 branches total**
-- **7 ready-to-delete candidates**
+- **10 branches returned**
+- **0 of the seven former cleanup candidates returned** (each queried by name)
 - **4 retained for reconciliation**
 - **4 active PR branches**
 - **2 permanent branches**
 - **0 branches deleted by this audit**
 
-The candidate list is a recommendation, not a deletion action. Recheck the branch/PR state immediately before any future deletion batch.
+The current returned inventory is exactly the four active PR branches, four retained reconciliation branches, and `master` plus `development`. GitHub's branch search did not return the seven former cleanup refs; verify with a fresh branch listing before any future cleanup operation. No deletion is requested or performed by this audit.
 
 
 ### `release-prep/core-1.0.0` — preserve theory, do not revive the release snapshot
