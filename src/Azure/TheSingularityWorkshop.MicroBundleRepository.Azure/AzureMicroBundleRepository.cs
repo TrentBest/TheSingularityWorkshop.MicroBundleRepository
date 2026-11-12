@@ -119,9 +119,9 @@ public sealed class AzureMicroBundleRepository : IMicroBundleIdentityRepository,
                     },
                     Metadata = new Dictionary<string, string>
                     {
-                        ["bundle-id"] = artifact.Address.BundleId.ToString(),
+                        ["bundle_id"] = artifact.Address.BundleId.ToString(),
                         ["version"] = artifact.Address.Version,
-                        ["content-sha256"] = artifact.Address.ContentHash
+                        ["content_sha256"] = artifact.Address.ContentHash
                     },
                     Conditions = new BlobRequestConditions
                     {
