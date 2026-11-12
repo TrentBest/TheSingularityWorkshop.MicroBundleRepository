@@ -117,12 +117,6 @@ public sealed class AzureMicroBundleRepository : IMicroBundleIdentityRepository,
                     {
                         ContentType = "application/octet-stream"
                     },
-                    Metadata = new Dictionary<string, string>
-                    {
-                        ["bundle_id"] = artifact.Address.BundleId.ToString(),
-                        ["version"] = artifact.Address.Version,
-                        ["content_sha256"] = artifact.Address.ContentHash
-                    },
                     Conditions = new BlobRequestConditions
                     {
                         IfNoneMatch = ETag.All
