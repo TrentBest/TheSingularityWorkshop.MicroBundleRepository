@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using Azure;
+using Azure.Identity;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
@@ -250,7 +251,7 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
         if (string.IsNullOrWhiteSpace(options.ContainerName))
             throw new ArgumentException("Container name is required.", nameof(options));
 
-        var service = new BlobServiceClient(options.StorageAccountUri, new global::Azure.Identity.DefaultAzureCredential());
+        var service = new BlobServiceClient(options.StorageAccountUri, new DefaultAzureCredential());
         return service.GetBlobContainerClient(options.ContainerName);
     }
 
