@@ -1,4 +1,5 @@
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using TheSingularityWorkshop.MicroBundleRepository.Azure;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
 
@@ -245,7 +246,10 @@ public sealed class AzureMicroBundleIdentityRepositoryIntegrationTests
             Assert.Null(await failingRepository.ResolveAsync(identity));
 
             var artifactNames = new List<string>();
-            await foreach (var blob in container.GetBlobsAsync(prefix: "artifacts/"))
+            await foreach (var blob in container.GetBlobsAsync(
+                traits: BlobTraits.None,
+                states: BlobStates.None,
+                prefix: "artifacts/"))
                 artifactNames.Add(blob.Name);
             var orphanName = Assert.Single(artifactNames);
             var orphanId = ulong.Parse(
