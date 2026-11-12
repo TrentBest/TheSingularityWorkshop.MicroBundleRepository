@@ -57,3 +57,11 @@ The interface does not move identity allocation into Experiences, MicroBundleDom
 The current change includes the Core identity contract and a filesystem adapter implementation. The filesystem adapter uses an exclusive lock file to serialize writers, writes and flushes immutable artifact bytes before committing the atomically replaced identity index, checks candidate IDs against both indexed bindings and pre-existing numeric artifact directories, and verifies the artifact when resolving a binding. The existing numeric artifact path layout is retained.
 
 The Azure adapter is not yet implemented. The filesystem adapter's current-head CI has not yet been observed, and its crash-recovery/failure-injection behavior still requires additional tests. These are explicit remaining acceptance items; the interface and documentation do not imply that all providers already satisfy the contract.
+
+## Provider implementation status
+
+The local filesystem adapter now serializes identity writers with an exclusive lock file and atomically replaces its persisted index after flushing artifact bytes.
+
+The Azure adapter now exposes the same identity contract through the existing `AzureMicroBundleRepository`. It stores the mapping in one JSON blob and uses ETag-based conditional writes (`If-Match` / `If-None-Match`) to serialize competing index updates across processes and hosts. Immutable artifact blobs are committed before the mapping index. A failed conditional index update may leave an unreferenced artifact, but the retry re-reads the winning index before selecting a binding.
+
+These provider implementations are initial slices, not a declaration that all acceptance criteria are complete. In particular, Azure concurrency/failure behavior needs focused tests against an emulator or live test account, numeric legacy writes need a fully coordinated reservation strategy to rule out cross-operation ID races, and both providers need failure-injection coverage for artifact/index commit boundaries and index corruption. Current-head CI is running for the combined implementation.
