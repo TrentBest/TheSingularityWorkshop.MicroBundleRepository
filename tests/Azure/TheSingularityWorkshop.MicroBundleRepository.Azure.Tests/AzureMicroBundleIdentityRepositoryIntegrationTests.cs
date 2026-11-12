@@ -187,6 +187,30 @@ public sealed class AzureMicroBundleIdentityRepositoryIntegrationTests
         }
     }
 
+    [Theory]
+    [InlineData("null")]
+    [InlineData("[null]")]
+    public async Task Null_identity_index_payloads_fail_closed(string json)
+    {
+        var (container, repository) = await CreateRepositoryAsync();
+        try
+        {
+            var index = container.GetBlobClient("identity/identity-bindings.json");
+            await index.UploadAsync(BinaryData.FromString(json));
+            var content = "must not replace a null index"u8.ToArray();
+            var hash = Convert.ToHexString(
+                System.Security.Cryptography.SHA256.HashData(content)).ToLowerInvariant();
+            var identity = new MicroBundleArtifactIdentity("sample.null-index", "1.0.0", hash);
+
+            await Assert.ThrowsAsync<InvalidDataException>(async () => await repository.ResolveAsync(identity));
+            await Assert.ThrowsAsync<InvalidDataException>(async () => await repository.PutAsync(identity.Ontology, identity.Version, content));
+        }
+        finally
+        {
+            await container.DeleteIfExistsAsync();
+        }
+    }
+
     [Fact]
     public async Task Concurrent_identity_writers_retry_conditional_index_commit_without_losing_bindings()
     {
