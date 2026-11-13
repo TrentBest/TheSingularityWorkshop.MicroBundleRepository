@@ -22,7 +22,7 @@ public sealed class RestMicroBundleArtifactCatalogTests
         {
             Assert.Equal("GET", request.Method);
             Assert.Contains("pageSize=25", request.Uri.Query);
-            Assert.Contains("continuationToken=cursor%2B%2F%3D", request.Uri.Query);
+            Assert.Contains("continuationToken=cursor%2B%20%2F%3D", request.Uri.Query);
             Assert.Contains("version=1.0%2Bbeta", request.Uri.Query);
             Assert.Contains("bundleId=17", request.Uri.Query);
             return new RestResponse(200, "OK", new Dictionary<string, string>(), payload);
