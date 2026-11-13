@@ -152,6 +152,9 @@ public sealed class MicroBundleWriteSecurityTests
 
     private sealed class RestHostFactory(bool configureKey = false, string? allowedCorsOrigin = null, long? maxRequestBytes = null) : WebApplicationFactory<Program>
     {
+        private readonly string _localRoot = Path.Combine(
+            Path.GetTempPath(), "mbrepo-write-tests", Guid.NewGuid().ToString("N"));
+
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.ConfigureAppConfiguration((_, configuration) =>
@@ -159,7 +162,7 @@ public sealed class MicroBundleWriteSecurityTests
                 var settings = new Dictionary<string, string?>
                 {
                     ["Repository:Mode"] = "Local",
-                    ["Repository:LocalRoot"] = Path.Combine(Path.GetTempPath(), "mbrepo-write-tests"),
+                    ["Repository:LocalRoot"] = _localRoot,
                     ["Repository:AllowedCorsOrigins:0"] = allowedCorsOrigin,
                 ["Repository:MaxMicroBundleRequestBytes"] = maxRequestBytes?.ToString(System.Globalization.CultureInfo.InvariantCulture)
                 };
