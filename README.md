@@ -308,7 +308,9 @@ The repository answers:
 
 > **Given this complete MicroBundle artifact address, where are its bytes and can I verify them?**
 
-For operational observation, the repository host also exposes an artifact inventory. This is deliberately narrower than semantic discovery: it reports stored artifact identity, size, and storage metadata without resolving dependencies or assigning meaning.
+For operational observation, the existing `GET /api/microbundles` endpoint exposes artifact identity, size, and storage metadata. For bounded identity discovery, the host separately exposes `GET /api/microbundles/identities?pageSize=100`. The identity endpoint returns only `bundleId`, `version`, and `contentHash`, with an opaque `continuationToken` when another page may exist. Page sizes are limited to 1–500; optional `bundleId` and exact `version` filters are supported (a version filter requires a bundle ID).
+
+Continuation tokens are adapter-specific and must be returned unchanged to the same repository adapter. Azure passes through the Blob Storage continuation token and reads blob names without downloading payloads; a filtered Azure page may be empty while still carrying a continuation token. The local adapter uses a deterministic identity cursor, but neither adapter promises snapshot isolation while artifacts are changing. This is deliberately narrower than semantic discovery: it does not resolve dependencies or assign meaning.
 
 The Workshop can manifest repository delivery through explicit **mailboxes**. A mailbox is an intake/delivery surface over a declared destination; the underlying repository still performs deterministic, content-addressed storage.
 
