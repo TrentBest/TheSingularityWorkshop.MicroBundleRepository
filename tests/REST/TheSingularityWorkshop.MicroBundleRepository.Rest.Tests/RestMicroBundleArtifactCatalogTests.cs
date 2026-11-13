@@ -42,6 +42,28 @@ public sealed class RestMicroBundleArtifactCatalogTests
         Assert.Equal("next+/=", page.ContinuationToken);
     }
 
+    [Fact]
+    public async Task ListPageAsync_does_not_treat_missing_endpoint_as_empty_inventory()
+    {
+        var transport = new StubTransport(_ =>
+            new RestResponse(404, "Not Found", new Dictionary<string, string>(), string.Empty));
+        var catalog = new RestMicroBundleArtifactCatalog(new Uri("https://repository.test"), transport);
+
+        await Assert.ThrowsAsync<HttpRequestException>(async () =>
+            await catalog.ListPageAsync(new MicroBundleArtifactListRequest()));
+    }
+
+    [Fact]
+    public async Task ListPageAsync_rejects_response_without_item_list()
+    {
+        var transport = new StubTransport(_ =>
+            new RestResponse(200, "OK", new Dictionary<string, string>(), """{"items":null,"continuationToken":null}"""));
+        var catalog = new RestMicroBundleArtifactCatalog(new Uri("https://repository.test"), transport);
+
+        await Assert.ThrowsAsync<InvalidDataException>(async () =>
+            await catalog.ListPageAsync(new MicroBundleArtifactListRequest()));
+    }
+
     private sealed class StubTransport(Func<RestRequest, RestResponse> responder) : IRestTransport
     {
         public Task<RestResponse> SendAsync(
