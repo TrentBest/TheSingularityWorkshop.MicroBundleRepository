@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using Azure;
 using Azure.Core;
@@ -156,15 +155,13 @@ public sealed class AzureMicroBundleRepositoryTests
 
         public override async IAsyncEnumerable<Page<BlobItem>> AsPages(
             string? continuationToken = null,
-            int? pageSizeHint = null,
-            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+            int? pageSizeHint = null)
         {
             ContinuationToken = continuationToken;
             PageSizeHint = pageSizeHint;
 
             foreach (var page in _pages)
             {
-                cancellationToken.ThrowIfCancellationRequested();
                 PagesRequested++;
                 yield return page;
                 await Task.Yield();
