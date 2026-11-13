@@ -92,33 +92,39 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroB
             ? $"{ArtifactPrefix}/{bundleId}/"
             : ArtifactPrefix + "/";
 
-        var page = await _container.GetBlobsAsync(
-                traits: BlobTraits.None,
-                states: BlobStates.None,
-                prefix: prefix,
-                cancellationToken: cancellationToken)
-            .AsPages(request.ContinuationToken, request.PageSize)
-            .FirstAsync(cancellationToken);
-
         var addresses = new List<MicroBundleArtifactAddress>(request.PageSize);
-        foreach (var blob in page.Values)
+        string? continuationToken = null;
+
+        await foreach (var page in _container.GetBlobsAsync(
+                           traits: BlobTraits.None,
+                           states: BlobStates.None,
+                           prefix: prefix,
+                           cancellationToken: cancellationToken)
+                       .AsPages(request.ContinuationToken, request.PageSize)
+                       .WithCancellation(cancellationToken))
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            foreach (var blob in page.Values)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
 
-            if (!TryParseArtifactObservation(blob, out var observation))
-                continue;
+                if (!TryParseArtifactObservation(blob, out var observation))
+                    continue;
 
-            var address = observation.Address;
-            if (request.BundleId is ulong requestedBundleId && address.BundleId != requestedBundleId)
-                continue;
-            if (request.Version is not null &&
-                !string.Equals(address.Version, request.Version, StringComparison.Ordinal))
-                continue;
+                var address = observation.Address;
+                if (request.BundleId is ulong requestedBundleId && address.BundleId != requestedBundleId)
+                    continue;
+                if (request.Version is not null &&
+                    !string.Equals(address.Version, request.Version, StringComparison.Ordinal))
+                    continue;
 
-            addresses.Add(address);
+                addresses.Add(address);
+            }
+
+            continuationToken = page.ContinuationToken;
+            break; // One provider page per request, even when filters yield no identities.
         }
 
-        return new MicroBundleArtifactListPage(addresses, page.ContinuationToken);
+        return new MicroBundleArtifactListPage(addresses, continuationToken);
     }
 
     public async ValueTask PutAsync(
