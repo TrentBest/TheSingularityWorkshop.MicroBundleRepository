@@ -131,7 +131,7 @@ public sealed class MicroBundleWriteSecurityTests
         using var factory = new RestHostFactory();
         using var client = factory.CreateClient();
 
-        using var response = await client.GetAsync("/api/microbundles/identities?pageSize=25");
+        using var response = await client.GetAsync("/api/microbundles/identities?pageSize=25&bundleId=18446744073709551615");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync();
