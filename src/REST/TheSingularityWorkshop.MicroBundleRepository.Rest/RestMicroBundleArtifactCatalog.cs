@@ -53,9 +53,25 @@ public sealed class RestMicroBundleArtifactCatalog : IMicroBundleArtifactCatalog
 
         if (page.Items is null)
             throw new InvalidDataException("The repository identity inventory response did not contain an item list.");
+        if (page.Items.Count > request.PageSize)
+            throw new InvalidDataException("The repository identity inventory response exceeded the requested page size.");
 
-        var addresses = page.Items.Select(item =>
-            new MicroBundleArtifactAddress(item.BundleId, item.Version, item.ContentHash)).ToArray();
+        var addresses = new MicroBundleArtifactAddress[page.Items.Count];
+        for (var i = 0; i < page.Items.Count; i++)
+        {
+            var item = page.Items[i];
+            if (item is null)
+                throw new InvalidDataException("The repository identity inventory response contained a null item.");
+
+            try
+            {
+                addresses[i] = new MicroBundleArtifactAddress(item.BundleId, item.Version, item.ContentHash);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidDataException("The repository identity inventory response contained an invalid artifact identity.", ex);
+            }
+        }
 
         return new MicroBundleArtifactListPage(addresses, page.ContinuationToken);
     }
