@@ -61,7 +61,7 @@ public sealed class MicroBundleArtifactListRequestTests
                 (ulong)index, "1.0.0", new string('a', 64)))
             .ToArray();
 
-        Assert.Throws<ArgumentException>(() => new MicroBundleArtifactListPage(items));
+        Assert.Throws<ArgumentException>(() => new MicroBundleArtifactListPage(items, null));
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public sealed class MicroBundleArtifactListRequestTests
             new(42, "1.0.0", new string('a', 64))
         };
 
-        var page = new MicroBundleArtifactListPage(supplied);
+        var page = new MicroBundleArtifactListPage(supplied, null);
         supplied.Clear();
 
         Assert.Single(page.Items);
