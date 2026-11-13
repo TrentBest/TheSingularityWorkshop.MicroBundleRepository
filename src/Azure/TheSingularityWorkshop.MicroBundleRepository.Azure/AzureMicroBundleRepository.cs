@@ -9,7 +9,7 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Azure;
 /// <summary>
 /// Stores MicroBundle artifacts as deterministic Azure block blobs.
 /// </summary>
-public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroBundleRepositoryObserver
+public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroBundleRepositoryObserver, IMicroBundleArtifactCatalog
 {
     private const string ArtifactPrefix = "artifacts";
 
@@ -75,6 +75,50 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroB
                 : StringComparer.Ordinal.Compare(left.Address.Version, right.Address.Version));
 
         return observations;
+    }
+
+    /// <summary>
+    /// Lists one Azure service page of artifact identities without downloading artifact payloads.
+    /// The continuation token is the opaque Azure Blob Storage token. Filters may produce a
+    /// short or empty result page while a continuation token remains.
+    /// </summary>
+    public async ValueTask<MicroBundleArtifactListPage> ListPageAsync(
+        MicroBundleArtifactListRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var prefix = request.BundleId is ulong bundleId
+            ? $"{ArtifactPrefix}/{bundleId}/"
+            : ArtifactPrefix + "/";
+
+        var page = await _container.GetBlobsAsync(
+                traits: BlobTraits.None,
+                states: BlobStates.None,
+                prefix: prefix,
+                cancellationToken: cancellationToken)
+            .AsPages(request.ContinuationToken, request.PageSize)
+            .FirstAsync(cancellationToken);
+
+        var addresses = new List<MicroBundleArtifactAddress>(request.PageSize);
+        foreach (var blob in page.Values)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!TryParseArtifactObservation(blob, out var observation))
+                continue;
+
+            var address = observation.Address;
+            if (request.BundleId is ulong requestedBundleId && address.BundleId != requestedBundleId)
+                continue;
+            if (request.Version is not null &&
+                !string.Equals(address.Version, request.Version, StringComparison.Ordinal))
+                continue;
+
+            addresses.Add(address);
+        }
+
+        return new MicroBundleArtifactListPage(addresses, page.ContinuationToken);
     }
 
     public async ValueTask PutAsync(
