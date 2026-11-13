@@ -177,6 +177,37 @@ app.MapGet("/health", (IConfiguration configuration) =>
     }));
 
 app.MapGet(
+    "/api/microbundles/identities",
+    async (
+        int? pageSize,
+        string? continuationToken,
+        ulong? bundleId,
+        string? version,
+        IMicroBundleArtifactCatalog catalog,
+        CancellationToken cancellationToken) =>
+    {
+        MicroBundleArtifactListRequest request;
+        try
+        {
+            request = new MicroBundleArtifactListRequest(
+                pageSize ?? MicroBundleArtifactListRequest.DefaultPageSize,
+                continuationToken,
+                bundleId,
+                version);
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(new { error = ex.Message });
+        }
+
+        var page = await catalog.ListPageAsync(request, cancellationToken);
+        return Results.Ok(new MicroBundleArtifactListPageDto(
+            page.Items.Select(address => new MicroBundleArtifactIdentityDto(
+                address.BundleId, address.Version, address.ContentHash)).ToArray(),
+            page.ContinuationToken));
+    });
+
+app.MapGet(
     "/api/microbundles",
     async (
         IMicroBundleRepositoryObserver observer,
