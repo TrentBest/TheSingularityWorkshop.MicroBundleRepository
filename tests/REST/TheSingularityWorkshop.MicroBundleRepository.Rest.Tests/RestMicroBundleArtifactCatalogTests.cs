@@ -54,6 +54,27 @@ public sealed class RestMicroBundleArtifactCatalogTests
     }
 
     [Fact]
+    public async Task ListPageAsync_rejects_response_larger_than_requested_page()
+    {
+        var hash = new string('c', 64);
+        var payload = JsonSerializer.Serialize(new
+        {
+            items = new[]
+            {
+                new { bundleId = 1UL, version = "1.0.0", contentHash = hash },
+                new { bundleId = 2UL, version = "1.0.0", contentHash = hash }
+            },
+            continuationToken = (string?)null
+        });
+        var transport = new StubTransport(_ =>
+            new RestResponse(200, "OK", new Dictionary<string, string>(), payload));
+        var catalog = new RestMicroBundleArtifactCatalog(new Uri("https://repository.test"), transport);
+
+        await Assert.ThrowsAsync<InvalidDataException>(async () =>
+            await catalog.ListPageAsync(new MicroBundleArtifactListRequest(pageSize: 1)));
+    }
+
+    [Fact]
     public async Task ListPageAsync_rejects_response_without_item_list()
     {
         var transport = new StubTransport(_ =>
