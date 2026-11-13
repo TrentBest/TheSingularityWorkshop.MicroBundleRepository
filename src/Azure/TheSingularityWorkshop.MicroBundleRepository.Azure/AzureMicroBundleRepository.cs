@@ -206,6 +206,10 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroB
         {
             return false;
         }
+        catch (OverflowException)
+        {
+            return false;
+        }
     }
 
     private static BlobContainerClient CreateContainerClient(AzureMicroBundleRepositoryOptions options)
