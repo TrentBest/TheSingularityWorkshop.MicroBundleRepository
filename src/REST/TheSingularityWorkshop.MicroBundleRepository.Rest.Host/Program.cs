@@ -18,6 +18,7 @@ if (string.Equals(mode, "Local", StringComparison.OrdinalIgnoreCase))
     var local = new FileSystemMicroBundleRepository(root);
     builder.Services.AddSingleton<IMicroBundleRepository>(local);
     builder.Services.AddSingleton<IMicroBundleRepositoryObserver>(local);
+    builder.Services.AddSingleton<IMicroBundleArtifactCatalog>(local);
 }
 else
 {
@@ -39,6 +40,8 @@ else
         services.GetRequiredService<AzureMicroBundleRepository>());
 
     builder.Services.AddSingleton<IMicroBundleRepositoryObserver>(services =>
+        services.GetRequiredService<AzureMicroBundleRepository>());
+    builder.Services.AddSingleton<IMicroBundleArtifactCatalog>(services =>
         services.GetRequiredService<AzureMicroBundleRepository>());
 
     // Experience artifacts and their mutable publication pointer use a separate
