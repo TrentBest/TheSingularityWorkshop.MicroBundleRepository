@@ -1,4 +1,4 @@
-using System.Net;
+using System.IO;
 using System.Text.Json;
 using TheSingularityWorkshop.FSM_REST;
 using TheSingularityWorkshop.MicroBundleRepository.Core;
@@ -44,15 +44,15 @@ public sealed class RestMicroBundleArtifactCatalog : IMicroBundleArtifactCatalog
             new RestRequest("GET", new Uri(_baseUri, "api/microbundles/identities?" + string.Join("&", query))),
             cancellationToken);
 
-        if (response.StatusCode == (int)HttpStatusCode.NotFound)
-            return new MicroBundleArtifactListPage(Array.Empty<MicroBundleArtifactAddress>(), null);
-
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException(
                 $"MicroBundle Repository identity inventory request failed with HTTP {response.StatusCode}: {response.Body}");
 
         var page = JsonSerializer.Deserialize<MicroBundleArtifactListPageDto>(response.Body, JsonOptions)
-            ?? new MicroBundleArtifactListPageDto(Array.Empty<MicroBundleArtifactIdentityDto>(), null);
+            ?? throw new InvalidDataException("The repository returned an empty identity inventory response.");
+
+        if (page.Items is null)
+            throw new InvalidDataException("The repository identity inventory response did not contain an item list.");
 
         var addresses = page.Items.Select(item =>
             new MicroBundleArtifactAddress(item.BundleId, item.Version, item.ContentHash)).ToArray();
