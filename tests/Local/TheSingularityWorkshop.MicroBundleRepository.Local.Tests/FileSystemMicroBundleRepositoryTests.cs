@@ -155,6 +155,79 @@ public sealed class FileSystemMicroBundleRepositoryTests
         }
     }
 
+    [Fact]
+    public async Task Artifact_catalog_pages_are_deterministic_and_continue_without_duplicates()
+    {
+        var rootPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootPath);
+        try
+        {
+            var repository = new FileSystemMicroBundleRepository(rootPath);
+            await repository.PutAsync(CreateArtifact(9, "1.0.0", "nine"u8.ToArray()));
+            await repository.PutAsync(CreateArtifact(2, "2.0.0", "two-b"u8.ToArray()));
+            await repository.PutAsync(CreateArtifact(2, "1.0.0", "two-a"u8.ToArray()));
+
+            var first = await repository.ListPageAsync(new MicroBundleArtifactListRequest(pageSize: 2));
+            var second = await repository.ListPageAsync(new MicroBundleArtifactListRequest(
+                pageSize: 2, continuationToken: first.ContinuationToken));
+
+            Assert.Equal(new ulong[] { 2, 2 }, first.Items.Select(x => x.BundleId));
+            Assert.NotNull(first.ContinuationToken);
+            Assert.Single(second.Items);
+            Assert.Equal(9UL, second.Items[0].BundleId);
+            Assert.Null(second.ContinuationToken);
+            Assert.Empty(first.Items.Intersect(second.Items));
+        }
+        finally
+        {
+            Directory.Delete(rootPath, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Artifact_catalog_applies_exact_identity_filters()
+    {
+        var rootPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootPath);
+        try
+        {
+            var repository = new FileSystemMicroBundleRepository(rootPath);
+            await repository.PutAsync(CreateArtifact(9, "1.0.0", "nine"u8.ToArray()));
+            await repository.PutAsync(CreateArtifact(9, "2.0.0", "nine-two"u8.ToArray()));
+            await repository.PutAsync(CreateArtifact(2, "2.0.0", "two"u8.ToArray()));
+
+            var page = await repository.ListPageAsync(new MicroBundleArtifactListRequest(
+                pageSize: 10, bundleId: 9, version: "2.0.0"));
+
+            var item = Assert.Single(page.Items);
+            Assert.Equal(9UL, item.BundleId);
+            Assert.Equal("2.0.0", item.Version);
+            Assert.Null(page.ContinuationToken);
+        }
+        finally
+        {
+            Directory.Delete(rootPath, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Artifact_catalog_rejects_malformed_local_continuation_tokens()
+    {
+        var rootPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootPath);
+        try
+        {
+            var repository = new FileSystemMicroBundleRepository(rootPath);
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                repository.ListPageAsync(new MicroBundleArtifactListRequest(
+                    continuationToken: "not-a-valid-cursor")).AsTask());
+        }
+        finally
+        {
+            Directory.Delete(rootPath, recursive: true);
+        }
+    }
+
     private static MicroBundleArtifact CreateArtifact(ulong bundleId, string version, byte[] content)
     {
         var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
