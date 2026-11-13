@@ -125,6 +125,31 @@ public sealed class MicroBundleWriteSecurityTests
         Assert.Equal("https://webpage.example", origins!.Single());
     }
 
+    [Fact]
+    public async Task IdentityInventory_ReturnsBoundedEmptyPage()
+    {
+        using var factory = new RestHostFactory();
+        using var client = factory.CreateClient();
+
+        using var response = await client.GetAsync("/api/microbundles/identities?pageSize=25");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("\"items\":[]", body, StringComparison.Ordinal);
+        Assert.Contains("\"continuationToken\":null", body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task IdentityInventory_RejectsVersionFilterWithoutBundleId()
+    {
+        using var factory = new RestHostFactory();
+        using var client = factory.CreateClient();
+
+        using var response = await client.GetAsync("/api/microbundles/identities?version=1.0.0");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     private sealed class RestHostFactory(bool configureKey = false, string? allowedCorsOrigin = null, long? maxRequestBytes = null) : WebApplicationFactory<Program>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
