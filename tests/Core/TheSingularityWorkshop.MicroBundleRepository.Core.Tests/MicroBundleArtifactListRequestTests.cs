@@ -54,6 +54,31 @@ public sealed class MicroBundleArtifactListRequestTests
     }
 
     [Fact]
+    public void Page_rejects_more_than_maximum_items()
+    {
+        var items = Enumerable.Range(1, MicroBundleArtifactListRequest.MaximumPageSize + 1)
+            .Select(index => new MicroBundleArtifactAddress(
+                (ulong)index, "1.0.0", new string('a', 64)))
+            .ToArray();
+
+        Assert.Throws<ArgumentException>(() => new MicroBundleArtifactListPage(items));
+    }
+
+    [Fact]
+    public void Page_copies_the_supplied_collection()
+    {
+        var supplied = new List<MicroBundleArtifactAddress>
+        {
+            new(42, "1.0.0", new string('a', 64))
+        };
+
+        var page = new MicroBundleArtifactListPage(supplied);
+        supplied.Clear();
+
+        Assert.Single(page.Items);
+    }
+
+    [Fact]
     public void Page_allows_empty_items_with_continuation_token()
     {
         var page = new MicroBundleArtifactListPage(
