@@ -21,7 +21,7 @@ public sealed class MicroBundleWriteSecurityTests
             new StringContent("{\"bundleId\":42,\"version\":\"1.0.0\",\"contentHash\":\""
                 + new string('a', 64) + "\",\"contentBase64\":\"\"}"));
 
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode, await response.Content.ReadAsStringAsync());
+        Assert.True(response.StatusCode == HttpStatusCode.ServiceUnavailable, $"Expected ServiceUnavailable, received {response.StatusCode}: {await response.Content.ReadAsStringAsync()}");
     }
 
     [Fact]
