@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: TrentBest/TheSingularityWorkshop.CiAi
-          ref: development
+          ref: 9e01a4be81fb94fa7bb2d4619196646adf3463f4
           path: CiAi
           submodules: recursive
           persist-credentials: false
@@ -39,7 +39,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
 
       - name: Wait for Build and Package evidence to finish
         env:
