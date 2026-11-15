@@ -8,6 +8,7 @@
   "actual_branches": [
     "development",
     "docs/visual-readme",
+    "feature/aspnetcore-10-dependencies",
     "feature/microbundle-publisher",
     "feature/ontology-address-mapping",
     "feature/revision-identity-bindings",
@@ -17,9 +18,9 @@
     "release-prep/rest-1.0.0",
     "work/microbundle-artifact-discovery"
   ],
-  "branch_count": 10,
+  "branch_count": 11,
   "status": "NON-COMPLIANT",
-  "evaluated_at": "2026-11-14T11:36:01Z",
-  "workflow_run": "https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/43590791662",
-  "triggering_commit": "48b3c2be12e92237b1de1ca7ff3e13c8e574da91"
+  "evaluated_at": "2026-11-15T12:00:30Z",
+  "workflow_run": "https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/43711628835",
+  "triggering_commit": "82b473590692a9d3e0774aa0e6784dc25280c724"
 }
