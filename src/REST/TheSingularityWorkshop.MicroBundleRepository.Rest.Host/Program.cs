@@ -72,7 +72,9 @@ builder.Services.AddCors();
 var app = builder.Build();
 var allowedCorsOrigins = app.Configuration
     .GetSection("Repository:AllowedCorsOrigins")
-    .Get<string[]>() ?? Array.Empty<string>();
+    .Get<string[]>()?
+    .Where(origin => !string.IsNullOrWhiteSpace(origin))
+    .ToArray() ?? Array.Empty<string>();
 
 app.UseRouting();
 app.UseCors(policy =>
