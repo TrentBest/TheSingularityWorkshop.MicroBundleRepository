@@ -4,7 +4,7 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Core;
 /// Portable identity for an immutable MicroBundle artifact.
 /// This identity is independent of runtime numeric IDs and repository-local storage keys.
 /// </summary>
-public readonly record struct MicroBundleArtifactIdentity
+public sealed record MicroBundleArtifactIdentity
 {
     public MicroBundleArtifactIdentity(string ontology, string version, string contentHash)
     {
