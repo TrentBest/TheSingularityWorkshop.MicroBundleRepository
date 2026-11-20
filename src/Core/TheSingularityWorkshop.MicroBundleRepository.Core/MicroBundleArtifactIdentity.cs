@@ -20,7 +20,7 @@ public readonly record struct MicroBundleArtifactIdentity
             throw new ArgumentException("Ontology must be a canonical, route-safe identifier without whitespace or path/query delimiters.", nameof(ontology));
 
         if (version is "." or ".." || version.Any(char.IsWhiteSpace) || version.Any(char.IsControl) ||
-            version.IndexOfAny(['/', '\\\\', '?', '#', '%']) >= 0)
+            version.IndexOfAny(['/', '\\', '?', '#', '%']) >= 0)
             throw new ArgumentException("Version must be a canonical, route-safe path segment.", nameof(version));
 
         if (contentHash.Length != 64 || contentHash.Any(c => !Uri.IsHexDigit(c)))
