@@ -5,6 +5,9 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Core;
 /// </summary>
 public sealed record MicroBundleIdentityBinding
 {
+    /// <summary>Creates a binding after validating exact version and content-hash agreement.</summary>
+    /// <param name="identity">Portable immutable revision identity.</param>
+    /// <param name="address">Repository-local numeric artifact address.</param>
     public MicroBundleIdentityBinding(
         MicroBundleArtifactIdentity identity,
         MicroBundleArtifactAddress address)
@@ -26,6 +29,8 @@ public sealed record MicroBundleIdentityBinding
         Address = address;
     }
 
+    /// <summary>Gets the portable immutable revision identity.</summary>
     public MicroBundleArtifactIdentity Identity { get; }
+    /// <summary>Gets the repository-local numeric address for the revision.</summary>
     public MicroBundleArtifactAddress Address { get; }
 }
