@@ -1,3 +1,4 @@
+using Xunit;
 using System.Diagnostics;
 
 namespace TheSingularityWorkshop.MicroBundleRepository.Cli.Tests;
