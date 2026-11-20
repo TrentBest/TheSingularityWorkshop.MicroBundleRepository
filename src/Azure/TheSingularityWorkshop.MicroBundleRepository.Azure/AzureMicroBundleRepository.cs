@@ -177,10 +177,25 @@ public sealed class AzureMicroBundleRepository : IMicroBundleIdentityRepository,
                 },
                 cancellationToken);
         }
-        catch (RequestFailedException ex) when (ex.Status == 412)
+        catch (RequestFailedException ex) when (ex.Status is 409 or 412)
         {
-            // Content-addressed writes are immutable. If the exact address already
-            // exists, the repository is already in the requested state.
+            // Conditional-create conflicts are idempotent only when the existing
+            // object contains the exact bytes named by its content address.
+            MicroBundleArtifact? existing;
+            try
+            {
+                existing = await GetAsync(artifact.Address, cancellationToken);
+            }
+            catch (ArgumentException exception)
+            {
+                throw new InvalidDataException(
+                    "An existing artifact at the requested content address does not match its declared hash.",
+                    exception);
+            }
+
+            if (existing is null || !existing.Content.Span.SequenceEqual(artifact.Content.Span))
+                throw new InvalidDataException(
+                    "An existing artifact at the requested content address contains different bytes.");
         }
     }
 
