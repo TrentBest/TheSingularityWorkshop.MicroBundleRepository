@@ -19,8 +19,9 @@ public readonly record struct MicroBundleArtifactIdentity
             ontology.IndexOfAny(['/', '\\', '?', '#', '%']) >= 0)
             throw new ArgumentException("Ontology must be a canonical, route-safe identifier without whitespace or path/query delimiters.", nameof(ontology));
 
-        if (version.Contains('/') || version.Contains('\\') || version.Any(char.IsControl))
-            throw new ArgumentException("Version must be a single storage-safe path segment.", nameof(version));
+        if (version is "." or ".." || version.Any(char.IsWhiteSpace) || version.Any(char.IsControl) ||
+            version.IndexOfAny(['/', '\\\\', '?', '#', '%']) >= 0)
+            throw new ArgumentException("Version must be a canonical, route-safe path segment.", nameof(version));
 
         if (contentHash.Length != 64 || contentHash.Any(c => !Uri.IsHexDigit(c)))
             throw new ArgumentException("Content hash must be a 64-character hexadecimal SHA-256 value.", nameof(contentHash));
