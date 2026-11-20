@@ -75,7 +75,7 @@ public sealed class RestMicroBundleRepositoryTests
                 $"https://repository.test/api/microbundles/9/2.0.0/{hash}",
                 request.Uri.ToString());
             Assert.NotNull(request.Headers);
-            Assert.Equal("test-write-key", request.Headers!["X-Repository-Write-Key"]);
+            Assert.Equal("test-write-key", request.Headers!["X-Workshop-Publisher-Key"]);
             Assert.Contains(Convert.ToBase64String(content), request.Body, StringComparison.Ordinal);
             return new RestResponse(204, "No Content", new Dictionary<string, string>(), string.Empty);
         });
@@ -86,6 +86,41 @@ public sealed class RestMicroBundleRepositoryTests
             writeApiKey: "test-write-key");
 
         await repository.PutAsync(artifact);
+    }
+
+    [Fact]
+    public async Task PutAsync_portable_identity_uploads_and_verifies_the_exact_artifact()
+    {
+        var content = new byte[] { 2, 3, 5, 7, 11 };
+        var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
+        var binding = new MicroBundleIdentityBindingDto("workshop/example", "1.2.3", hash, 81);
+        var artifact = new MicroBundleArtifactDto(81, "1.2.3", hash, Convert.ToBase64String(content));
+
+        var transport = new StubTransport(request =>
+        {
+            if (request.Method == "PUT")
+            {
+                Assert.Equal("https://repository.test/api/microbundles/identity", request.Uri.ToString());
+                Assert.Equal("test-write-key", request.Headers!["X-Workshop-Publisher-Key"]);
+                Assert.Contains("workshop/example", request.Body, StringComparison.Ordinal);
+                return new RestResponse(200, "OK", new Dictionary<string, string>(), JsonSerializer.Serialize(binding));
+            }
+
+            Assert.Equal("GET", request.Method);
+            Assert.Equal($"https://repository.test/api/microbundles/81/1.2.3/{hash}", request.Uri.ToString());
+            return new RestResponse(200, "OK", new Dictionary<string, string>(), JsonSerializer.Serialize(artifact));
+        });
+
+        var repository = new RestMicroBundleRepository(
+            new Uri("https://repository.test"),
+            transport,
+            writeApiKey: "test-write-key");
+
+        var result = await repository.PutAsync("workshop/example", "1.2.3", content);
+
+        Assert.Equal(81UL, result.Address.BundleId);
+        Assert.Equal("workshop/example", result.Identity.Ontology);
+        Assert.Equal(hash, result.Identity.ContentHash);
     }
 
     [Fact]
