@@ -28,6 +28,8 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
     private readonly Func<ulong, string, CancellationToken, Task>? _beforeReservation;
     private readonly Func<CancellationToken, Task>? _beforeIndexCommit;
 
+    /// <summary>Creates an identity repository using the configured Azure Blob Storage account.</summary>
+    /// <param name="options">Storage account URI and container configuration.</param>
     public AzureMicroBundleIdentityRepository(AzureMicroBundleRepositoryOptions options)
         : this(CreateContainer(options))
     {
@@ -47,14 +49,17 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
         _beforeIndexCommit = beforeIndexCommit;
     }
 
+    /// <summary>Creates the backing container when it does not already exist.</summary>
     public Task InitializeAsync(CancellationToken cancellationToken = default) =>
         _artifacts.InitializeAsync(cancellationToken);
 
+    /// <summary>Retrieves and verifies an artifact by its repository-local address.</summary>
     public ValueTask<MicroBundleArtifact?> GetAsync(
         MicroBundleArtifactAddress address,
         CancellationToken cancellationToken = default) =>
         _artifacts.GetAsync(address, cancellationToken);
 
+    /// <summary>Stores an artifact through the numeric API after reserving its local ID.</summary>
     public async ValueTask PutAsync(
         MicroBundleArtifact artifact,
         CancellationToken cancellationToken = default)
@@ -64,6 +69,7 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
         await _artifacts.PutArtifactAsync(artifact, cancellationToken);
     }
 
+    /// <summary>Stores bytes and durably binds their portable identity to a local numeric ID.</summary>
     public async ValueTask<MicroBundleIdentityBinding> PutAsync(
         string ontology,
         string version,
@@ -117,6 +123,7 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
         }
     }
 
+    /// <summary>Resolves a complete portable revision identity to its local binding.</summary>
     public async ValueTask<MicroBundleIdentityBinding?> ResolveAsync(
         MicroBundleArtifactIdentity identity,
         CancellationToken cancellationToken = default)
@@ -132,6 +139,7 @@ public sealed class AzureMicroBundleIdentityRepository : IMicroBundleIdentityRep
         return binding;
     }
 
+    /// <summary>Resolves a repository-local numeric ID to its portable revision binding.</summary>
     public async ValueTask<MicroBundleIdentityBinding?> ResolveAsync(
         ulong bundleId,
         CancellationToken cancellationToken = default)
