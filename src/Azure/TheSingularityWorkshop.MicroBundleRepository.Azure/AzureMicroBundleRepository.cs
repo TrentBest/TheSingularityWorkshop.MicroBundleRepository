@@ -14,7 +14,7 @@ public sealed class AzureMicroBundleRepository : IMicroBundleIdentityRepository,
     private const string ArtifactPrefix = "artifacts";
 
     private readonly BlobContainerClient _container;
-    private readonly AzureMicroBundleIdentityRepository _identityRepository;
+    private readonly Lazy<AzureMicroBundleIdentityRepository> _identityRepository;
 
     public AzureMicroBundleRepository(AzureMicroBundleRepositoryOptions options)
         : this(CreateContainerClient(options))
@@ -30,7 +30,7 @@ public sealed class AzureMicroBundleRepository : IMicroBundleIdentityRepository,
     {
         _container = container ?? throw new ArgumentNullException(nameof(container));
         _identityRepository = initializeIdentityRepository
-            ? new AzureMicroBundleIdentityRepository(container)
+            ? new Lazy<AzureMicroBundleIdentityRepository>(() => new AzureMicroBundleIdentityRepository(container))
             : null!;
     }
 
@@ -141,7 +141,7 @@ public sealed class AzureMicroBundleRepository : IMicroBundleIdentityRepository,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(artifact);
-        return _identityRepository.PutAsync(artifact, cancellationToken);
+        return _identityRepository.Value.PutAsync(artifact, cancellationToken);
     }
 
     internal async ValueTask PutArtifactAsync(
@@ -163,12 +163,6 @@ public sealed class AzureMicroBundleRepository : IMicroBundleIdentityRepository,
                     HttpHeaders = new BlobHttpHeaders
                     {
                         ContentType = "application/octet-stream"
-                    },
-                    Metadata = new Dictionary<string, string>
-                    {
-                        ["bundle-id"] = artifact.Address.BundleId.ToString(),
-                        ["version"] = artifact.Address.Version,
-                        ["content-sha256"] = artifact.Address.ContentHash
                     },
                     Conditions = new BlobRequestConditions
                     {
@@ -204,17 +198,17 @@ public sealed class AzureMicroBundleRepository : IMicroBundleIdentityRepository,
         string version,
         ReadOnlyMemory<byte> content,
         CancellationToken cancellationToken = default) =>
-        _identityRepository.PutAsync(ontology, version, content, cancellationToken);
+        _identityRepository.Value.PutAsync(ontology, version, content, cancellationToken);
 
     public ValueTask<MicroBundleIdentityBinding?> ResolveAsync(
         MicroBundleArtifactIdentity identity,
         CancellationToken cancellationToken = default) =>
-        _identityRepository.ResolveAsync(identity, cancellationToken);
+        _identityRepository.Value.ResolveAsync(identity, cancellationToken);
 
     public ValueTask<MicroBundleIdentityBinding?> ResolveAsync(
         ulong bundleId,
         CancellationToken cancellationToken = default) =>
-        _identityRepository.ResolveAsync(bundleId, cancellationToken);
+        _identityRepository.Value.ResolveAsync(bundleId, cancellationToken);
 
     internal static string GetBlobName(MicroBundleArtifactAddress address) =>
         $"{ArtifactPrefix}/{address.BundleId}/{address.Version}/{address.ContentHash}.bundle";
