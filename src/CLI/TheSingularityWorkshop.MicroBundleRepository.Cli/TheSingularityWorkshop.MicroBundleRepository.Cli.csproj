@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../Core/TheSingularityWorkshop.MicroBundleRepository.Core/TheSingularityWorkshop.MicroBundleRepository.Core.csproj" />
+    <ProjectReference Include="../../REST/TheSingularityWorkshop.MicroBundleRepository.Rest/TheSingularityWorkshop.MicroBundleRepository.Rest.csproj" />
   </ItemGroup>
 
 </Project>
