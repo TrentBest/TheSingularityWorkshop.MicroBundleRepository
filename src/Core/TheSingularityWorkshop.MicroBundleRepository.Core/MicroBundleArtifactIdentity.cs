@@ -16,10 +16,10 @@ public readonly record struct MicroBundleArtifactIdentity
             throw new ArgumentException("Ontology must use canonical Unicode Form C normalization.", nameof(ontology));
 
         if (ontology.Any(char.IsControl) || ontology.Any(char.IsWhiteSpace) ||
-            ontology.IndexOfAny(['/', '\\\\', '?', '#', '%']) >= 0)
+            ontology.IndexOfAny(['/', '\\', '?', '#', '%']) >= 0)
             throw new ArgumentException("Ontology must be a canonical, route-safe identifier without whitespace or path/query delimiters.", nameof(ontology));
 
-        if (version.Contains('/') || version.Contains('\\\\') || version.Any(char.IsControl))
+        if (version.Contains('/') || version.Contains('\\') || version.Any(char.IsControl))
             throw new ArgumentException("Version must be a single storage-safe path segment.", nameof(version));
 
         if (contentHash.Length != 64 || contentHash.Any(c => !Uri.IsHexDigit(c)))
