@@ -26,17 +26,16 @@ Examples:
   repo-cli publish workshop/example 1.0.0 ./bundle.bin
 """;
 
-var parsed = ParseArguments(args);
-if (parsed.Command is null)
-{
-    Console.WriteLine(usage);
-    return 1;
-}
-
-using var http = new HttpClient { BaseAddress = parsed.BaseUri };
-
 try
 {
+    var parsed = ParseArguments(args);
+    if (parsed.Command is null)
+    {
+        Console.WriteLine(usage);
+        return 1;
+    }
+
+    using var http = new HttpClient { BaseAddress = parsed.BaseUri };
     return parsed.Command switch
     {
         "health" => await HealthAsync(http),
@@ -70,8 +69,10 @@ static (Uri BaseUri, string? Command, string[] Arguments) ParseArguments(string[
         remaining.Add(args[i]);
     }
 
-    if (!Uri.TryCreate(url, UriKind.Absolute, out var baseUri))
-        throw new ArgumentException($"Repository URL '{url}' is not a valid absolute URI.");
+    if (!Uri.TryCreate(url, UriKind.Absolute, out var baseUri)
+        || (baseUri.Scheme != Uri.UriSchemeHttp && baseUri.Scheme != Uri.UriSchemeHttps)
+        || !string.IsNullOrEmpty(baseUri.UserInfo))
+        throw new ArgumentException("Repository URL must be an absolute HTTP or HTTPS URI without embedded credentials.");
     if (!baseUri.AbsoluteUri.EndsWith("/", StringComparison.Ordinal))
         baseUri = new Uri(baseUri.AbsoluteUri + "/", UriKind.Absolute);
 
