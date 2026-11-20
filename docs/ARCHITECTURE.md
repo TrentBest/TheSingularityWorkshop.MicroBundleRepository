@@ -35,13 +35,17 @@ Azure Blob Storage
 
 ## Artifact identity
 
-Every artifact is addressed by:
+The portable identity of an immutable artifact is the tuple:
 
-- MicroBundle ID
+- canonical ontology string
 - explicit version
 - SHA-256 content identity
 
-The SHA-256 is not merely metadata. The repository constructs the immutable artifact only after verifying that the bytes match the declared content identity.
+The Core contract exposes this tuple as `MicroBundleArtifactIdentity`. Ontology identifiers are ordinal and case-sensitive, must already be Unicode Form C normalized, and reject whitespace and route/path delimiters. The SHA-256 is not merely metadata: artifact bytes must match the declared digest before they are accepted.
+
+This portable identity is deliberately separate from the current runtime-facing `MicroBundleArtifactAddress`, which still carries the numeric Domain `BundleId`. The numeric ID is not silently reinterpreted as an ontology string, and no repository-local storage handle is exposed as portable identity. The adapter and FSM_COS binding migration remains a separate integration step.
+
+A repository-local storage key is an implementation detail. It must never be used as the portable identity or persisted into a published Experience manifest.
 
 ## Azure layout
 
@@ -50,7 +54,7 @@ The first storage implementation uses one private container:
 ```text
 microbundles/
 └── artifacts/
-    └── {bundleId}/
+    └── {repository-local-key}/
         └── {version}/
             └── {sha256}.bundle
 ```
