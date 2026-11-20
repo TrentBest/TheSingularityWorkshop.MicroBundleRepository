@@ -27,8 +27,7 @@ public readonly record struct MicroBundleArtifactAddress
 
         if (version is "." or ".." ||
             version.Any(char.IsControl) ||
-            version.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 ||
-            version.Contains('/') || version.Contains('\\'))
+            version.IndexOfAny("<>:\"/\\\\|?*".ToCharArray()) >= 0)
         {
             throw new ArgumentException(
                 "Version must be a portable, single storage-safe path segment.",
