@@ -36,22 +36,28 @@ public sealed class CliProcessTests
 
     private static async Task<ProcessResult> RunAsync(params string[] arguments)
     {
-        var cliAssembly = Path.Combine(
-            AppContext.BaseDirectory,
-            "TheSingularityWorkshop.MicroBundleRepository.Cli.dll");
-        Assert.True(File.Exists(cliAssembly), $"CLI assembly was not copied to test output: {cliAssembly}");
+        var repositoryRoot = FindRepositoryRoot();
+        var cliProject = Path.Combine(
+            repositoryRoot,
+            "src",
+            "CLI",
+            "TheSingularityWorkshop.MicroBundleRepository.Cli",
+            "TheSingularityWorkshop.MicroBundleRepository.Cli.csproj");
+        Assert.True(File.Exists(cliProject), $"CLI project was not found: {cliProject}");
 
         using var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
                 FileName = "dotnet",
+                WorkingDirectory = repositoryRoot,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false
             }
         };
-        process.StartInfo.ArgumentList.Add(cliAssembly);
+        foreach (var argument in new[] { "run", "--no-build", "--configuration", "Release", "--project", cliProject, "--" })
+            process.StartInfo.ArgumentList.Add(argument);
         foreach (var argument in arguments)
             process.StartInfo.ArgumentList.Add(argument);
 
@@ -64,6 +70,19 @@ public sealed class CliProcessTests
         await process.WaitForExitAsync();
 
         return new ProcessResult(process.ExitCode, await stdout, await stderr);
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
+             directory is not null;
+             directory = directory.Parent)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "TheSingularityWorkshop.MicroBundleRepository.slnx")))
+                return directory.FullName;
+        }
+
+        throw new DirectoryNotFoundException("Could not locate TheSingularityWorkshop.MicroBundleRepository.slnx.");
     }
 
     private sealed record ProcessResult(int ExitCode, string StandardOutput, string StandardError);
