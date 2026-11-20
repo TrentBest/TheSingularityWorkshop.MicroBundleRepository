@@ -3,12 +3,14 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Core;
 /// <summary>
 /// A durable repository-local numeric address bound to one portable immutable revision.
 /// </summary>
-public readonly record struct MicroBundleIdentityBinding
+public sealed record MicroBundleIdentityBinding
 {
     public MicroBundleIdentityBinding(
         MicroBundleArtifactIdentity identity,
         MicroBundleArtifactAddress address)
     {
+        ArgumentNullException.ThrowIfNull(identity);
+
         if (address.BundleId == 0)
             throw new ArgumentOutOfRangeException(nameof(address));
 
