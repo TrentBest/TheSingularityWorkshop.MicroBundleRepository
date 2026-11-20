@@ -1,5 +1,8 @@
 using Xunit;
 using System.Diagnostics;
+using System.Net;
+using System.Security.Cryptography;
+using System.Text.Json;
 
 namespace TheSingularityWorkshop.MicroBundleRepository.Cli.Tests;
 
@@ -8,7 +11,7 @@ public sealed class CliProcessTests
     [Fact]
     public async Task Publish_WithoutWorkshopCredential_FailsClosed()
     {
-        var result = await RunAsync("publish", "workshop/example", "1.0.0", "missing.bundle");
+        var result = await RunAsync(null, "publish", "workshop/example", "1.0.0", "missing.bundle");
 
         Assert.Equal(1, result.ExitCode);
         Assert.Contains("Publishing is disabled", result.StandardError);
@@ -18,7 +21,7 @@ public sealed class CliProcessTests
     [Fact]
     public async Task Put_RefusesLegacyCallerSelectedNumericIdentity()
     {
-        var result = await RunAsync("put", "2110", "1.0.0", "bundle.bin");
+        var result = await RunAsync(null, "put", "2110", "1.0.0", "bundle.bin");
 
         Assert.Equal(1, result.ExitCode);
         Assert.Contains("numeric-ID put command is retired", result.StandardError);
@@ -27,7 +30,7 @@ public sealed class CliProcessTests
     [Fact]
     public async Task Url_WithUnsupportedScheme_FailsThroughCliErrorBoundary()
     {
-        var result = await RunAsync("--url", "file:///tmp/repository", "health");
+        var result = await RunAsync(null, "--url", "file:///tmp/repository", "health");
 
         Assert.Equal(1, result.ExitCode);
         Assert.Contains("ERROR:", result.StandardError);
@@ -35,7 +38,129 @@ public sealed class CliProcessTests
         Assert.DoesNotContain("Unhandled exception", result.StandardError);
     }
 
-    private static async Task<ProcessResult> RunAsync(params string[] arguments)
+    [Fact]
+    public async Task Publish_UsesWorkshopCredentialAndVerifiesExactReadBack()
+    {
+        var content = new byte[] { 3, 1, 4, 1, 5, 9, 2, 6 };
+        var hash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
+        var credential = "test-workshop-publisher-secret";
+        var inputPath = Path.Combine(Path.GetTempPath(), $"microbundle-{Guid.NewGuid():N}.bin");
+        await File.WriteAllBytesAsync(inputPath, content);
+
+        using var listener = new HttpListener();
+        var portProbe = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
+        portProbe.Start();
+        var port = ((IPEndPoint)portProbe.LocalEndpoint).Port;
+        portProbe.Stop();
+        var baseUrl = $"http://127.0.0.1:{port}/";
+        listener.Prefixes.Add(baseUrl);
+        listener.Start();
+
+        try
+        {
+            var server = HandlePublishAsync(listener, content, hash, credential);
+            var result = await RunAsync(
+                credential,
+                "--url", baseUrl,
+                "publish", "workshop/example", "1.0.0", inputPath);
+            var requests = await server;
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Contains($"Content SHA-256:    {hash}", result.StandardOutput);
+            Assert.Contains("Bytes verified:     8", result.StandardOutput);
+            Assert.DoesNotContain(credential, result.StandardOutput);
+            Assert.DoesNotContain(credential, result.StandardError);
+            Assert.Equal(2, requests.Count);
+            Assert.Equal("PUT", requests[0].Method);
+            Assert.Equal("GET", requests[1].Method);
+            Assert.All(requests, request => Assert.Equal(credential, request.PublisherKey));
+            Assert.Equal("workshop/example", requests[0].Ontology);
+            Assert.Equal(Convert.ToBase64String(content), requests[0].ContentBase64);
+            Assert.Equal(hash, requests[0].ContentHash);
+            Assert.Equal(hash, requests[1].ContentHash);
+        }
+        finally
+        {
+            listener.Stop();
+            File.Delete(inputPath);
+        }
+    }
+
+    private static async Task<List<ObservedRequest>> HandlePublishAsync(
+        HttpListener listener,
+        byte[] content,
+        string hash,
+        string credential)
+    {
+        var requests = new List<ObservedRequest>();
+        for (var i = 0; i < 2; i++)
+        {
+            var context = await listener.GetContextAsync();
+            using var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding);
+            var body = await reader.ReadToEndAsync();
+            var request = new ObservedRequest(
+                context.Request.HttpMethod,
+                context.Request.Url!.AbsolutePath,
+                context.Request.Headers["X-Workshop-Publisher-Key"],
+                null,
+                null,
+                null);
+
+            if (i == 0)
+            {
+                using var document = JsonDocument.Parse(body);
+                request = request with
+                {
+                    Ontology = document.RootElement.GetProperty("ontology").GetString(),
+                    ContentBase64 = document.RootElement.GetProperty("contentBase64").GetString(),
+                    ContentHash = hash
+                };
+                Assert.Equal("/api/microbundles/identity", request.Path);
+                Assert.Equal("workshop/example", request.Ontology);
+                Assert.Equal(Convert.ToBase64String(content), request.ContentBase64);
+                Assert.Equal(credential, request.PublisherKey);
+
+                var binding = JsonSerializer.Serialize(new
+                {
+                    ontology = "workshop/example",
+                    version = "1.0.0",
+                    contentHash = hash,
+                    bundleId = 73UL
+                });
+                await WriteResponseAsync(context, 200, binding);
+            }
+            else
+            {
+                Assert.Equal("/api/microbundles/73/1.0.0/" + hash, request.Path);
+                Assert.Equal(credential, request.PublisherKey);
+                request = request with { ContentHash = hash };
+                var artifact = JsonSerializer.Serialize(new
+                {
+                    bundleId = 73UL,
+                    version = "1.0.0",
+                    contentHash = hash,
+                    contentBase64 = Convert.ToBase64String(content)
+                });
+                await WriteResponseAsync(context, 200, artifact);
+            }
+
+            requests.Add(request);
+        }
+
+        return requests;
+    }
+
+    private static async Task WriteResponseAsync(HttpListenerContext context, int statusCode, string body)
+    {
+        var bytes = System.Text.Encoding.UTF8.GetBytes(body);
+        context.Response.StatusCode = statusCode;
+        context.Response.ContentType = "application/json";
+        context.Response.ContentLength64 = bytes.Length;
+        await context.Response.OutputStream.WriteAsync(bytes);
+        context.Response.Close();
+    }
+
+    private static async Task<ProcessResult> RunAsync(string? publisherCredential, params string[] arguments)
     {
         var repositoryRoot = FindRepositoryRoot();
         var cliProject = Path.Combine(
@@ -63,6 +188,8 @@ public sealed class CliProcessTests
             process.StartInfo.ArgumentList.Add(argument);
 
         process.StartInfo.Environment.Remove("MICRO_BUNDLE_REPOSITORY_WORKSHOP_PUBLISHER_KEY");
+        if (publisherCredential is not null)
+            process.StartInfo.Environment["MICRO_BUNDLE_REPOSITORY_WORKSHOP_PUBLISHER_KEY"] = publisherCredential;
         process.StartInfo.Environment.Remove("MICRO_BUNDLE_REPOSITORY_URL");
 
         Assert.True(process.Start());
@@ -85,6 +212,14 @@ public sealed class CliProcessTests
 
         throw new DirectoryNotFoundException("Could not locate TheSingularityWorkshop.MicroBundleRepository.slnx.");
     }
+
+    private sealed record ObservedRequest(
+        string Method,
+        string Path,
+        string? PublisherKey,
+        string? Ontology,
+        string? ContentBase64,
+        string? ContentHash);
 
     private sealed record ProcessResult(int ExitCode, string StandardOutput, string StandardError);
 }
