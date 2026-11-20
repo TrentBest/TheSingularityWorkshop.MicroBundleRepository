@@ -44,7 +44,7 @@ public sealed class MicroBundleWriteSecurityTests
     {
         using var factory = new RestHostFactory(configureKey: true);
         using var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add("X-Repository-Write-Key", "incorrect-key");
+        client.DefaultRequestHeaders.Add("X-Workshop-Publisher-Key", "incorrect-key");
 
         using var response = await client.PutAsync(
             "/api/microbundles/42/1.0.0/" + new string('a', 64),
@@ -58,7 +58,7 @@ public sealed class MicroBundleWriteSecurityTests
     {
         using var factory = new RestHostFactory(configureKey: true, maxRequestBytes: 64);
         using var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add("X-Repository-Write-Key", "test-only-write-key");
+        client.DefaultRequestHeaders.Add("X-Workshop-Publisher-Key", "test-only-write-key");
 
         using var content = new StringContent(new string('x', 1024), Encoding.UTF8, "application/json");
         using var response = await client.PutAsync(
@@ -73,7 +73,7 @@ public sealed class MicroBundleWriteSecurityTests
     {
         using var factory = new RestHostFactory(configureKey: true);
         using var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add("X-Repository-Write-Key", "test-only-write-key");
+        client.DefaultRequestHeaders.Add("X-Workshop-Publisher-Key", "test-only-write-key");
 
         var bytes = Encoding.UTF8.GetBytes("authorized write integration test");
         var hash = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
@@ -167,7 +167,7 @@ public sealed class MicroBundleWriteSecurityTests
                 ["Repository:MaxMicroBundleRequestBytes"] = maxRequestBytes?.ToString(System.Globalization.CultureInfo.InvariantCulture)
                 };
                 if (configureKey)
-                    settings["Repository:WriteApiKey"] = "test-only-write-key";
+                    settings["Repository:WorkshopPublisherKey"] = "test-only-write-key";
                 configuration.AddInMemoryCollection(settings);
             });
         }
