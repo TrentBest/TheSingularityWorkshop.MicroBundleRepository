@@ -59,7 +59,7 @@ public sealed class MicroBundleArtifactIdentityTests
     [Fact]
     public void Identity_and_address_reject_nonportable_version_segments()
     {
-        string[] invalidVersions = [".", "..", "1:0.0", "1.0.0?", "1.0.0\\n"];
+        string[] invalidVersions = [".", "..", "1:0.0", "1.0.0?", "1.0.0%2F", "1.0 0", "1.0.0\\n"];
 
         foreach (var version in invalidVersions)
         {
