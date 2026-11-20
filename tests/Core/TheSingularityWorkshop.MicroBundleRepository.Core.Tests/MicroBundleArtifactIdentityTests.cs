@@ -63,6 +63,21 @@ public sealed class MicroBundleArtifactIdentityTests
             new MicroBundleArtifactIdentity("Workshop.Renderer", "../1.0.0", Hash));
     }
 
+    [Theory]
+    [InlineData(".")]
+    [InlineData("..")]
+    [InlineData("1.0/0")]
+    [InlineData("1.0\\\\0")]
+    [InlineData("1.0?0")]
+    [InlineData("1.0#0")]
+    [InlineData("1.0%2F0")]
+    [InlineData("1.0 0")]
+    public void Identity_rejects_ambiguous_version_path_segments(string version)
+    {
+        Assert.Throws<ArgumentException>(() =>
+            new MicroBundleArtifactIdentity("Workshop.Renderer", version, Hash));
+    }
+
     [Fact]
     public void Identity_requires_sha256_hex()
     {
