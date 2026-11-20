@@ -54,6 +54,20 @@ public sealed class MicroBundleWriteSecurityTests
     }
 
     [Fact]
+    public async Task Put_RejectsLegacyGenericRepositoryWriteKey()
+    {
+        using var factory = new RestHostFactory(configureKey: true);
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Repository-Write-Key", "test-only-write-key");
+
+        using var response = await client.PutAsync(
+            "/api/microbundles/42/1.0.0/" + new string('a', 64),
+            new StringContent("{}"));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Put_RejectsDeclaredOversizedBodyBeforeJsonBinding()
     {
         using var factory = new RestHostFactory(configureKey: true, maxRequestBytes: 64);
