@@ -26,6 +26,8 @@ public sealed class FileSystemMicroBundleIdentityRepository : IMicroBundleIdenti
     private readonly string _artifactRoot;
     private readonly Func<CancellationToken, Task>? _beforeIndexCommit;
 
+    /// <summary>Creates a filesystem identity repository rooted at the specified directory.</summary>
+    /// <param name="root">Repository storage directory.</param>
     public FileSystemMicroBundleIdentityRepository(string root)
         : this(root, beforeIndexCommit: null)
     {
@@ -44,6 +46,7 @@ public sealed class FileSystemMicroBundleIdentityRepository : IMicroBundleIdenti
         Directory.CreateDirectory(_artifactRoot);
     }
 
+    /// <summary>Stores bytes and durably binds their portable identity to a local numeric ID.</summary>
     public async ValueTask<MicroBundleIdentityBinding> PutAsync(
         string ontology,
         string version,
@@ -84,6 +87,7 @@ public sealed class FileSystemMicroBundleIdentityRepository : IMicroBundleIdenti
         return new MicroBundleIdentityBinding(identity, address);
     }
 
+    /// <summary>Resolves a complete portable revision identity to its local binding.</summary>
     public async ValueTask<MicroBundleIdentityBinding?> ResolveAsync(
         MicroBundleArtifactIdentity identity,
         CancellationToken cancellationToken = default)
@@ -99,6 +103,7 @@ public sealed class FileSystemMicroBundleIdentityRepository : IMicroBundleIdenti
         return binding;
     }
 
+    /// <summary>Resolves a repository-local numeric ID to its portable revision binding.</summary>
     public async ValueTask<MicroBundleIdentityBinding?> ResolveAsync(
         ulong bundleId,
         CancellationToken cancellationToken = default)
