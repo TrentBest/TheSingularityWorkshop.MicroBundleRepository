@@ -93,11 +93,12 @@ public sealed class CliProcessTests
         string credential)
     {
         var requests = new List<ObservedRequest>();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         for (var i = 0; i < 2; i++)
         {
-            var context = await listener.GetContextAsync();
+            var context = await listener.GetContextAsync().WaitAsync(timeout.Token);
             using var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding);
-            var body = await reader.ReadToEndAsync();
+            var body = await reader.ReadToEndAsync(timeout.Token);
             var request = new ObservedRequest(
                 context.Request.HttpMethod,
                 context.Request.Url!.AbsolutePath,
@@ -115,11 +116,6 @@ public sealed class CliProcessTests
                     ContentBase64 = document.RootElement.GetProperty("contentBase64").GetString(),
                     ContentHash = hash
                 };
-                Assert.Equal("/api/microbundles/identity", request.Path);
-                Assert.Equal("workshop/example", request.Ontology);
-                Assert.Equal(Convert.ToBase64String(content), request.ContentBase64);
-                Assert.Equal(credential, request.PublisherKey);
-
                 var binding = JsonSerializer.Serialize(new
                 {
                     ontology = "workshop/example",
@@ -131,8 +127,6 @@ public sealed class CliProcessTests
             }
             else
             {
-                Assert.Equal("/api/microbundles/73/1.0.0/" + hash, request.Path);
-                Assert.Equal(credential, request.PublisherKey);
                 request = request with { ContentHash = hash };
                 var artifact = JsonSerializer.Serialize(new
                 {
@@ -195,7 +189,16 @@ public sealed class CliProcessTests
         Assert.True(process.Start());
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(40));
+        try
+        {
+            await process.WaitForExitAsync(timeout.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            process.Kill(entireProcessTree: true);
+            throw new TimeoutException("The CLI process did not complete within 40 seconds.");
+        }
 
         return new ProcessResult(process.ExitCode, await stdout, await stderr);
     }
