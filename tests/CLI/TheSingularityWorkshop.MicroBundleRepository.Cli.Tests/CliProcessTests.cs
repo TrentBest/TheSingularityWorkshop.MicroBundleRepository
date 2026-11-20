@@ -73,7 +73,8 @@ public sealed class CliProcessTests
             Assert.Equal(2, requests.Count);
             Assert.Equal("PUT", requests[0].Method);
             Assert.Equal("GET", requests[1].Method);
-            Assert.All(requests, request => Assert.Equal(credential, request.PublisherKey));
+            Assert.Equal(credential, requests[0].PublisherKey);
+            Assert.Null(requests[1].PublisherKey);
             Assert.Equal("workshop/example", requests[0].Ontology);
             Assert.Equal(Convert.ToBase64String(content), requests[0].ContentBase64);
             Assert.Equal(hash, requests[0].ContentHash);
