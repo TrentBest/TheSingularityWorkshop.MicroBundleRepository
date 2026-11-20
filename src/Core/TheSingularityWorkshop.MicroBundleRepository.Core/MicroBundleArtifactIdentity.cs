@@ -12,6 +12,10 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Core;
 /// </remarks>
 public sealed record MicroBundleArtifactIdentity
 {
+    /// <summary>Creates a portable identity from a canonical ontology, exact version, and SHA-256 hash.</summary>
+    /// <param name="ontology">Canonical hierarchical ontology identifier.</param>
+    /// <param name="version">Exact immutable artifact version.</param>
+    /// <param name="contentHash">SHA-256 digest in hexadecimal form.</param>
     public MicroBundleArtifactIdentity(string ontology, string version, string contentHash)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(ontology);
@@ -51,9 +55,13 @@ public sealed record MicroBundleArtifactIdentity
         ContentHash = contentHash.ToLowerInvariant();
     }
 
+    /// <summary>Gets the canonical hierarchical ontology identifier.</summary>
     public string Ontology { get; }
+    /// <summary>Gets the exact artifact version.</summary>
     public string Version { get; }
+    /// <summary>Gets the lowercase SHA-256 digest of the artifact bytes.</summary>
     public string ContentHash { get; }
 
+    /// <summary>Returns the portable ontology/version/hash representation.</summary>
     public override string ToString() => $"{Ontology}/{Version}/{ContentHash}";
 }
