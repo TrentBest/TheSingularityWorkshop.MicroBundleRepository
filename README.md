@@ -48,7 +48,7 @@ These commands validate the source and test projects. They do not publish an art
 
 ## 🟪 05 Documentation and theory
 
-[CiAi-assisted deployment vision](docs/CIAI_DEPLOYMENT_VISION.md) · [Complete domain map and coverage gaps](docs/DOMAIN_MAP.md) · [REST package release checklist](docs/REST_RELEASE_READINESS.md) · [Living lifecycle diagram](docs/images/microbundle-lifecycle.svg) · [Artifact delivery at simulation scale](docs/SIMULATION_SCALE.md) · [Experience publication model](docs/images/experience-publication-model.svg) · [Artifact identity](docs/images/microbundle-artifact-identity.svg) · [Delivery boundary](docs/images/microbundle-delivery-boundary.svg) · [Repository boundary](docs/images/microbundle-repository-boundary.svg) · [Projects and boundaries](#projects) · [Azure configuration](#azure-configuration) · [Development](#development)
+[Durable revision identity bindings](docs/IDENTITY_BINDINGS.md) · [CiAi-assisted deployment vision](docs/CIAI_DEPLOYMENT_VISION.md) · [Complete domain map and coverage gaps](docs/DOMAIN_MAP.md) · [REST package release checklist](docs/REST_RELEASE_READINESS.md) · [Living lifecycle diagram](docs/images/microbundle-lifecycle.svg) · [Artifact delivery at simulation scale](docs/SIMULATION_SCALE.md) · [Experience publication model](docs/images/experience-publication-model.svg) · [Artifact identity](docs/images/microbundle-artifact-identity.svg) · [Delivery boundary](docs/images/microbundle-delivery-boundary.svg) · [Repository boundary](docs/images/microbundle-repository-boundary.svg) · [Projects and boundaries](#projects) · [Azure configuration](#azure-configuration) · [Development](#development)
 
 ---
 
@@ -328,7 +328,7 @@ dotnet build TheSingularityWorkshop.MicroBundleRepository.slnx --configuration R
 dotnet test TheSingularityWorkshop.MicroBundleRepository.slnx --configuration Release
 ~~~
 
-The Azure integration test path will be added once the real development storage account is provisioned; the current test suite intentionally has no hidden dependency on a live cloud resource.
+Azure identity integration tests run against Azurite in CI; they do not require a live production storage account. A production-account migration is a separate operational task.
 
 ## Why Blob Storage first?
 
