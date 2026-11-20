@@ -31,8 +31,8 @@ public sealed record MicroBundleArtifactIdentity
         if (ontology.Any(char.IsControl) ||
             ontology.Any(char.IsWhiteSpace) ||
             ontology.IndexOfAny(['\\', '?', '#', '%']) >= 0 ||
-            ontology.StartsWith('/', StringComparison.Ordinal) ||
-            ontology.EndsWith('/', StringComparison.Ordinal) ||
+            ontology[0] == '/' ||
+            ontology[^1] == '/' ||
             ontology.Contains("//", StringComparison.Ordinal) ||
             ontology.Split('/').Any(segment => segment is "." or ".."))
         {
