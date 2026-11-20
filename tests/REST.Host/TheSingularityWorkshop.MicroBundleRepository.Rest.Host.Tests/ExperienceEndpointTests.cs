@@ -159,7 +159,7 @@ public sealed class ExperienceEndpointTests
         var repository = new FakeExperienceRepository(null);
         using var factory = new RestHostFactory(new FakeCatalog(null), repository, configureWriteKey: true);
         using var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add("X-Repository-Write-Key", "test-write-key");
+        client.DefaultRequestHeaders.Add("X-Workshop-Publisher-Key", "test-write-key");
 
         var response = await client.PutAsJsonAsync(
             $"/api/experiences/42/{Address.Version}/{Hash}",
@@ -176,7 +176,7 @@ public sealed class ExperienceEndpointTests
         var repository = new FakeExperienceRepository(null);
         using var factory = new RestHostFactory(new FakeCatalog(null), repository, configureWriteKey: true);
         using var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add("X-Repository-Write-Key", "test-write-key");
+        client.DefaultRequestHeaders.Add("X-Workshop-Publisher-Key", "test-write-key");
 
         var response = await client.PutAsJsonAsync(
             $"/api/experiences/42/{Address.Version}/{Hash}",
@@ -193,7 +193,7 @@ public sealed class ExperienceEndpointTests
         var repository = new FakeExperienceRepository(null);
         using var factory = new RestHostFactory(catalog, repository, configureWriteKey: true);
         using var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add("X-Repository-Write-Key", "test-write-key");
+        client.DefaultRequestHeaders.Add("X-Workshop-Publisher-Key", "test-write-key");
 
         var missing = await client.PutAsJsonAsync(
             "/api/experiences/42/publication",
@@ -217,7 +217,7 @@ public sealed class ExperienceEndpointTests
         var repository = new FakeExperienceRepository(new ExperienceArtifact(Address, Payload));
         using var factory = new RestHostFactory(catalog, repository, configureWriteKey: true);
         using var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add("X-Repository-Write-Key", "test-write-key");
+        client.DefaultRequestHeaders.Add("X-Workshop-Publisher-Key", "test-write-key");
 
         var response = await client.DeleteAsync("/api/experiences/42/publication");
 
@@ -238,7 +238,7 @@ public sealed class ExperienceEndpointTests
                 {
                     ["Repository:Mode"] = "Local",
                     ["Repository:LocalRoot"] = Path.Combine(Path.GetTempPath(), "mbrepo-host-tests", Guid.NewGuid().ToString("N")),
-                    ["Repository:WriteApiKey"] = configureWriteKey ? "test-write-key" : null
+                    ["Repository:WorkshopPublisherKey"] = configureWriteKey ? "test-write-key" : null
                 }));
 
             builder.ConfigureServices(services =>
