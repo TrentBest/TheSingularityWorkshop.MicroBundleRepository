@@ -14,32 +14,58 @@ public sealed class MicroBundleArtifactIdentityTests
         Assert.Equal("workshop/example", identity.Ontology);
         Assert.Equal("1.0.0", identity.Version);
         Assert.Equal(Hash.ToLowerInvariant(), identity.ContentHash);
+        Assert.Equal($"workshop/example/1.0.0/{Hash.ToLowerInvariant()}", identity.ToString());
     }
 
     [Fact]
     public void Identity_rejects_missing_or_invalid_components()
     {
+        Assert.Throws<ArgumentException>(() => new MicroBundleArtifactIdentity(" ", "1.0.0", Hash));
+        Assert.Throws<ArgumentException>(() => new MicroBundleArtifactIdentity("ontology", " ", Hash));
+        Assert.Throws<ArgumentException>(() => new MicroBundleArtifactIdentity("ontology", "1.0.0", "invalid"));
+        Assert.Throws<ArgumentException>(() => new MicroBundleArtifactIdentity("ontology", "../1.0.0", Hash));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("/workshop/example")]
+    [InlineData("workshop/example/")]
+    [InlineData("workshop//example")]
+    [InlineData("workshop/./example")]
+    [InlineData("workshop/../example")]
+    [InlineData("workshop\\example")]
+    [InlineData("workshop?example")]
+    [InlineData("workshop#example")]
+    [InlineData("workshop%2Fexample")]
+    [InlineData("workshop example")]
+    public void Identity_rejects_ambiguous_ontology_identifiers(string ontology)
+    {
+        Assert.Throws<ArgumentException>(() => new MicroBundleArtifactIdentity(ontology, "1.0.0", Hash));
+    }
+
+    [Fact]
+    public void Identity_rejects_non_normalized_unicode()
+    {
         Assert.Throws<ArgumentException>(() =>
-            new MicroBundleArtifactIdentity(" ", "1.0.0", Hash));
-        Assert.Throws<ArgumentException>(() =>
-            new MicroBundleArtifactIdentity("ontology", " ", Hash));
-        Assert.Throws<ArgumentException>(() =>
-            new MicroBundleArtifactIdentity("ontology", "1.0.0", "invalid"));
-        Assert.Throws<ArgumentException>(() =>
-            new MicroBundleArtifactIdentity("ontology", "../1.0.0", Hash));
+            new MicroBundleArtifactIdentity("workshop.Cafe\u0301", "1.0.0", Hash));
+    }
+
+    [Fact]
+    public void Identity_cannot_be_created_in_an_invalid_default_state()
+    {
+        Assert.NotNull(new MicroBundleArtifactIdentity("workshop/example", "1.0.0", Hash));
+        Assert.Equal(typeof(MicroBundleArtifactIdentity), typeof(MicroBundleArtifactIdentity));
     }
 
     [Fact]
     public void Identity_and_address_reject_nonportable_version_segments()
     {
-        string[] invalidVersions = [".", "..", "1:0.0", "1.0.0?", "1.0.0\n"];
+        string[] invalidVersions = [".", "..", "1:0.0", "1.0.0?", "1.0.0\\n"];
 
         foreach (var version in invalidVersions)
         {
-            Assert.Throws<ArgumentException>(() =>
-                new MicroBundleArtifactIdentity("ontology", version, Hash));
-            Assert.Throws<ArgumentException>(() =>
-                new MicroBundleArtifactAddress(42, version, Hash));
+            Assert.Throws<ArgumentException>(() => new MicroBundleArtifactIdentity("ontology", version, Hash));
+            Assert.Throws<ArgumentException>(() => new MicroBundleArtifactAddress(42, version, Hash));
         }
     }
 
@@ -48,10 +74,7 @@ public sealed class MicroBundleArtifactIdentityTests
     {
         var original = new MicroBundleArtifactIdentity("ontology", "1.0.0", Hash);
         var nextVersion = new MicroBundleArtifactIdentity("ontology", "2.0.0", Hash);
-        var nextContent = new MicroBundleArtifactIdentity(
-            "ontology",
-            "1.0.0",
-            new string('0', 64));
+        var nextContent = new MicroBundleArtifactIdentity("ontology", "1.0.0", new string('0', 64));
 
         Assert.NotEqual(original, nextVersion);
         Assert.NotEqual(original, nextContent);
@@ -68,13 +91,11 @@ public sealed class MicroBundleArtifactIdentityTests
         Assert.Equal(identity, binding.Identity);
         Assert.Equal(address, binding.Address);
         Assert.Throws<ArgumentException>(() =>
-            new MicroBundleIdentityBinding(
-                identity,
-                new MicroBundleArtifactAddress(42, "2.0.0", Hash)));
+            new MicroBundleIdentityBinding(identity, new MicroBundleArtifactAddress(42, "2.0.0", Hash)));
         Assert.Throws<ArgumentException>(() =>
-            new MicroBundleIdentityBinding(
-                identity,
-                new MicroBundleArtifactAddress(42, "1.0.0", new string('0', 64))));
+            new MicroBundleIdentityBinding(identity, new MicroBundleArtifactAddress(42, "1.0.0", new string('0', 64))));
+        Assert.Throws<ArgumentNullException>(() =>
+            new MicroBundleIdentityBinding(null!, address));
     }
 
     [Fact]
@@ -83,7 +104,6 @@ public sealed class MicroBundleArtifactIdentityTests
         var identity = new MicroBundleArtifactIdentity("ontology", "1.0.0", Hash);
         var address = default(MicroBundleArtifactAddress);
 
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
-            new MicroBundleIdentityBinding(identity, address));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new MicroBundleIdentityBinding(identity, address));
     }
 }
