@@ -53,8 +53,7 @@ public sealed class MicroBundleArtifactIdentityTests
     [Fact]
     public void Identity_cannot_be_created_in_an_invalid_default_state()
     {
-        Assert.NotNull(new MicroBundleArtifactIdentity("workshop/example", "1.0.0", Hash));
-        Assert.Equal(typeof(MicroBundleArtifactIdentity), typeof(MicroBundleArtifactIdentity));
+        Assert.Null(default(MicroBundleArtifactIdentity));
     }
 
     [Fact]
