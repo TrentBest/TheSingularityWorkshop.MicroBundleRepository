@@ -122,6 +122,7 @@ public sealed class FileSystemMicroBundleIdentityRepository : IMicroBundleIdenti
         return binding;
     }
 
+    /// <summary>Retrieves and verifies an artifact by its repository-local address.</summary>
     public async ValueTask<MicroBundleArtifact?> GetAsync(
         MicroBundleArtifactAddress address,
         CancellationToken cancellationToken = default)
@@ -135,6 +136,7 @@ public sealed class FileSystemMicroBundleIdentityRepository : IMicroBundleIdenti
         return new MicroBundleArtifact(address, bytes);
     }
 
+    /// <summary>Stores an artifact through the numeric API while protecting identity-bound IDs.</summary>
     public async ValueTask PutAsync(
         MicroBundleArtifact artifact,
         CancellationToken cancellationToken = default)
