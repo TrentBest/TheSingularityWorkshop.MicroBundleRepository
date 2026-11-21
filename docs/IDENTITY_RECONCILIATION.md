@@ -43,17 +43,17 @@ The durable mapping must be one-to-one for the complete portable revision key an
 
 Concurrent writers require storage-native coordination: filesystem writers need cross-process exclusion/atomic index replacement; Azure writers need conditional updates/reservations. A process that does not participate in the coordination protocol must not be mixed with writers that assume it.
 
-## Current development versus proposed integration
+## Current implementation in development
 
-The current `development` branch still exposes numeric `MicroBundleArtifactAddress` values to the repository contract. The portable identity work is staged in a draft PR chain:
+The portable identity implementation is now integrated into canonical `development` through the ordered merge chain:
 
-1. [PR #39 — durable portable revision identity and local bindings](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/39)
-2. [PR #40 — REST identity endpoints and Workshop publisher authorization](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/40), stacked on #39
-3. [PR #41 — authenticated identity-aware publisher CLI](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/41), stacked on #40
+1. [PR #39 — durable portable revision identity and local bindings](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/39), merged at `85a6be638edcff576508ec856a7a6003c2c4ca64`.
+2. [PR #40 — REST identity endpoints and Workshop publisher authorization](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/40), merged at `cb211d3585d0253b79f60f31291864cba1a8307d`.
+3. [PR #41 — authenticated identity-aware publisher CLI](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/41), merged at `a25c272195d329d912f6e31926eb79b34e779b5a`.
 
-The PR descriptions report successful .NET 10 build/test evidence and package verification, while package publication was skipped. These PRs are still draft and unmerged. Their behavior must not be described as present on canonical `development` until the stack is reconciled and accepted.
+The merged implementation includes durable filesystem/Azure bindings, additive REST ingestion and resolution, Workshop-only mutation authorization, and the identity-aware publisher CLI. Remote publishing requires HTTPS except for loopback development; the authenticated CLI does not follow redirects. The final pre-merge code head passed 150/150 standard tests and 152/152 source-integrated tests; package verification and packing passed with publication skipped. The post-merge development workflow is the release evidence of record and must remain green.
 
-The cross-repository domain/runtime mapping remains tracked in [MicroBundleDomain issue #28](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleDomain/issues/28). The repository's local binding is necessary but does not alone prove that FSM_COS manifests and numeric dependency declarations resolve the same portable identity.
+The cross-repository domain/runtime mapping remains tracked in [MicroBundleDomain issue #28](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleDomain/issues/28). The repository binding maps portable revision identity to a repository-local storage address. It does **not** redefine `MicroBundleDescriptor.Id`, map numeric dependency declarations, or alone prove FSM_COS dependency closure. Those identities remain distinct until the owning Domain/composition contract and consumer tests prove the mapping.
 
 ## Explicitly out of scope
 
