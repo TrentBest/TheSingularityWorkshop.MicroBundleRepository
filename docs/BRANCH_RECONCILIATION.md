@@ -1,7 +1,8 @@
 # Branch reconciliation — current audit
 
-**Audit date:** 2026-11-20  
-**Live remote inventory:** 15 branches. Canonical policy remains exactly `master` + `development`. No branch was deleted, force-pushed, merged, or rewritten by this audit.
+**Audit date:** 2026-11-20 / refreshed after integration  
+**Audited development head:** `89c05f09f917ee90dd82252a5e55d4e054ab5f6f`  
+**Live remote inventory:** 15 branches. Canonical policy remains exactly `master` + `development`. The #39/#40/#41 implementation stack was merged into `development`; no branch was deleted or force-pushed by this audit.
 
 ## Current inventory
 
@@ -10,10 +11,10 @@ The table records the code heads used for this audit. PR #41's validated code he
 | Branch | Audited code head | Relationship / PR | Disposition |
 |---|---|---|---|
 | `master` | `28b2908e` | Canonical released baseline | Retain unchanged |
-| `development` | `7dbd0ed2` | Canonical active integration branch | Retain |
-| `adp/revision-identity-reconcile` | `fe9d0e6f` | PR #39 → development; 33 commits ahead, 0 behind | Retain; first layer of active stack |
-| `adp/rest-identity-workshop-auth` | `b81de079` | PR #40 → #39; 42 commits ahead of development through its stack | Retain; second layer of active stack |
-| `feat/workshop-rest-publisher` | `e0acab0e` | PR #41 → #40; 58 commits ahead, 0 behind development | Retain; top layer of active stack |
+| `development` | `89c05f09` | Canonical active integration branch; portable identity stack integrated | Retain |
+| `adp/revision-identity-reconcile` | `fdbe30f5` | PR #39 merged to development at `85a6be63`; 0 ahead of current development | **READY FOR OWNER DELETION** |
+| `adp/rest-identity-workshop-auth` | `b81de079` | PR #40 merged to development at `cb211d35`; 0 ahead of current development | **READY FOR OWNER DELETION** |
+| `feat/workshop-rest-publisher` | `bd327bc3` | PR #41 merged to development at `a25c2721`; 0 ahead of current development | **READY FOR OWNER DELETION** |
 | `feature/revision-identity-bindings` | `64829170` | PR #33 open; 68 ahead, 77 behind | Retain pending selective reconciliation; do not merge wholesale |
 | `feature/ontology-address-mapping` | `4f6d2551` | PR #31 open; 35 ahead, 77 behind | Retain pending selective salvage; its public numeric-address replacement conflicts with the compatibility-preserving identity model |
 | `work/microbundle-artifact-discovery` | `7ad6cd14` | PR #21 open; 104 ahead, 308 behind | Retain pending selective reconciliation; do not merge wholesale |
@@ -25,31 +26,19 @@ The table records the code heads used for this audit. PR #41's validated code he
 | `release-prep/core-1.0.0` | `7bc9067c` | PR #12 closed unmerged to master; 59 ahead, 308 behind | Preserve pending release-artifact/docs audit |
 | `release-prep/rest-1.0.0` | `537f4e2b` | PR #13 closed unmerged to master; 28 ahead, 308 behind | Preserve pending release-artifact/docs audit |
 
-The three current identity/publisher PRs form one ordered dependency stack:
-
-```text
-development
-    |
-    v
-PR #39  durable portable revision identity
-    |
-    v
-PR #40  REST identity API + Workshop-only mutation authority
-    |
-    v
-PR #41  authenticated identity-aware publisher CLI
-```
-
-The current PR #41 head `e0acab0e96464143c47ee991eea2e1225e6d15ce` contains the latest CLI security hardening and tests. Its predecessor code head `4085ff9f79e2ed81061a7ee7145dcf5d6cb4b543` passed 148 standard and 150 source-integrated tests; the newer code commits are awaiting their own workflow results. The stack remains draft and unmerged.
+The three-stage identity/publisher implementation is now integrated into `development` in dependency order: PR #39 (durable identity) → PR #40 (REST/auth) → PR #41 (publisher CLI). The merged development head `a25c2721` passed 150/150 standard tests and 152/152 source-integrated tests; package verification/packing passed with publication skipped. The three source branches have no commits ahead of current development and are ready for owner deletion.
 
 ## Deletion readiness
 
-**READY FOR OWNER DELETION: two branches.**
+**READY FOR OWNER DELETION: five branches.**
 
+- `TrentBest/TheSingularityWorkshop.MicroBundleRepository:adp/revision-identity-reconcile` — PR #39 merged; all branch commits are reachable from `development`.
+- `TrentBest/TheSingularityWorkshop.MicroBundleRepository:adp/rest-identity-workshop-auth` — PR #40 merged; all branch commits are reachable from `development`.
+- `TrentBest/TheSingularityWorkshop.MicroBundleRepository:feat/workshop-rest-publisher` — PR #41 merged; all branch commits are reachable from `development`.
 - `TrentBest/TheSingularityWorkshop.MicroBundleRepository:feature/aspnetcore-10-dependencies` — PR #37 is closed unmerged; its only changed test-project file has the exact same blob SHA on current `development`.
-- `TrentBest/TheSingularityWorkshop.MicroBundleRepository:work/portable-artifact-identity-contract` — PR #38 is closed unmerged; its three changed paths (`MicroBundleArtifactIdentity.cs`, its tests, and `docs/ARCHITECTURE.md`) are superseded by PR #39's stricter hierarchical identity validation, expanded tests, and current identity documentation. The newer work remains preserved on the active #39 → #40 → #41 stack.
+- `TrentBest/TheSingularityWorkshop.MicroBundleRepository:work/portable-artifact-identity-contract` — PR #38 is closed unmerged; its three changed paths (`MicroBundleArtifactIdentity.cs`, its tests, and `docs/ARCHITECTURE.md`) are superseded by PR #39's stricter hierarchical identity validation, expanded tests, and current identity documentation.
 
-A low ahead count alone is not proof that a branch is disposable. These two candidates have been checked for changed paths and their replacement content is preserved. No deletion was performed; the owner should remove them in one audited batch after rechecking the exact remote heads.
+These five candidates have been checked for commit reachability or replacement content. No deletion was performed; the owner should remove them in one audited batch after rechecking the exact remote heads. Deleting all five would reduce the live inventory from 15 to 10; eight additional surplus refs would still need reconciliation.
 
 The following refs remain **not deletion-approved**:
 
