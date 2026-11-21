@@ -39,6 +39,62 @@ public sealed class CliProcessTests
     }
 
     [Fact]
+    public async Task Publish_RejectsRemoteHttpBeforeReadingInput()
+    {
+        var result = await RunAsync(
+            "test-workshop-publisher-secret",
+            "--url", "http://example.com/",
+            "publish", "workshop/example", "1.0.0", "missing.bundle");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("requires HTTPS", result.StandardError);
+        Assert.DoesNotContain("missing.bundle", result.StandardError);
+    }
+
+    [Fact]
+    public async Task Publish_DoesNotFollowRedirectWithWorkshopCredential()
+    {
+        var credential = "test-workshop-publisher-secret";
+        var inputPath = Path.Combine(Path.GetTempPath(), $"microbundle-{Guid.NewGuid():N}.bin");
+        await File.WriteAllBytesAsync(inputPath, [1, 2, 3, 4]);
+
+        using var source = new HttpListener();
+        using var destination = new HttpListener();
+        var sourcePort = GetAvailablePort();
+        var destinationPort = GetAvailablePort();
+        var sourceUrl = $"http://127.0.0.1:{sourcePort}/";
+        var destinationUrl = $"http://127.0.0.1:{destinationPort}/";
+        source.Prefixes.Add(sourceUrl);
+        destination.Prefixes.Add(destinationUrl);
+        source.Start();
+        destination.Start();
+
+        try
+        {
+            var redirect = HandleRedirectAsync(source, destinationUrl);
+            var result = await RunAsync(
+                credential,
+                "--url", sourceUrl,
+                "publish", "workshop/example", "1.0.0", inputPath);
+            var sourceKey = await redirect;
+
+            Assert.Equal(1, result.ExitCode);
+            Assert.Contains("HTTP 307", result.StandardError);
+            Assert.Equal(credential, sourceKey);
+
+            using var noRedirect = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                () => destination.GetContextAsync().WaitAsync(noRedirect.Token));
+        }
+        finally
+        {
+            source.Stop();
+            destination.Stop();
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
     public async Task Publish_UsesWorkshopCredentialAndVerifiesExactReadBack()
     {
         var content = new byte[] { 3, 1, 4, 1, 5, 9, 2, 6 };
@@ -85,6 +141,26 @@ public sealed class CliProcessTests
             listener.Stop();
             File.Delete(inputPath);
         }
+    }
+
+    private static int GetAvailablePort()
+    {
+        var listener = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        listener.Stop();
+        return port;
+    }
+
+    private static async Task<string?> HandleRedirectAsync(HttpListener listener, string destinationUrl)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        var context = await listener.GetContextAsync().WaitAsync(timeout.Token);
+        var publisherKey = context.Request.Headers["X-Workshop-Publisher-Key"];
+        context.Response.StatusCode = (int)HttpStatusCode.TemporaryRedirect;
+        context.Response.RedirectLocation = destinationUrl;
+        context.Response.Close();
+        return publisherKey;
     }
 
     private static async Task<List<ObservedRequest>> HandlePublishAsync(
