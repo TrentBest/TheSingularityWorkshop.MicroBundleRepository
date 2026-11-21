@@ -99,13 +99,14 @@ A MicroBundle revision has the portable identity:
 (ontology, exact version, SHA-256)
 ```
 
-The repository preserves the existing runtime-facing numeric address while owning the durable mapping between these two identities:
+The repository preserves the existing `MicroBundleArtifactAddress` contract while adding a durable mapping between portable revisions and repository-local storage addresses:
 
-- **Portable revision:** ontology string + exact version + SHA-256 of the immutable bytes.
+- **Portable revision:** canonical ontology + exact version + SHA-256 of the immutable bytes.
 - **Repository-local address:** `MicroBundleArtifactAddress(ulong bundleId, version, contentHash)`.
-- **Local numeric ID:** a non-zero storage/runtime handle allocated by this repository. It is not globally portable and must not be authored into an Experience manifest.
+- **Local numeric ID:** a non-zero storage handle allocated by this repository. It is not globally portable and must not be authored into an Experience manifest.
+- **Domain/runtime identity:** `MicroBundleDescriptor.Id` and numeric dependency references remain a separate MicroBundleDomain/FSM_COS contract.
 
-The mapping is one-to-one and durable. Re-ingesting the same complete revision returns its existing binding; conflicting, corrupt, missing, or mismatched bindings fail closed. The repository computes the SHA-256 from the supplied bytes and verifies the immutable artifact before exposing a binding.
+The mapping is one-to-one and durable. Re-ingesting the same complete revision returns its existing binding; conflicting, corrupt, missing, or mismatched bindings fail closed. The repository computes the SHA-256 from the supplied bytes and verifies the immutable artifact before exposing a binding. The repository-local storage handle must never be substituted for the domain/runtime ID. See [Portable identity reconciliation](docs/IDENTITY_RECONCILIATION.md) for the remaining cross-repository proof.
 
 The physical Azure location remains repository-local and deterministic:
 
