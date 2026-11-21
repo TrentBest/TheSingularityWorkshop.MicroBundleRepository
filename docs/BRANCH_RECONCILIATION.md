@@ -1,24 +1,24 @@
 # Branch reconciliation — current audit
 
 **Audit date:** 2026-11-20 / refreshed after integration  
-**Audited development head:** `89c05f09f917ee90dd82252a5e55d4e054ab5f6f`  
+**Audited development head:** `14c1d6beafffaecaf98f1f76778500477d324623`  
 **Live remote inventory:** 15 branches. Canonical policy remains exactly `master` + `development`. The #39/#40/#41 implementation stack was merged into `development`; no branch was deleted or force-pushed by this audit.
 
 ## Current inventory
 
-The table records the code heads used for this audit. PR #41's validated code head is `e0acab0e`; later commits on that branch update only documentation/readiness records and do not change the code under test. The current branch history is authoritative for the latest documentation commit.
+The table records the remote heads checked for this audit. The #39/#40/#41 implementation stack is integrated into development; historical PR branches may contain stale documentation-only commits, which are individually dispositioned below.
 
 | Branch | Audited code head | Relationship / PR | Disposition |
 |---|---|---|---|
 | `master` | `28b2908e` | Canonical released baseline | Retain unchanged |
-| `development` | `89c05f09` | Canonical active integration branch; portable identity stack integrated | Retain |
+| `development` | `14c1d6be` | Canonical active integration branch; portable identity and separate FSM_COS adapter integrated | Retain |
 | `adp/revision-identity-reconcile` | `fdbe30f5` | PR #39 merged to development at `85a6be63`; 0 ahead of current development | **READY FOR OWNER DELETION** |
 | `adp/rest-identity-workshop-auth` | `b81de079` | PR #40 merged to development at `cb211d35`; 0 ahead of current development | **READY FOR OWNER DELETION** |
-| `feat/workshop-rest-publisher` | `bd327bc3` | PR #41 merged to development at `a25c2721`; 0 ahead of current development | **READY FOR OWNER DELETION** |
-| `feature/revision-identity-bindings` | `64829170` | PR #33 open; 68 ahead, 77 behind | Retain pending selective reconciliation; do not merge wholesale |
+| `feat/workshop-rest-publisher` | `518b2a26` | PR #41 merged at `a25c2721`; one extra branch-audit-doc commit is superseded by current development `docs/BRANCH_RECONCILIATION.md` | **READY FOR OWNER DELETION** |
+| `feature/revision-identity-bindings` | `64829170` | PR #33 closed as superseded by merged PR #39; identity implementation and tests are replaced by the integrated stricter contract | **READY FOR OWNER DELETION** |
 | `feature/ontology-address-mapping` | `4f6d2551` | PR #31 open; 35 ahead, 77 behind | Retain pending selective salvage; its public numeric-address replacement conflicts with the compatibility-preserving identity model |
 | `work/microbundle-artifact-discovery` | `7ad6cd14` | PR #21 open; 104 ahead, 308 behind | Retain pending selective reconciliation; do not merge wholesale |
-| `feature/microbundle-publisher` | `28480422` | PR #17 open; 47 ahead, 308 behind | Retain pending selective reconciliation against the newer REST-authenticated publisher |
+| `feature/microbundle-publisher` | `28480422` | PR #17 closed as superseded by merged PR #40/#41 and the separate FSM_COS integration package | **READY FOR OWNER DELETION** |
 | `docs/visual-readme` | `f781ddb8` | No current PR; 36 ahead, 308 behind | Preserve until its unique visual/docs changes are audited |
 | `feature/aspnetcore-10-dependencies` | `7ee60d47` | PR #37 closed unmerged; its only changed test-project file is byte-identical to development | **READY FOR OWNER DELETION** |
 | `work/portable-artifact-identity-contract` | `18987e8d` | PR #38 closed unmerged; its three unique paths are superseded by the stronger implementation/docs/tests in PR #39 | **READY FOR OWNER DELETION** |
@@ -26,22 +26,26 @@ The table records the code heads used for this audit. PR #41's validated code he
 | `release-prep/core-1.0.0` | `7bc9067c` | PR #12 closed unmerged to master; 59 ahead, 308 behind | Preserve pending release-artifact/docs audit |
 | `release-prep/rest-1.0.0` | `537f4e2b` | PR #13 closed unmerged to master; 28 ahead, 308 behind | Preserve pending release-artifact/docs audit |
 
-The three-stage identity/publisher implementation is now integrated into `development` in dependency order: PR #39 (durable identity) → PR #40 (REST/auth) → PR #41 (publisher CLI). The merged development head `a25c2721` passed 150/150 standard tests and 152/152 source-integrated tests; package verification/packing passed with publication skipped. The three source branches have no commits ahead of current development and are ready for owner deletion.
+The identity/publisher implementation is integrated into `development` in dependency order: PR #39 (durable identity) → PR #40 (REST/auth) → PR #41 (publisher CLI). The separate FSM_COS adapter now keeps composition out of the REST delivery package. The integrated implementation passes 154/154 standard and 156/156 source-integrated tests; Core/Azure/REST/FSM_COS packages pack successfully with publication skipped. The three stack branches and two superseded historical branches below are ready for owner deletion.
 
 ## Deletion readiness
 
-**READY FOR OWNER DELETION: five branches.**
+**READY FOR OWNER DELETION: seven branches.**
 
 - `TrentBest/TheSingularityWorkshop.MicroBundleRepository:adp/revision-identity-reconcile` — PR #39 merged; all branch commits are reachable from `development`.
 - `TrentBest/TheSingularityWorkshop.MicroBundleRepository:adp/rest-identity-workshop-auth` — PR #40 merged; all branch commits are reachable from `development`.
-- `TrentBest/TheSingularityWorkshop.MicroBundleRepository:feat/workshop-rest-publisher` — PR #41 merged; all branch commits are reachable from `development`.
+- `TrentBest/TheSingularityWorkshop.MicroBundleRepository:feat/workshop-rest-publisher` — PR #41 merged; its only extra commit is an outdated `docs/BRANCH_RECONCILIATION.md` snapshot, superseded by the current development audit.
+- `TrentBest/TheSingularityWorkshop.MicroBundleRepository:feature/revision-identity-bindings` — PR #33 closed as superseded by PR #39; the portable identity contract, filesystem/Azure bindings, failure handling, and tests are integrated in their later implementation.
+- `TrentBest/TheSingularityWorkshop.MicroBundleRepository:feature/microbundle-publisher` — PR #17 closed as superseded by PR #40/#41 and the separate FSM_COS integration package. The old Core `MicroBundleAssemblyPayload` envelope was intentionally not adopted; assembly materialization now belongs to the integration package, and the identity-aware CLI is integrated.
 - `TrentBest/TheSingularityWorkshop.MicroBundleRepository:feature/aspnetcore-10-dependencies` — PR #37 is closed unmerged; its only changed test-project file has the exact same blob SHA on current `development`.
-- `TrentBest/TheSingularityWorkshop.MicroBundleRepository:work/portable-artifact-identity-contract` — PR #38 is closed unmerged; its three changed paths (`MicroBundleArtifactIdentity.cs`, its tests, and `docs/ARCHITECTURE.md`) are superseded by PR #39's stricter hierarchical identity validation, expanded tests, and current identity documentation.
+- `TrentBest/TheSingularityWorkshop.MicroBundleRepository:work/portable-artifact-identity-contract` — PR #38 is closed unmerged; its three changed paths (`MicroBundleArtifactIdentity.cs`, its tests, and `docs/ARCHITECTURE.md`) are superseded by PR #39's stricter hierarchical identity validation, expanded tests, and current identity documentation. The branch's alternative `{repository-local-key}` storage-path proposal is intentionally rejected; the accepted compatibility contract retains `MicroBundleArtifactAddress(ulong bundleId, version, contentHash)` as the repository-local address.
 
-These five candidates have been checked for commit reachability or replacement content. No deletion was performed; the owner should remove them in one audited batch after rechecking the exact remote heads. Deleting all five would reduce the live inventory from 15 to 10; eight additional surplus refs would still need reconciliation.
+These seven candidates have been checked for commit reachability or replacement content. No deletion was performed; the owner should remove them in one audited batch after rechecking the exact remote heads. Deleting all seven would reduce the live inventory from 15 to 8, leaving six additional surplus refs to reconcile.
 
 The following refs remain **not deletion-approved**:
 
+- `feature/ontology-address-mapping` — PR #31 remains open; its numeric-address replacement conflicts with the accepted compatibility contract. Review compatible changes selectively.
+- `work/microbundle-artifact-discovery` — PR #21 remains open; paginated discovery, semantic metadata, and docs/tests require selective reconciliation.
 - `docs/visual-readme` — inspect the 36 unique commits for visuals/docs not present on development.
 - `fix/repository-boundary` — 15 changed paths remain to be reconciled.
 - `release-prep/core-1.0.0` and `release-prep/rest-1.0.0` — preserve their unique release documentation and implementation until reviewed.
