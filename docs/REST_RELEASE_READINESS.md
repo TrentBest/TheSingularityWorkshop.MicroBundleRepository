@@ -21,6 +21,20 @@
 
 The standard test matrix at the latest validated code head reports Core 43, Local 26, Azure 29, REST client 20, REST Host 26, and CLI 6: **150/150 passed**. The source-integrated matrix reports Core 43, Local 26, Azure 29, REST client 22, REST Host 26, and CLI 6: **152/152 passed**. The two additional CLI process tests cover rejection of remote HTTP publishing and refusal to follow a redirect while carrying the Workshop credential. The Azure identity integration tests use Azurite; these results do not establish a live production-account migration or mixed-version writer safety.
 
+## Package publication posture
+
+This is currently a **first-publication package line**, not an update to an already-published MicroBundleRepository package:
+
+| Package | Source version | Target | NuGet status |
+|---|---|---|---|
+| `TheSingularityWorkshop.MicroBundleRepository.Core` | `0.1.0-alpha.1` | .NET 10 | Not listed in the publisher's NuGet profile |
+| `TheSingularityWorkshop.MicroBundleRepository.Azure` | `0.1.0-alpha.1` | .NET 10 | Not listed in the publisher's NuGet profile |
+| `TheSingularityWorkshop.MicroBundleRepository.Rest` | `0.1.0-alpha.2` | .NET 10 | Not listed in the publisher's NuGet profile |
+
+The [publisher's NuGet profile](https://www.nuget.org/profiles/TheSingularityWorkshop) lists the published MicroBundleDomain, FSM_REST, and FSM_COS dependencies, but does not list these MicroBundleRepository package IDs. Treat them as unpublished until a direct package/version lookup proves otherwise. The successful package workflow proves packing only, not publication.
+
+MicroBundleRepository consumes the already-published `MicroBundleDomain 1.0.1`, `FSM_REST 0.1.0-alpha.4`, and `FSM_COS 0.1.0-alpha.6` package versions in its package-based build; its source-integration lane separately validates the current source checkouts. Before the first repository package publication, finalize the intended alpha versions, verify clean external consumer restore/build, align the release branch according to the repository's package-aware release policy, and satisfy Sith. No publication is authorized by this readiness record.
+
 ## Remaining release blockers
 
 1. **Integrate the reviewed stack into `development`.** The PRs are intentionally stacked. Retarget and validate each dependent PR only after its prerequisite is integrated; require fresh exact-head checks after any base/head change. Do not merge a later stack layer independently of its prerequisites.
