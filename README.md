@@ -236,23 +236,24 @@ Inspect the repository:
 dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- list
 ~~~
 
-Publish a local artifact:
+Publish a local artifact by its portable identity:
 
 ~~~powershell
-dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- put 2110 1.0.0 .undle.bin
+$env:MICRO_BUNDLE_REPOSITORY_WORKSHOP_PUBLISHER_KEY = "<Workshop-issued credential>"
+dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- publish workshop/example 1.0.0 ./bundle.bin
 ~~~
 
-Retrieve a known artifact:
+The publisher credential is supplied by the Workshop host through the environment. It is never accepted as a command-line argument or printed. The CLI sends it only on the mutation request. The repository computes the content hash, allocates the repository-local numeric ID, returns the portable identity binding, and the REST client reads the artifact back and verifies the exact bytes. Remote publishing requires HTTPS; plain HTTP is accepted only for loopback development. The authenticated publisher does not follow redirects.
+
+The old caller-selected numeric-ID `put` command is retired. Numeric IDs remain repository-local results and retrieval addresses, not publisher inputs.
+
+Retrieve a known artifact using its repository-local numeric address:
 
 ~~~powershell
-dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- get 2110 1.0.0 <sha256> .undle.bin
+dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- get 2110 1.0.0 <sha256> ./bundle.bin
 ~~~
 
-The CLI computes the SHA-256 from the supplied bytes and the existing Core artifact contract verifies the identity before the request is sent. That gives us a simple human-operated path for publishing and inspecting the small MicroBundles that will eventually compose the zeroth ontology:
-
-**The Singularity Workshop.**
-
-A future GUI, Workshop mailbox, or other client can use the same REST boundary without changing the repository contract.
+The CLI remains a thin operational surface over the REST boundary. A Workshop editor, mailbox, or other trusted host can invoke the same identity-aware publishing contract without moving storage allocation or authorization policy into the CLI.
 
 ## Azure configuration
 

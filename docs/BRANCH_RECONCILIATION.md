@@ -1,5 +1,68 @@
 # Branch reconciliation — current audit
 
+**Audit date:** 2026-11-20  
+**Live remote inventory:** 15 branches. Canonical policy remains exactly `master` + `development`. No branch was deleted, force-pushed, merged, or rewritten by this audit.
+
+## Current inventory
+
+The table records the code heads used for this audit. PR #41's validated code head is `e0acab0e`; later commits on that branch update only documentation/readiness records and do not change the code under test. The current branch history is authoritative for the latest documentation commit.
+
+| Branch | Audited code head | Relationship / PR | Disposition |
+|---|---|---|---|
+| `master` | `28b2908e` | Canonical released baseline | Retain unchanged |
+| `development` | `7dbd0ed2` | Canonical active integration branch | Retain |
+| `adp/revision-identity-reconcile` | `fe9d0e6f` | PR #39 → development; 33 commits ahead, 0 behind | Retain; first layer of active stack |
+| `adp/rest-identity-workshop-auth` | `b81de079` | PR #40 → #39; 42 commits ahead of development through its stack | Retain; second layer of active stack |
+| `feat/workshop-rest-publisher` | `e0acab0e` | PR #41 → #40; 58 commits ahead, 0 behind development | Retain; top layer of active stack |
+| `feature/revision-identity-bindings` | `64829170` | PR #33 open; 68 ahead, 77 behind | Retain pending selective reconciliation; do not merge wholesale |
+| `feature/ontology-address-mapping` | `4f6d2551` | PR #31 open; 35 ahead, 77 behind | Retain pending selective salvage; its public numeric-address replacement conflicts with the compatibility-preserving identity model |
+| `work/microbundle-artifact-discovery` | `7ad6cd14` | PR #21 open; 104 ahead, 308 behind | Retain pending selective reconciliation; do not merge wholesale |
+| `feature/microbundle-publisher` | `28480422` | PR #17 open; 47 ahead, 308 behind | Retain pending selective reconciliation against the newer REST-authenticated publisher |
+| `docs/visual-readme` | `f781ddb8` | No current PR; 36 ahead, 308 behind | Preserve until its unique visual/docs changes are audited |
+| `feature/aspnetcore-10-dependencies` | `7ee60d47` | PR #37 closed unmerged; its only changed test-project file is byte-identical to development | **READY FOR OWNER DELETION** |
+| `work/portable-artifact-identity-contract` | `18987e8d` | PR #38 closed unmerged; its three unique paths are superseded by the stronger implementation/docs/tests in PR #39 | **READY FOR OWNER DELETION** |
+| `fix/repository-boundary` | `44dc8e34` | PR #11 closed unmerged to master; 36 ahead, 308 behind | Preserve pending selective content/reachability audit |
+| `release-prep/core-1.0.0` | `7bc9067c` | PR #12 closed unmerged to master; 59 ahead, 308 behind | Preserve pending release-artifact/docs audit |
+| `release-prep/rest-1.0.0` | `537f4e2b` | PR #13 closed unmerged to master; 28 ahead, 308 behind | Preserve pending release-artifact/docs audit |
+
+The three current identity/publisher PRs form one ordered dependency stack:
+
+```text
+development
+    |
+    v
+PR #39  durable portable revision identity
+    |
+    v
+PR #40  REST identity API + Workshop-only mutation authority
+    |
+    v
+PR #41  authenticated identity-aware publisher CLI
+```
+
+The current PR #41 head `e0acab0e96464143c47ee991eea2e1225e6d15ce` contains the latest CLI security hardening and tests. Its predecessor code head `4085ff9f79e2ed81061a7ee7145dcf5d6cb4b543` passed 148 standard and 150 source-integrated tests; the newer code commits are awaiting their own workflow results. The stack remains draft and unmerged.
+
+## Deletion readiness
+
+**READY FOR OWNER DELETION: two branches.**
+
+- `TrentBest/TheSingularityWorkshop.MicroBundleRepository:feature/aspnetcore-10-dependencies` — PR #37 is closed unmerged; its only changed test-project file has the exact same blob SHA on current `development`.
+- `TrentBest/TheSingularityWorkshop.MicroBundleRepository:work/portable-artifact-identity-contract` — PR #38 is closed unmerged; its three changed paths (`MicroBundleArtifactIdentity.cs`, its tests, and `docs/ARCHITECTURE.md`) are superseded by PR #39's stricter hierarchical identity validation, expanded tests, and current identity documentation. The newer work remains preserved on the active #39 → #40 → #41 stack.
+
+A low ahead count alone is not proof that a branch is disposable. These two candidates have been checked for changed paths and their replacement content is preserved. No deletion was performed; the owner should remove them in one audited batch after rechecking the exact remote heads.
+
+The following refs remain **not deletion-approved**:
+
+- `docs/visual-readme` — inspect the 36 unique commits for visuals/docs not present on development.
+- `fix/repository-boundary` — 15 changed paths remain to be reconciled.
+- `release-prep/core-1.0.0` and `release-prep/rest-1.0.0` — preserve their unique release documentation and implementation until reviewed.
+
+The live Sith policy check fails until the owner reduces the branch inventory to exactly `master` and `development`. Do not weaken or bypass the policy to make the current candidate appear release-ready.
+
+---
+
+## Previous audit history
+
 **Purpose:** preserve every unique implementation, test, document, visual, and release artifact; then reduce this repository to exactly `master` and `development`.
 
 **Audit date:** 2026-11-12  

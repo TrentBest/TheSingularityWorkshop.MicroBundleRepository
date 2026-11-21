@@ -35,13 +35,25 @@ Azure Blob Storage
 
 ## Artifact identity
 
-Every artifact is addressed by:
+An immutable artifact revision has the portable identity:
 
-- MicroBundle ID
-- explicit version
-- SHA-256 content identity
+```text
+(ontology, exact version, SHA-256)
+```
 
-The SHA-256 is not merely metadata. The repository constructs the immutable artifact only after verifying that the bytes match the declared content identity.
+The repository maps that identity to its existing repository-local address:
+
+```text
+MicroBundleArtifactAddress(localBundleId, version, contentHash)
+```
+
+The local numeric ID is allocated by one repository. It is a storage locator, not a globally portable MicroBundle identity, and must not be authored into an Experience manifest.
+
+Do not silently substitute this repository-local address for the existing domain/runtime identity in `MicroBundleDescriptor.Id` or `MicroBundleDependencyRequest.BundleId`. The repository binding establishes portable-revision-to-storage-address mapping; it does not, by itself, establish the mapping to the domain/runtime ID used by FSM_COS dependency closure.
+
+That cross-boundary contract remains tracked in [MicroBundleDomain issue #28](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleDomain/issues/28). Until the contract and its consumer tests are complete, treat portable artifact identity, repository-local storage address, and domain/runtime identity as distinct values.
+
+The SHA-256 is not merely metadata. The repository computes it from supplied bytes and verifies the immutable artifact before exposing a binding.
 
 ## Azure layout
 
