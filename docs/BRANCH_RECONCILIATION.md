@@ -1,7 +1,7 @@
 # Branch reconciliation — current audit
 
-**Audit date:** 2026-11-20  
-**Live remote inventory:** 15 branches. Canonical policy remains exactly `master` + `development`. No branch was deleted, force-pushed, merged, or rewritten by this audit.
+**Audit date:** 2026-11-21  
+**Live remote inventory:** 15 branches (verified by a complete live branch search). Canonical policy remains exactly `master` + `development`. No branch was deleted, force-pushed, merged, or rewritten by this audit.
 
 ## Current inventory
 
@@ -20,7 +20,7 @@ The table records the code heads used for this audit. PR #41's validated code he
 | `feature/microbundle-publisher` | `28480422` | PR #17 open; 47 ahead, 308 behind | Retain pending selective reconciliation against the newer REST-authenticated publisher |
 | `docs/visual-readme` | `f781ddb8` | No current PR; 36 ahead, 308 behind | Preserve until its unique visual/docs changes are audited |
 | `feature/aspnetcore-10-dependencies` | `7ee60d47` | PR #37 closed unmerged; its only changed test-project file is byte-identical to development | **READY FOR OWNER DELETION** |
-| `work/portable-artifact-identity-contract` | `18987e8d` | PR #38 closed unmerged; its three unique paths are superseded by the stronger implementation/docs/tests in PR #39 | **READY FOR OWNER DELETION** |
+| `work/portable-artifact-identity-contract` | `18987e8d` | PR #38 closed unmerged; code/tests are superseded by #39, and its old repository-local-key storage-path proposal is intentionally rejected by the current numeric-address compatibility contract | **READY FOR OWNER DELETION** |
 | `fix/repository-boundary` | `44dc8e34` | PR #11 closed unmerged to master; 36 ahead, 308 behind | Preserve pending selective content/reachability audit |
 | `release-prep/core-1.0.0` | `7bc9067c` | PR #12 closed unmerged to master; 59 ahead, 308 behind | Preserve pending release-artifact/docs audit |
 | `release-prep/rest-1.0.0` | `537f4e2b` | PR #13 closed unmerged to master; 28 ahead, 308 behind | Preserve pending release-artifact/docs audit |
@@ -40,16 +40,16 @@ PR #40  REST identity API + Workshop-only mutation authority
 PR #41  authenticated identity-aware publisher CLI
 ```
 
-The current PR #41 head `e0acab0e96464143c47ee991eea2e1225e6d15ce` contains the latest CLI security hardening and tests. Its predecessor code head `4085ff9f79e2ed81061a7ee7145dcf5d6cb4b543` passed 148 standard and 150 source-integrated tests; the newer code commits are awaiting their own workflow results. The stack remains draft and unmerged.
+The current PR #41 head is `d6a0cd0833bb06435de05ca7a0d0bc8ebf31dae8`. Exact-head Build/Test run #587 passed: standard .NET 10 suite **150/150** and source-integrated suite **152/152**, with zero build errors. Exact-head Package run #575 passed verification, build/test (**144/144**), and Core/Azure/REST packing; the publish job was **skipped** and no package was published. The latest head adds the audited branch-readiness correction below; the stack remains draft and unmerged.
 
 ## Deletion readiness
 
 **READY FOR OWNER DELETION: two branches.**
 
 - `TrentBest/TheSingularityWorkshop.MicroBundleRepository:feature/aspnetcore-10-dependencies` — PR #37 is closed unmerged; its only changed test-project file has the exact same blob SHA on current `development`.
-- `TrentBest/TheSingularityWorkshop.MicroBundleRepository:work/portable-artifact-identity-contract` — PR #38 is closed unmerged; its three changed paths (`MicroBundleArtifactIdentity.cs`, its tests, and `docs/ARCHITECTURE.md`) are superseded by PR #39's stricter hierarchical identity validation, expanded tests, and current identity documentation. The newer work remains preserved on the active #39 → #40 → #41 stack.
+- `TrentBest/TheSingularityWorkshop.MicroBundleRepository:work/portable-artifact-identity-contract` — PR #38 is closed unmerged. Its identity type and tests are superseded by PR #39. Its `docs/ARCHITECTURE.md` delta is also dispositioned: the old `{repository-local-key}` storage layout is intentionally rejected because the accepted compatibility direction retains `MicroBundleArtifactAddress(ulong bundleId, version, contentHash)` as the local runtime/storage address. The portable-identity/local-address distinction and manifest rule are preserved in PR #39's `docs/IDENTITY_BINDINGS.md`; current `docs/ARCHITECTURE.md` retains the numeric path. No unique implementation or documentation requirement remains on this branch.
 
-A low ahead count alone is not proof that a branch is disposable. These two candidates have been checked for changed paths and their replacement content is preserved. No deletion was performed; the owner should remove them in one audited batch after rechecking the exact remote heads.
+The two candidates have been checked against their closed/unmerged PRs and current `development`. The #38 documentation path/layout proposal was explicitly rejected in favor of the current compatibility contract; the identity requirements it introduced are preserved in current documentation. No deletion was performed. Recheck the exact remote heads before any owner-authorized single-batch deletion.
 
 The following refs remain **not deletion-approved**:
 
