@@ -25,7 +25,7 @@ The source of the runtime-to-portable mapping remains owned by the Domain/host i
 
 `AssemblyMicroBundleArtifactMaterializer` is a starter implementation for artifacts whose content is a managed .NET assembly. Other artifact formats can provide another `IMicroBundleArtifactMaterializer`.
 
-Assembly loading uses the default .NET load context in this initial adapter. Unloadable per-Experience isolation and dependency resolver policy remain separate lifecycle work.
+Assembly loading uses the default .NET load context in this initial adapter. **Materialization executes bundle code in-process with the host's privileges. Only materialize artifacts from trusted publishers; SHA-256 proves byte integrity, not code safety or publisher identity, and the Workshop publisher key is not a sandbox.** Unloadable per-Experience isolation and dependency resolver policy remain separate lifecycle work.
 
 ## Usage
 
