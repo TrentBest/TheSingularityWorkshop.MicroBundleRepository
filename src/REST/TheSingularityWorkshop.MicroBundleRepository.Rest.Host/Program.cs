@@ -17,6 +17,7 @@ if (string.Equals(mode, "Local", StringComparison.OrdinalIgnoreCase))
 
     var local = new FileSystemMicroBundleRepository(root);
     builder.Services.AddSingleton<IMicroBundleRepository>(local);
+    builder.Services.AddSingleton<IMicroBundleIdentityRepository>(local);
     builder.Services.AddSingleton<IMicroBundleRepositoryObserver>(local);
     builder.Services.AddSingleton<IMicroBundleArtifactCatalog>(local);
 }
@@ -37,6 +38,8 @@ else
         }));
 
     builder.Services.AddSingleton<IMicroBundleRepository>(services =>
+        services.GetRequiredService<AzureMicroBundleRepository>());
+    builder.Services.AddSingleton<IMicroBundleIdentityRepository>(services =>
         services.GetRequiredService<AzureMicroBundleRepository>());
 
     builder.Services.AddSingleton<IMicroBundleRepositoryObserver>(services =>
@@ -87,9 +90,10 @@ app.UseCors(policy =>
     }
 });
 
-// Writes are disabled unless the deployment explicitly configures a shared API key.
+// Every repository mutation is a Workshop-authorized publication operation.
+// No generic repository write key or caller-supplied identity string grants authority.
 // This middleware runs before minimal-API body binding, so unauthenticated callers
-// cannot force JSON/base64 request-body buffering on the write endpoint.
+// cannot force JSON/base64 request-body buffering on a write endpoint.
 app.Use(async (context, next) =>
 {
     var isMicroBundleWrite = HttpMethods.IsPut(context.Request.Method) &&
@@ -101,23 +105,23 @@ app.Use(async (context, next) =>
     if (isMicroBundleWrite || isExperienceWrite)
     {
         var configuredKey = context.RequestServices
-            .GetRequiredService<IConfiguration>()["Repository:WriteApiKey"];
+            .GetRequiredService<IConfiguration>()["Repository:WorkshopPublisherKey"];
 
         if (string.IsNullOrWhiteSpace(configuredKey))
         {
             context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
             await context.Response.WriteAsJsonAsync(new
             {
-                error = "Repository writes are disabled because write authorization is not configured."
+                error = "Repository writes are disabled because the Workshop publisher credential is not configured."
             });
             return;
         }
 
-        if (!context.Request.Headers.TryGetValue("X-Repository-Write-Key", out var suppliedKey) ||
+        if (!context.Request.Headers.TryGetValue("X-Workshop-Publisher-Key", out var suppliedKey) ||
             !KeysMatch(configuredKey, suppliedKey.ToString()))
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            await context.Response.WriteAsJsonAsync(new { error = "A valid write authorization key is required." });
+            await context.Response.WriteAsJsonAsync(new { error = "A valid Workshop publisher credential is required." });
             return;
         }
 
@@ -207,6 +211,65 @@ app.MapGet(
             page.Items.Select(address => new MicroBundleArtifactIdentityDto(
                 address.BundleId, address.Version, address.ContentHash)).ToArray(),
             page.ContinuationToken));
+    });
+
+app.MapPut(
+    "/api/microbundles/identity",
+    async (
+        MicroBundleIdentityWriteDto dto,
+        IMicroBundleIdentityRepository repository,
+        CancellationToken cancellationToken) =>
+    {
+        try
+        {
+            var content = Convert.FromBase64String(dto.ContentBase64);
+            var binding = await repository.PutAsync(dto.Ontology, dto.Version, content, cancellationToken);
+            return Results.Ok(MicroBundleIdentityBindingDto.From(binding));
+        }
+        catch (FormatException)
+        {
+            return Results.BadRequest(new { error = "Artifact content must be valid Base64." });
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(new { error = ex.Message });
+        }
+    });
+
+app.MapGet(
+    "/api/microbundles/identity",
+    async (
+        string ontology,
+        string version,
+        string contentHash,
+        IMicroBundleIdentityRepository repository,
+        CancellationToken cancellationToken) =>
+    {
+        try
+        {
+            var identity = new MicroBundleArtifactIdentity(ontology, version, contentHash);
+            var binding = await repository.ResolveAsync(identity, cancellationToken);
+            return binding is null
+                ? Results.NotFound()
+                : Results.Ok(MicroBundleIdentityBindingDto.From(binding));
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(new { error = ex.Message });
+        }
+    });
+
+app.MapGet(
+    "/api/microbundles/identity/{bundleId}",
+    async (
+        ulong bundleId,
+        IMicroBundleIdentityRepository repository,
+        CancellationToken cancellationToken) =>
+    {
+        var binding = await repository.ResolveAsync(bundleId, cancellationToken);
+        return binding is null
+            ? Results.NotFound()
+            : Results.Ok(MicroBundleIdentityBindingDto.From(binding));
     });
 
 app.MapGet(

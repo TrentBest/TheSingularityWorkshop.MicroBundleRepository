@@ -277,12 +277,15 @@ See [architecture](docs/ARCHITECTURE.md) for the full repository boundary.
 
 ## Experience artifact publication
 
-The REST host also exposes a separate Experience artifact store and mutable publication pointer. These writes use the same `X-Repository-Write-Key` authorization as MicroBundle writes; if `Repository:WriteApiKey` is absent, all write routes fail closed with `503`.
+The REST host also exposes a separate Experience artifact store and mutable publication pointer. Every mutation—including MicroBundle artifact writes, portable identity ingestion, Experience artifact uploads, and publication-pointer changes—requires the Workshop editor credential configured as `Repository:WorkshopPublisherKey` and supplied in `X-Workshop-Publisher-Key`. The host fails closed with `503` when that credential is not configured and rejects missing or incorrect credentials with `401`. The former generic `Repository:WriteApiKey` / `X-Repository-Write-Key` contract no longer grants write authority.
 
 Experience artifacts are stored as immutable serialized bytes at `experiences/artifacts/{experienceId}/{version}/{sha256}.experience`. The repository verifies the content hash and remains independent of WebPage or any specific Experience implementation; the host retrieves the verified artifact, deserializes its definition, and passes its MicroBundle requirements to FSM_COS. Artifact storage and the mutable publication pointer remain separate concerns.
 
 | Method and route | Purpose |
 |---|---|
+| `PUT /api/microbundles/identity` | Ingest Base64 bytes under `{ ontology, version, contentBase64 }`; the repository computes SHA-256 and returns the portable identity plus its repository-local numeric binding. |
+| `GET /api/microbundles/identity?ontology=...&version=...&contentHash=...` | Resolve a complete portable revision identity to its durable local binding. |
+| `GET /api/microbundles/identity/{bundleId}` | Resolve a local numeric ID back to its exact portable identity. |
 | `PUT /api/experiences/{experienceId}/{version}/{contentHash}` | Upload immutable bytes as JSON `{ experienceId, version, contentHash, contentBase64 }`. The host verifies SHA-256, stores the artifact, and reads it back before returning `204`. |
 | `PUT /api/experiences/{experienceId}/publication` | Explicitly move the publication pointer using JSON `{ version, contentHash }`. The referenced immutable artifact must already exist and pass integrity verification. |
 | `DELETE /api/experiences/{experienceId}/publication` | Remove the publication pointer. Immutable artifact bytes are retained. |

@@ -44,7 +44,21 @@ public sealed class MicroBundleWriteSecurityTests
     {
         using var factory = new RestHostFactory(configureKey: true);
         using var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add("X-Repository-Write-Key", "incorrect-key");
+        client.DefaultRequestHeaders.Add("X-Workshop-Publisher-Key", "incorrect-key");
+
+        using var response = await client.PutAsync(
+            "/api/microbundles/42/1.0.0/" + new string('a', 64),
+            new StringContent("{}"));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Put_RejectsLegacyGenericRepositoryWriteKey()
+    {
+        using var factory = new RestHostFactory(configureKey: true);
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Repository-Write-Key", "test-only-write-key");
 
         using var response = await client.PutAsync(
             "/api/microbundles/42/1.0.0/" + new string('a', 64),
@@ -58,7 +72,7 @@ public sealed class MicroBundleWriteSecurityTests
     {
         using var factory = new RestHostFactory(configureKey: true, maxRequestBytes: 64);
         using var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add("X-Repository-Write-Key", "test-only-write-key");
+        client.DefaultRequestHeaders.Add("X-Workshop-Publisher-Key", "test-only-write-key");
 
         using var content = new StringContent(new string('x', 1024), Encoding.UTF8, "application/json");
         using var response = await client.PutAsync(
@@ -73,7 +87,7 @@ public sealed class MicroBundleWriteSecurityTests
     {
         using var factory = new RestHostFactory(configureKey: true);
         using var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add("X-Repository-Write-Key", "test-only-write-key");
+        client.DefaultRequestHeaders.Add("X-Workshop-Publisher-Key", "test-only-write-key");
 
         var bytes = Encoding.UTF8.GetBytes("authorized write integration test");
         var hash = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
@@ -96,6 +110,62 @@ public sealed class MicroBundleWriteSecurityTests
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
         var responseBody = await getResponse.Content.ReadAsStringAsync();
         Assert.Contains(contentBase64, responseBody, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task PortableIdentity_PutAndResolveExposeOnlyVerifiedRepositoryBinding()
+    {
+        using var factory = new RestHostFactory(configureKey: true);
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Workshop-Publisher-Key", "test-only-write-key");
+
+        var bytes = Encoding.UTF8.GetBytes("portable identity host integration");
+        var hash = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+        var request = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            ontology = "workshop/example",
+            version = "1.0.0",
+            contentBase64 = Convert.ToBase64String(bytes)
+        });
+
+        using var put = await client.PutAsync(
+            "/api/microbundles/identity",
+            new StringContent(request, Encoding.UTF8, "application/json"));
+        Assert.Equal(HttpStatusCode.OK, put.StatusCode);
+        using var bindingJson = System.Text.Json.JsonDocument.Parse(await put.Content.ReadAsStringAsync());
+        var bundleId = bindingJson.RootElement.GetProperty("bundleId").GetUInt64();
+        Assert.NotEqual(0UL, bundleId);
+        Assert.Equal(hash, bindingJson.RootElement.GetProperty("contentHash").GetString());
+
+        using var byIdentity = await client.GetAsync(
+            $"/api/microbundles/identity?ontology=workshop%2Fexample&version=1.0.0&contentHash={hash}");
+        Assert.Equal(HttpStatusCode.OK, byIdentity.StatusCode);
+
+        using var byId = await client.GetAsync($"/api/microbundles/identity/{bundleId}");
+        Assert.Equal(HttpStatusCode.OK, byId.StatusCode);
+
+        using var artifact = await client.GetAsync($"/api/microbundles/{bundleId}/1.0.0/{hash}");
+        Assert.Equal(HttpStatusCode.OK, artifact.StatusCode);
+        Assert.Contains(Convert.ToBase64String(bytes), await artifact.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task PortableIdentity_PutRequiresWorkshopPublisherCredential()
+    {
+        using var factory = new RestHostFactory(configureKey: true);
+        using var client = factory.CreateClient();
+
+        var request = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            ontology = "workshop/unauthorized",
+            version = "1.0.0",
+            contentBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes("no"))
+        });
+        using var response = await client.PutAsync(
+            "/api/microbundles/identity",
+            new StringContent(request, Encoding.UTF8, "application/json"));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
@@ -167,7 +237,7 @@ public sealed class MicroBundleWriteSecurityTests
                 ["Repository:MaxMicroBundleRequestBytes"] = maxRequestBytes?.ToString(System.Globalization.CultureInfo.InvariantCulture)
                 };
                 if (configureKey)
-                    settings["Repository:WriteApiKey"] = "test-only-write-key";
+                    settings["Repository:WorkshopPublisherKey"] = "test-only-write-key";
                 configuration.AddInMemoryCollection(settings);
             });
         }
