@@ -55,6 +55,8 @@ The merged implementation includes durable filesystem/Azure bindings, additive R
 
 The cross-repository domain/runtime mapping remains tracked in [MicroBundleDomain issue #28](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleDomain/issues/28). The repository binding maps portable revision identity to a repository-local storage address. It does **not** redefine `MicroBundleDescriptor.Id`, map numeric dependency declarations, or alone prove FSM_COS dependency closure. Those identities remain distinct until the owning Domain/composition contract and consumer tests prove the mapping.
 
+The separate `TheSingularityWorkshop.MicroBundleRepository.FSM_COS` integration package now accepts an explicit `runtimeId -> MicroBundleArtifactAddress` map and validates both `IMicroBundle.Id` and `MicroBundleDescriptor.Id` after materialization. Its tests deliberately use different runtime and repository-local numeric IDs. This proves the adapter no longer assumes equality; it does not yet derive the runtime-ID mapping from portable ontology identity. That source mapping remains the Domain #28 obligation.
+
 ## Explicitly out of scope
 
 This repository does not decide:
