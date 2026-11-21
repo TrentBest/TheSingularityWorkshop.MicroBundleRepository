@@ -5,7 +5,9 @@
 
 ## Current inventory
 
-| Branch | Current head | Relationship / PR | Disposition |
+The table records the code heads used for this audit. PR #41's validated code head is `e0acab0e`; subsequent commits `9041c4aa`, `e3fc5768`, and `d9942f5c` update only documentation/readiness records and do not change the code under test.
+
+| Branch | Audited code head | Relationship / PR | Disposition |
 |---|---|---|---|
 | `master` | `28b2908e` | Canonical released baseline | Retain unchanged |
 | `development` | `7dbd0ed2` | Canonical active integration branch | Retain |
