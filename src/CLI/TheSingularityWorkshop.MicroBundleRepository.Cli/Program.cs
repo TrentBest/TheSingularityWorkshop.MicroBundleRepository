@@ -139,8 +139,15 @@ static async Task<int> PublishAsync(Uri baseUri, string[] args)
     if (string.IsNullOrWhiteSpace(credential))
         return Fail("Publishing is disabled: set MICRO_BUNDLE_REPOSITORY_WORKSHOP_PUBLISHER_KEY using the Workshop-issued credential.");
 
+    if (!baseUri.IsLoopback && baseUri.Scheme != Uri.UriSchemeHttps)
+        return Fail("Publishing requires HTTPS for non-loopback repository URLs.");
+
     var content = await File.ReadAllBytesAsync(args[2]);
-    using var http = new HttpClient();
+
+    // The publisher credential is a custom header, not the Authorization header.
+    // Disable redirects so a server cannot redirect the credential to another origin.
+    using var handler = new HttpClientHandler { AllowAutoRedirect = false };
+    using var http = new HttpClient(handler);
     var repository = new RestMicroBundleRepository(baseUri, new HttpClientRestTransport(http), credential);
     var binding = await repository.PutAsync(args[0], args[1], content);
 
