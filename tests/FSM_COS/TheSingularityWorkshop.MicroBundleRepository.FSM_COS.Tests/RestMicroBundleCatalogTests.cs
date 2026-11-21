@@ -1,0 +1,313 @@
+using System.Security.Cryptography;
+using System.Text.Json;
+using TheSingularityWorkshop.FSM_COS;
+using TheSingularityWorkshop.MicroBundleDomain;
+using TheSingularityWorkshop.MicroBundleRepository.Core;
+using TheSingularityWorkshop.MicroBundleRepository.Rest;
+using TheSingularityWorkshop.MicroBundleRepository.FSM_COS;
+using Xunit;
+
+namespace TheSingularityWorkshop.MicroBundleRepository.FSM_COS.Tests;
+
+public sealed class RestMicroBundleCatalogTests
+{
+    [Fact]
+    public async Task PreloadClosureAsync_fetches_declared_dependencies()
+    {
+        var rootContent = new byte[] { 1 };
+        var dependencyContent = new byte[] { 2 };
+
+        var rootAddress = Address(1, rootContent);
+        var dependencyAddress = Address(2, dependencyContent);
+
+        var repository = new RestMicroBundleRepository(
+            new Uri("https://repository.test"),
+            new RepositoryTransport(new Dictionary<string, MicroBundleArtifact>
+            {
+                [rootAddress.ToString()] = new MicroBundleArtifact(rootAddress, rootContent),
+                [dependencyAddress.ToString()] = new MicroBundleArtifact(dependencyAddress, dependencyContent)
+            }));
+
+        var catalog = new RestMicroBundleCatalog(
+            repository,
+            new Dictionary<ulong, MicroBundleArtifactAddress>
+            {
+                [1] = rootAddress,
+                [2] = dependencyAddress
+            },
+            new Materializer());
+
+        await catalog.PreloadClosureAsync(new[] { 1UL });
+
+        Assert.True(catalog.TryResolve(1, out var root));
+        Assert.True(catalog.TryResolve(2, out var dependency));
+        Assert.Equal(1UL, root!.Id);
+        Assert.Equal(2UL, dependency!.Id);
+        Assert.True(catalog.TryResolve(1, "1.0.0", out _));
+        Assert.False(catalog.TryResolve(1, "2.0.0", out _));
+    }
+
+    [Fact]
+    public async Task PreloadClosureAsync_maps_runtime_ids_to_distinct_repository_storage_addresses()
+    {
+        var rootContent = new byte[] { 51 };
+        var dependencyContent = new byte[] { 52 };
+        var rootAddress = Address(700, rootContent);
+        var dependencyAddress = Address(800, dependencyContent);
+
+        var repository = new RestMicroBundleRepository(
+            new Uri("https://repository.test"),
+            new RepositoryTransport(new Dictionary<string, MicroBundleArtifact>
+            {
+                [rootAddress.ToString()] = new(rootAddress, rootContent),
+                [dependencyAddress.ToString()] = new(dependencyAddress, dependencyContent)
+            }));
+
+        var catalog = new RestMicroBundleCatalog(
+            repository,
+            new Dictionary<ulong, MicroBundleArtifactAddress>
+            {
+                [1] = rootAddress,
+                [2] = dependencyAddress
+            },
+            new Materializer());
+
+        await catalog.PreloadClosureAsync(new[] { 1UL });
+
+        Assert.True(catalog.TryResolve(1, out var root));
+        Assert.True(catalog.TryResolve(2, out var dependency));
+        Assert.True(catalog.TryResolve(rootAddress, out var rootByAddress));
+        Assert.True(catalog.TryResolve(dependencyAddress, out var dependencyByAddress));
+        Assert.Same(root, rootByAddress);
+        Assert.Same(dependency, dependencyByAddress);
+        Assert.Equal(1UL, root!.Id);
+        Assert.Equal(2UL, dependency!.Id);
+        Assert.False(catalog.TryResolve(700, out _));
+        Assert.False(catalog.TryResolve(800, out _));
+    }
+
+    [Fact]
+    public async Task PreloadClosureAsync_does_not_publish_partial_closure_when_dependency_is_missing()
+    {
+        var rootContent = new byte[] { 11 };
+        var dependencyContent = new byte[] { 22 };
+        var rootAddress = Address(1, rootContent);
+        var dependencyAddress = Address(2, dependencyContent);
+
+        var artifacts = new Dictionary<string, MicroBundleArtifact>
+        {
+            [rootAddress.ToString()] = new MicroBundleArtifact(rootAddress, rootContent)
+        };
+        var addresses = new Dictionary<ulong, MicroBundleArtifactAddress>
+        {
+            [1] = rootAddress
+        };
+        var repository = new RestMicroBundleRepository(
+            new Uri("https://repository.test"),
+            new RepositoryTransport(artifacts));
+        var catalog = new RestMicroBundleCatalog(repository, addresses, new Materializer());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => catalog.PreloadClosureAsync(new[] { 1UL }));
+
+        Assert.False(catalog.TryResolve(1, out _));
+        Assert.False(catalog.TryResolve(2, out _));
+
+        // Repair the caller-provided address map and repository, then retry.
+        // The first failed attempt must not have cached the root as loaded.
+        addresses[2] = dependencyAddress;
+        artifacts[dependencyAddress.ToString()] =
+            new MicroBundleArtifact(dependencyAddress, dependencyContent);
+
+        var repairedCatalog = new RestMicroBundleCatalog(repository, addresses, new Materializer());
+        await repairedCatalog.PreloadClosureAsync(new[] { 1UL });
+
+        Assert.True(repairedCatalog.TryResolve(1, out _));
+        Assert.True(repairedCatalog.TryResolve(2, out _));
+    }
+
+    [Fact]
+    public async Task PreloadClosureAsync_rejects_materialized_runtime_id_that_does_not_match_mapping_key()
+    {
+        var content = new byte[] { 7 };
+        var wrongAddress = Address(2, content);
+        var repository = new RestMicroBundleRepository(
+            new Uri("https://repository.test"),
+            new RepositoryTransport(new Dictionary<string, MicroBundleArtifact>
+            {
+                [wrongAddress.ToString()] = new MicroBundleArtifact(wrongAddress, content)
+            }));
+        var catalog = new RestMicroBundleCatalog(
+            repository,
+            new Dictionary<ulong, MicroBundleArtifactAddress> { [1] = wrongAddress },
+            new WrongIdMaterializer());
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => catalog.PreloadClosureAsync(new[] { 1UL }));
+
+        Assert.Contains("expected 1", error.Message);
+        Assert.False(catalog.TryResolve(1, out _));
+        Assert.False(catalog.TryResolve(2, out _));
+    }
+
+ #if WORKSHOP_USE_REPOSITORY_SOURCES
+    [Fact]
+    public async Task PreloadClosureAsync_rejects_unpinned_dependencies()
+    {
+        var rootContent = new byte[] { 31 };
+        var dependencyContent = new byte[] { 32 };
+        var rootAddress = Address(1, rootContent);
+        var dependencyAddress = Address(2, dependencyContent);
+        var repository = new RestMicroBundleRepository(
+            new Uri("https://repository.test"),
+            new RepositoryTransport(new Dictionary<string, MicroBundleArtifact>
+            {
+                [rootAddress.ToString()] = new(rootAddress, rootContent),
+                [dependencyAddress.ToString()] = new(dependencyAddress, dependencyContent)
+            }));
+        var catalog = new RestMicroBundleCatalog(
+            repository,
+            new Dictionary<ulong, MicroBundleArtifactAddress>
+            {
+                [1] = rootAddress,
+                [2] = dependencyAddress
+            },
+            new UnpinnedMaterializer());
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => catalog.PreloadClosureAsync(new[] { 1UL }));
+
+        Assert.Contains("unpinned dependency", error.Message);
+        Assert.False(catalog.TryResolve(1, out _));
+        Assert.False(catalog.TryResolve(2, out _));
+    }
+
+    [Fact]
+    public async Task PreloadClosureAsync_rejects_dependency_address_with_different_exact_version()
+    {
+        var rootContent = new byte[] { 41 };
+        var dependencyContent = new byte[] { 42 };
+        var rootAddress = Address(1, rootContent);
+        var dependencyAddress = new MicroBundleArtifactAddress(
+            2,
+            "2.0.0",
+            Convert.ToHexString(SHA256.HashData(dependencyContent)).ToLowerInvariant());
+        var repository = new RestMicroBundleRepository(
+            new Uri("https://repository.test"),
+            new RepositoryTransport(new Dictionary<string, MicroBundleArtifact>
+            {
+                [rootAddress.ToString()] = new(rootAddress, rootContent),
+                [dependencyAddress.ToString()] = new(dependencyAddress, dependencyContent)
+            }));
+        var catalog = new RestMicroBundleCatalog(
+            repository,
+            new Dictionary<ulong, MicroBundleArtifactAddress>
+            {
+                [1] = rootAddress,
+                [2] = dependencyAddress
+            },
+            new Materializer());
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => catalog.PreloadClosureAsync(new[] { 1UL }));
+
+        Assert.Contains("requires exact version '1.0.0'", error.Message);
+        Assert.False(catalog.TryResolve(1, out _));
+        Assert.False(catalog.TryResolve(2, out _));
+    }
+
+    private sealed class UnpinnedMaterializer : IMicroBundleArtifactMaterializer
+    {
+        public IMicroBundle Materialize(MicroBundleArtifact artifact, ulong expectedRuntimeId) =>
+            new UnpinnedTestBundle(expectedRuntimeId);
+    }
+
+    private sealed class UnpinnedTestBundle(ulong id) : IMicroBundle
+    {
+        public MicroBundleDescriptor Descriptor { get; } = new(id, "1.0.0");
+        public ulong Id => Descriptor.Id;
+        public IReadOnlyList<MicroBundleDependencyRequest> Dependencies { get; } =
+            id == 1
+                ? new[] { MicroBundleDependencyRequest.Unconfigured(2) }
+                : Array.Empty<MicroBundleDependencyRequest>();
+
+        public void Load(IMicroBundleLoadContext context) { }
+        public bool Arbitrate(IMicroBundleArbitrationContext context, int roundIndex) => false;
+    }
+
+ #endif
+
+    private static MicroBundleDependencyRequest CreateDependency(ulong id)
+    {
+#if WORKSHOP_USE_REPOSITORY_SOURCES
+        return MicroBundleDependencyRequest.Pinned(id, "1.0.0");
+#else
+        return MicroBundleDependencyRequest.Unconfigured(id);
+#endif
+    }
+
+    private static MicroBundleArtifactAddress Address(ulong id, byte[] content) =>
+        new(id, "1.0.0", Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant());
+
+    private sealed class Materializer : IMicroBundleArtifactMaterializer
+    {
+        public IMicroBundle Materialize(MicroBundleArtifact artifact, ulong expectedRuntimeId) =>
+            expectedRuntimeId == 1
+                ? new TestBundle(1, 2)
+                : new TestBundle(expectedRuntimeId);
+    }
+
+    private sealed class WrongIdMaterializer : IMicroBundleArtifactMaterializer
+    {
+        public IMicroBundle Materialize(MicroBundleArtifact artifact, ulong expectedRuntimeId) =>
+            new TestBundle(artifact.Address.BundleId);
+    }
+
+    private sealed class TestBundle(ulong id, params ulong[] dependencyIds) : IMicroBundle
+    {
+        public MicroBundleDescriptor Descriptor { get; } = new(id, "1.0.0");
+        public ulong Id => Descriptor.Id;
+        public IReadOnlyList<MicroBundleDependencyRequest> Dependencies { get; } =
+            dependencyIds.Select(CreateDependency).ToArray();
+
+        public void Load(IMicroBundleLoadContext context) { }
+
+        public bool Arbitrate(IMicroBundleArbitrationContext context, int roundIndex) => false;
+    }
+
+    private sealed class RepositoryTransport(
+        IReadOnlyDictionary<string, MicroBundleArtifact> artifacts) : TheSingularityWorkshop.FSM_REST.IRestTransport
+    {
+        public Task<TheSingularityWorkshop.FSM_REST.RestResponse> SendAsync(
+            TheSingularityWorkshop.FSM_REST.RestRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            var parts = request.Uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            var address = new MicroBundleArtifactAddress(
+                ulong.Parse(parts[^3]),
+                parts[^2],
+                parts[^1]);
+
+            if (!artifacts.TryGetValue(address.ToString(), out var artifact))
+                return Task.FromResult(
+                    new TheSingularityWorkshop.FSM_REST.RestResponse(
+                        404,
+                        "Not Found",
+                        new Dictionary<string, string>(),
+                        string.Empty));
+
+            var dto = new MicroBundleArtifactDto(
+                artifact.Address.BundleId,
+                artifact.Address.Version,
+                artifact.Address.ContentHash,
+                Convert.ToBase64String(artifact.Content.ToArray()));
+
+            return Task.FromResult(
+                new TheSingularityWorkshop.FSM_REST.RestResponse(
+                    200,
+                    "OK",
+                    new Dictionary<string, string>(),
+                    JsonSerializer.Serialize(dto)));
+        }
+    }
+}
