@@ -14,6 +14,8 @@ The portable revision key is the complete tuple:
 - **Version** selects the exact declared artifact version.
 - **SHA-256** verifies the exact artifact bytes.
 
+The ontology value here is the canonical capability/artifact identifier (for example, `TheSingularityWorkshop.Renderer`). It is not the older nine-layer integer `OntologySignature` used as a semantic coordinate in Architect / Singularity Hub, and it is not the numeric runtime/domain ID. MicroBundleDomain documents this distinction in its [Identity Model](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleDomain/blob/development/docs/IDENTITY_MODEL.md#ontology-identifier-is-not-an-ontology-signature). The current contracts do not define a conversion between these concepts.
+
 The digest is an integrity value. It does not authenticate a publisher or authorize publication.
 
 ## Repository-local binding
