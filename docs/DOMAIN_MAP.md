@@ -31,7 +31,7 @@ The portable artifact identity implementation is now part of canonical `developm
 
 The repository maps portable artifact revisions to private storage handles. It does not redefine `MicroBundleDescriptor.Id` or prove numeric dependency closure. The remaining cross-repository runtime mapping is tracked in [MicroBundleDomain issue #28](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleDomain/issues/28) and [MicroBundleDomain's normative identity model](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleDomain/blob/development/docs/IDENTITY_MODEL.md). Do not equate repository-local handles with runtime/domain identifiers.
 
-The final pre-merge code head passed 150/150 standard tests and 152/152 source-integrated tests; package verification/packing passed with publication skipped. The post-merge development workflow remains the authoritative integration evidence.
+The integrated repository plus separate FSM_COS adapter passes 154/154 standard tests and 156/156 source-integrated tests. The package workflow packs Core, Azure, REST, and FSM_COS integration packages successfully; publication remains skipped.
 
 ## Lifecycle: what exists versus what remains
 
