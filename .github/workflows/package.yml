@@ -48,6 +48,55 @@ jobs:
         run: dotnet pack src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest/TheSingularityWorkshop.MicroBundleRepository.Rest.csproj --configuration Release --no-build --output ./artifacts
       - name: Pack FSM_COS integration
         run: dotnet pack src/FSM_COS/TheSingularityWorkshop.MicroBundleRepository.FSM_COS/TheSingularityWorkshop.MicroBundleRepository.FSM_COS.csproj --configuration Release --no-build --output ./artifacts
+      - name: Validate clean package consumer
+        shell: bash
+        run: |
+          set -euo pipefail
+          consumer_dir="$RUNNER_TEMP/microbundle-package-consumer"
+          mkdir -p "$consumer_dir"
+          cat > "$consumer_dir/Consumer.csproj" <<'EOF'
+          <Project Sdk="Microsoft.NET.Sdk">
+            <PropertyGroup>
+              <TargetFramework>net10.0</TargetFramework>
+              <Nullable>enable</Nullable>
+              <ImplicitUsings>enable</ImplicitUsings>
+            </PropertyGroup>
+            <ItemGroup>
+              <PackageReference Include="TheSingularityWorkshop.MicroBundleRepository.Core" Version="0.1.0-alpha.1" />
+              <PackageReference Include="TheSingularityWorkshop.MicroBundleRepository.Azure" Version="0.1.0-alpha.1" />
+              <PackageReference Include="TheSingularityWorkshop.MicroBundleRepository.Rest" Version="0.1.0-alpha.2" />
+              <PackageReference Include="TheSingularityWorkshop.MicroBundleRepository.FSM_COS" Version="0.1.0-alpha.1" />
+            </ItemGroup>
+          </Project>
+          EOF
+          cat > "$consumer_dir/Smoke.cs" <<'EOF'
+          using TheSingularityWorkshop.MicroBundleRepository.Core;
+          using TheSingularityWorkshop.MicroBundleRepository.Azure;
+          using TheSingularityWorkshop.MicroBundleRepository.Rest;
+          using TheSingularityWorkshop.MicroBundleRepository.FSM_COS;
+
+          public static class PackageSmoke
+          {
+              public static Type[] PublicTypes =>
+              [
+                  typeof(MicroBundleArtifactIdentity),
+                  typeof(AzureMicroBundleRepository),
+                  typeof(RestMicroBundleRepository),
+                  typeof(RestMicroBundleCatalog)
+              ];
+          }
+          EOF
+          cat > "$consumer_dir/NuGet.Config" <<EOF
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="local-artifacts" value="$GITHUB_WORKSPACE/artifacts" />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+            </packageSources>
+          </configuration>
+          EOF
+          dotnet restore "$consumer_dir/Consumer.csproj" --configfile "$consumer_dir/NuGet.Config"
+          dotnet build "$consumer_dir/Consumer.csproj" --configuration Release --no-restore
       - name: Upload packages
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
