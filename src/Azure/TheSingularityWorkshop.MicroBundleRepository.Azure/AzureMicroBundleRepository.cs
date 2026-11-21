@@ -9,11 +9,12 @@ namespace TheSingularityWorkshop.MicroBundleRepository.Azure;
 /// <summary>
 /// Stores MicroBundle artifacts as deterministic Azure block blobs.
 /// </summary>
-public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroBundleRepositoryObserver, IMicroBundleArtifactCatalog
+public sealed class AzureMicroBundleRepository : IMicroBundleIdentityRepository, IMicroBundleRepositoryObserver, IMicroBundleArtifactCatalog
 {
     private const string ArtifactPrefix = "artifacts";
 
     private readonly BlobContainerClient _container;
+    private readonly Lazy<AzureMicroBundleIdentityRepository> _identityRepository;
 
     public AzureMicroBundleRepository(AzureMicroBundleRepositoryOptions options)
         : this(CreateContainerClient(options))
@@ -21,8 +22,16 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroB
     }
 
     internal AzureMicroBundleRepository(BlobContainerClient container)
+        : this(container, initializeIdentityRepository: true)
+    {
+    }
+
+    internal AzureMicroBundleRepository(BlobContainerClient container, bool initializeIdentityRepository)
     {
         _container = container ?? throw new ArgumentNullException(nameof(container));
+        _identityRepository = initializeIdentityRepository
+            ? new Lazy<AzureMicroBundleIdentityRepository>(() => new AzureMicroBundleIdentityRepository(container))
+            : null!;
     }
 
     /// <summary>
@@ -127,7 +136,15 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroB
         return new MicroBundleArtifactListPage(addresses, continuationToken);
     }
 
-    public async ValueTask PutAsync(
+    public ValueTask PutAsync(
+        MicroBundleArtifact artifact,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(artifact);
+        return _identityRepository.Value.PutAsync(artifact, cancellationToken);
+    }
+
+    internal async ValueTask PutArtifactAsync(
         MicroBundleArtifact artifact,
         CancellationToken cancellationToken = default)
     {
@@ -147,12 +164,6 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroB
                     {
                         ContentType = "application/octet-stream"
                     },
-                    Metadata = new Dictionary<string, string>
-                    {
-                        ["bundle-id"] = artifact.Address.BundleId.ToString(),
-                        ["version"] = artifact.Address.Version,
-                        ["content-sha256"] = artifact.Address.ContentHash
-                    },
                     Conditions = new BlobRequestConditions
                     {
                         IfNoneMatch = ETag.All
@@ -160,12 +171,47 @@ public sealed class AzureMicroBundleRepository : IMicroBundleRepository, IMicroB
                 },
                 cancellationToken);
         }
-        catch (RequestFailedException ex) when (ex.Status == 412)
+        catch (RequestFailedException ex) when (ex.Status is 409 or 412)
         {
-            // Content-addressed writes are immutable. If the exact address already
-            // exists, the repository is already in the requested state.
+            // Conditional-create conflicts are idempotent only when the existing
+            // object contains the exact bytes named by its content address.
+            MicroBundleArtifact? existing;
+            try
+            {
+                existing = await GetAsync(artifact.Address, cancellationToken);
+            }
+            catch (ArgumentException exception)
+            {
+                throw new InvalidDataException(
+                    "An existing artifact at the requested content address does not match its declared hash.",
+                    exception);
+            }
+
+            if (existing is null || !existing.Content.Span.SequenceEqual(artifact.Content.Span))
+                throw new InvalidDataException(
+                    "An existing artifact at the requested content address contains different bytes.");
         }
     }
+
+    /// <summary>Stores bytes and durably binds their portable identity to a local numeric ID.</summary>
+    public ValueTask<MicroBundleIdentityBinding> PutAsync(
+        string ontology,
+        string version,
+        ReadOnlyMemory<byte> content,
+        CancellationToken cancellationToken = default) =>
+        _identityRepository.Value.PutAsync(ontology, version, content, cancellationToken);
+
+    /// <summary>Resolves a complete portable revision identity to its local binding.</summary>
+    public ValueTask<MicroBundleIdentityBinding?> ResolveAsync(
+        MicroBundleArtifactIdentity identity,
+        CancellationToken cancellationToken = default) =>
+        _identityRepository.Value.ResolveAsync(identity, cancellationToken);
+
+    /// <summary>Resolves a repository-local numeric ID to its portable revision binding.</summary>
+    public ValueTask<MicroBundleIdentityBinding?> ResolveAsync(
+        ulong bundleId,
+        CancellationToken cancellationToken = default) =>
+        _identityRepository.Value.ResolveAsync(bundleId, cancellationToken);
 
     internal static string GetBlobName(MicroBundleArtifactAddress address) =>
         $"{ArtifactPrefix}/{address.BundleId}/{address.Version}/{address.ContentHash}.bundle";

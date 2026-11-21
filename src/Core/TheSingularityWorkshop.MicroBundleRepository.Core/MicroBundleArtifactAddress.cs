@@ -10,11 +10,8 @@ public readonly record struct MicroBundleArtifactAddress
         if (bundleId == 0)
             throw new ArgumentOutOfRangeException(nameof(bundleId));
 
-        ArgumentException.ThrowIfNullOrWhiteSpace(version);
+        ValidateVersion(version);
         ArgumentException.ThrowIfNullOrWhiteSpace(contentHash);
-
-        if (version.Contains('/') || version.Contains('\\'))
-            throw new ArgumentException("Version must be a single storage-safe path segment.", nameof(version));
 
         if (contentHash.Length != 64 || contentHash.Any(c => !Uri.IsHexDigit(c)))
             throw new ArgumentException("Content hash must be a 64-character hexadecimal SHA-256 value.", nameof(contentHash));
@@ -22,6 +19,21 @@ public readonly record struct MicroBundleArtifactAddress
         BundleId = bundleId;
         Version = version;
         ContentHash = contentHash.ToLowerInvariant();
+    }
+
+    internal static void ValidateVersion(string version)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(version);
+
+        if (version is "." or ".." ||
+            version.Any(char.IsControl) ||
+            version.Any(char.IsWhiteSpace) ||
+            version.IndexOfAny("<>:\"/\\\\|?*%".ToCharArray()) >= 0)
+        {
+            throw new ArgumentException(
+                "Version must be a portable, single storage-safe path segment.",
+                nameof(version));
+        }
     }
 
     public ulong BundleId { get; }

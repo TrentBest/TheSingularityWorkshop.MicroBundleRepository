@@ -93,17 +93,21 @@ The architectural invariant is simple:
 
 ## Artifact identity
 
-An artifact is addressed by three values:
+A MicroBundle revision has the portable identity:
 
-~~~text
-MicroBundle ID
-      +
-explicit version
-      +
-SHA-256 content identity
-~~~
+```text
+(ontology, exact version, SHA-256)
+```
 
-The physical Azure location is deterministic:
+The repository preserves the existing runtime-facing numeric address while owning the durable mapping between these two identities:
+
+- **Portable revision:** ontology string + exact version + SHA-256 of the immutable bytes.
+- **Repository-local address:** `MicroBundleArtifactAddress(ulong bundleId, version, contentHash)`.
+- **Local numeric ID:** a non-zero storage/runtime handle allocated by this repository. It is not globally portable and must not be authored into an Experience manifest.
+
+The mapping is one-to-one and durable. Re-ingesting the same complete revision returns its existing binding; conflicting, corrupt, missing, or mismatched bindings fail closed. The repository computes the SHA-256 from the supplied bytes and verifies the immutable artifact before exposing a binding.
+
+The physical Azure location remains repository-local and deterministic:
 
 ~~~text
 microbundles/
@@ -113,9 +117,7 @@ microbundles/
             └── {sha256}.bundle
 ~~~
 
-No database lookup is required to locate a complete artifact address.
-
-The repository verifies the SHA-256 before materializing the immutable artifact object. Storage metadata repeats the identity for inspection, but the bytes remain authoritative.
+See [Durable MicroBundle revision identity bindings](docs/IDENTITY_BINDINGS.md) for the normative mapping, persistence guarantees, and filesystem/Azure concurrency boundaries.
 
 ## Projects
 
