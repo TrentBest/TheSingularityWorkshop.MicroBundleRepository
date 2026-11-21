@@ -132,9 +132,12 @@ src/
 │       └── Azure Blob Storage implementation
 ├── REST/
 │   ├── TheSingularityWorkshop.MicroBundleRepository.Rest
-│   │   └── REST delivery adapter
+│   │   └── transport-only REST delivery adapter
 │   └── TheSingularityWorkshop.MicroBundleRepository.Rest.Host
 │       └── REST API host
+├── FSM_COS/
+│   └── TheSingularityWorkshop.MicroBundleRepository.FSM_COS
+│       └── separate runtime catalog and artifact materialization adapter
 └── CLI/
     └── TheSingularityWorkshop.MicroBundleRepository.Cli
         └── platform-neutral human operational client
@@ -144,8 +147,10 @@ tests/
 │   └── deterministic artifact identity tests
 ├── Azure/
 │   └── deterministic Azure path/configuration tests
-└── REST/
-    └── REST boundary tests
+├── REST/
+│   └── REST boundary tests
+└── FSM_COS/
+    └── runtime-ID to repository-address mapping and materialization tests
 ~~~
 
 ### Add it to an existing project
@@ -155,7 +160,7 @@ Choose the smallest dependency that matches the host's responsibility:
 - **Artifact contract only:** reference `TheSingularityWorkshop.MicroBundleRepository.Core`.
 - **Azure Blob persistence:** add the Azure adapter and authenticate through `DefaultAzureCredential`; keep account keys out of source control.
 - **HTTP delivery:** add the REST adapter/host only when the deployment needs that transport.
-- **Runtime composition/materialization:** keep the adapter that binds verified artifact bytes to FSM_COS outside the repository Core and storage packages. The repository must not depend upward on the composition engine.
+- **Runtime composition/materialization:** reference `TheSingularityWorkshop.MicroBundleRepository.FSM_COS`. This separate integration package bridges verified REST artifact bytes into FSM_COS. The REST delivery package itself has no MicroBundleDomain or FSM_COS dependency.
 
 The project files declare source package versions, not proof of publication. Verify the exact package/version on NuGet before depending on it; until then, use a local project reference from the host solution.
 
