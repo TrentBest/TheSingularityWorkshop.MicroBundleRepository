@@ -21,6 +21,18 @@
 | Dependency closure, arbitration, convergence, RuntimeAssembly | FSM_COS | [FSM_COS repository](https://github.com/TrentBest/FSM_COS) | Composition owner; not repository responsibility |
 | Host activation and visual manifestation | WebPage / AnyApp / other hosts | [WebPage](https://github.com/TrentBest/WebPage) · [AnyApp](https://github.com/TrentBest/AnyApp) | Consumer layer; must not be artifact authority |
 
+## Identity reconciliation status
+
+The current development contract still exposes numeric `MicroBundleArtifactAddress` values. The portable artifact identity work is staged, not yet canonical:
+
+- [PR #39](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/39) proposes canonical `(ontology, exact version, SHA-256)` identity and repository-local durable numeric bindings.
+- [PR #40](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/40) adds REST resolution and Workshop-only publisher authorization on #39.
+- [PR #41](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/41) adds the authenticated publisher CLI on #40.
+
+All three are draft and unmerged. Their recorded tests do not make their implementation part of `development`. See [Portable Identity Reconciliation](IDENTITY_RECONCILIATION.md) and [MicroBundleDomain issue #28](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleDomain/issues/28).
+
+The remaining cross-repository question is not merely how the repository maps a portable revision to its own storage handle. It is how a portable revision maps, without collision or guesswork, to the runtime/domain identifier consumed by MicroBundle dependencies and FSM_COS manifests. Do not equate those handles or claim dependency-closure proof until the mapping is specified and tested across the composition boundary.
+
 ## Lifecycle: what exists versus what remains
 
 1. **Author capability** — implement `IMicroBundle` and its descriptor/dependencies/load/arbitration contract. See [first MicroBundle guide](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleDomain/blob/development/docs/adventures/01-your-first-microbundle.md).
