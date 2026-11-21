@@ -15,7 +15,7 @@
 | Artifact inventory | Observer contract + REST host | [REST host](../src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest.Host/Program.cs) · [observer contract](../src/Core/TheSingularityWorkshop.MicroBundleRepository.Core/IMicroBundleRepositoryObserver.cs) | MicroBundle inventory route exists; not a semantic dependency catalog |
 | Immutable Experience bytes | Repository Core + Azure adapter | [contract](../src/Core/TheSingularityWorkshop.MicroBundleRepository.Core/IExperienceRepository.cs) · [Azure adapter](../src/Azure/TheSingularityWorkshop.MicroBundleRepository.Azure/AzureExperienceRepository.cs) | Implemented in source; production wiring and end-to-end proof incomplete |
 | Mutable current-publication pointer | Repository Core + Azure catalog + REST host | [contract](../src/Core/TheSingularityWorkshop.MicroBundleRepository.Core/IExperienceCatalog.cs) · [Azure catalog](../src/Azure/TheSingularityWorkshop.MicroBundleRepository.Azure/AzureExperienceCatalog.cs) · [host routes](../src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest.Host/Program.cs) | GET publication route and host tests exist; current-head CI passes published/unpublished, invalid-ID and missing-storage outcomes; end-to-end consumer proof remains open |
-| REST transport for MicroBundle bytes | REST host | [Program.cs](../src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest.Host/Program.cs) | GET/list/PUT routes exist; auth, payload bounds and hostile-client behavior require explicit review |
+| REST transport for MicroBundle bytes | REST host | [Program.cs](../src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest.Host/Program.cs) | GET/list/PUT routes, Workshop-only mutation authorization, and request limits are implemented and host-tested; deployment origin/key rotation and live hostile-network validation remain operational gates |
 | Experience artifact retrieval/publication through REST | REST client + repository REST host | [REST client](../src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest/RestExperienceClient.cs) · [host routes](../src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest.Host/Program.cs) · [tracked gap #22](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/issues/22) | Publication lookup and immutable GET routes/client exist; current-head CI passes client and host contract tests for exact bytes, missing artifacts, malformed hashes, integrity failures, oversized requests, and publication outcomes. Live Azure execution and end-to-end composition/activation remain open |
 | Artifact materialization into IMicroBundle | Composition integration | [materializer contract](../src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest/IMicroBundleArtifactMaterializer.cs) · [catalog](../src/REST/TheSingularityWorkshop.MicroBundleRepository.Rest/RestMicroBundleCatalog.cs) | Integration exists; the REST project references composition concerns and needs a boundary-placement review |
 | Dependency closure, arbitration, convergence, RuntimeAssembly | FSM_COS | [FSM_COS repository](https://github.com/TrentBest/FSM_COS) | Composition owner; not repository responsibility |
@@ -23,15 +23,15 @@
 
 ## Identity reconciliation status
 
-The current development contract still exposes numeric `MicroBundleArtifactAddress` values. The portable artifact identity work is staged, not yet canonical:
+The portable artifact identity implementation is now part of canonical `development`:
 
-- [PR #39](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/39) proposes canonical `(ontology, exact version, SHA-256)` identity and repository-local durable numeric bindings.
-- [PR #40](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/40) adds REST resolution and Workshop-only publisher authorization on #39.
-- [PR #41](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/41) adds the authenticated publisher CLI on #40.
+- [PR #39](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/39) — durable `(ontology, exact version, SHA-256)` identity and repository-local numeric bindings; merged.
+- [PR #40](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/40) — REST ingestion/resolution and Workshop-only publisher authorization; merged.
+- [PR #41](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/pull/41) — authenticated identity-aware publisher CLI; merged.
 
-All three are draft and unmerged. Their recorded tests do not make their implementation part of `development`. See [Portable Identity Reconciliation](IDENTITY_RECONCILIATION.md) and [MicroBundleDomain issue #28](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleDomain/issues/28).
+The repository maps portable artifact revisions to private storage handles. It does not redefine `MicroBundleDescriptor.Id` or prove numeric dependency closure. The remaining cross-repository runtime mapping is tracked in [MicroBundleDomain issue #28](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleDomain/issues/28) and [MicroBundleDomain's normative identity model](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleDomain/blob/development/docs/IDENTITY_MODEL.md). Do not equate repository-local handles with runtime/domain identifiers.
 
-The remaining cross-repository question is not merely how the repository maps a portable revision to its own storage handle. It is how a portable revision maps, without collision or guesswork, to the runtime/domain identifier consumed by MicroBundle dependencies and FSM_COS manifests. Do not equate those handles or claim dependency-closure proof until the mapping is specified and tested across the composition boundary.
+The final pre-merge code head passed 150/150 standard tests and 152/152 source-integrated tests; package verification/packing passed with publication skipped. The post-merge development workflow remains the authoritative integration evidence.
 
 ## Lifecycle: what exists versus what remains
 
