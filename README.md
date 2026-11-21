@@ -243,7 +243,7 @@ $env:MICRO_BUNDLE_REPOSITORY_WORKSHOP_PUBLISHER_KEY = "<Workshop-issued credenti
 dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- publish workshop/example 1.0.0 ./bundle.bin
 ~~~
 
-The publisher credential is supplied by the Workshop host through the environment. It is never accepted as a command-line argument or printed. The CLI sends it only on the mutation request. The repository computes the content hash, allocates the repository-local numeric ID, returns the portable identity binding, and the REST client reads the artifact back and verifies the exact bytes.
+The publisher credential is supplied by the Workshop host through the environment. It is never accepted as a command-line argument or printed. The CLI sends it only on the mutation request. The repository computes the content hash, allocates the repository-local numeric ID, returns the portable identity binding, and the REST client reads the artifact back and verifies the exact bytes. Remote publishing requires HTTPS; plain HTTP is accepted only for loopback development. The authenticated publisher does not follow redirects.
 
 The old caller-selected numeric-ID `put` command is retired. Numeric IDs remain repository-local results and retrieval addresses, not publisher inputs.
 
