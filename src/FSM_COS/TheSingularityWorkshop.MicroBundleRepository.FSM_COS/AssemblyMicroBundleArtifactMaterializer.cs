@@ -61,7 +61,9 @@ public sealed class AssemblyMicroBundleArtifactMaterializer : IMicroBundleArtifa
         }
         catch (ReflectionTypeLoadException exception)
         {
-            return exception.Types.OfType<Type>();
+            throw new InvalidOperationException(
+                $"Assembly '{assembly.FullName}' could not load all of its types; refusing partial MicroBundle discovery.",
+                exception);
         }
     }
 }
