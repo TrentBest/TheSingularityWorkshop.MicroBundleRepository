@@ -34,7 +34,7 @@ public sealed class RestMicroBundleCatalog : IMicroBundleCatalog
         ArgumentNullException.ThrowIfNull(runtimeAddresses);
         _materializer = materializer ?? throw new ArgumentNullException(nameof(materializer));
 
-        var snapshot = new Dictionary<ulong, MicroBundleArtifactAddress>(runtimeAddresses);
+        var snapshot = runtimeAddresses.ToDictionary(static pair => pair.Key, static pair => pair.Value);
         if (snapshot.Keys.Any(runtimeId => runtimeId == 0))
             throw new ArgumentException("Runtime MicroBundle IDs must be non-zero.", nameof(runtimeAddresses));
         if (snapshot.Values.Any(address => address.BundleId == 0))
