@@ -130,6 +130,9 @@ src/
 ├── Azure/
 │   └── TheSingularityWorkshop.MicroBundleRepository.Azure
 │       └── Azure Blob Storage implementation
+├── Local/
+│   └── TheSingularityWorkshop.MicroBundleRepository.Local
+│       └── filesystem implementation
 ├── REST/
 │   ├── TheSingularityWorkshop.MicroBundleRepository.Rest
 │   │   └── transport-only REST delivery adapter
@@ -147,6 +150,8 @@ tests/
 │   └── deterministic artifact identity tests
 ├── Azure/
 │   └── deterministic Azure path/configuration tests
+├── Local/
+│   └── deterministic filesystem persistence tests
 ├── REST/
 │   └── REST boundary tests
 └── FSM_COS/
@@ -158,6 +163,7 @@ tests/
 Choose the smallest dependency that matches the host's responsibility:
 
 - **Artifact contract only:** reference `TheSingularityWorkshop.MicroBundleRepository.Core`.
+- **Filesystem persistence:** add `TheSingularityWorkshop.MicroBundleRepository.Local` for local development and deterministic tests.
 - **Azure Blob persistence:** add the Azure adapter and authenticate through `DefaultAzureCredential`; keep account keys out of source control.
 - **HTTP delivery:** add the REST adapter/host only when the deployment needs that transport.
 - **Runtime composition/materialization:** reference `TheSingularityWorkshop.MicroBundleRepository.FSM_COS`. This separate integration package bridges verified REST artifact bytes into FSM_COS. The REST delivery package itself has no MicroBundleDomain or FSM_COS dependency.
