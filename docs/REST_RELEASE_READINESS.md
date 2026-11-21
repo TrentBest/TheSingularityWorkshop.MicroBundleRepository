@@ -15,12 +15,13 @@
 | Mutation authorization | All MicroBundle and Experience mutations require `Repository:WorkshopPublisherKey` / `X-Workshop-Publisher-Key`. Missing server configuration fails closed; the former generic write-key header grants no authority. | Integrated and host-tested |
 | Publisher CLI | `publish <ontology> <version> <input-file>`; repository allocates the local ID; client validates returned identity and reads exact bytes back. Credential is environment-supplied, never a CLI argument. | Integrated and process-tested |
 | Publisher transport security | Remote publishing requires HTTPS; HTTP is allowed only for loopback development. Redirects are disabled on the credential-bearing client. | Integrated; regression-tested |
-| Post-merge standard build/test | [Build and Test #44875249584](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/44875249584): **150/150 tests passed** on merge commit `a25c272195d329d912f6e31926eb79b34e779b5a`. | Passed |
-| Post-merge source integration | Same workflow: **152/152 source-integrated tests passed**, including the current MicroBundleDomain/FSM source integration path. | Passed |
-| Post-merge package verification | [Package #44875249582](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/44875249582): verification, build, tests, and Core/Azure/REST package packing passed. Publish job was skipped; **no NuGet package was published**. | Passed; publication skipped |
+| FSM_COS integration package | Separate `TheSingularityWorkshop.MicroBundleRepository.FSM_COS` package owns runtime catalog/materialization. Its explicit runtime-ID → repository-address map is tested with different numeric IDs; assembly materialization verifies both runtime and descriptor IDs. | Integrated; standard/source tests passed |
+| Post-merge standard build/test | [Build and Test #44876122487](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/44876122487): **154/154 tests passed** on the new FSM_COS integration checkpoint. | Passed |
+| Post-merge source integration | Same workflow: **156/156 source-integrated tests passed**, including the current MicroBundleDomain/FSM source integration path. | Passed |
+| Post-merge package verification | [Package #44876122493](https://github.com/TrentBest/TheSingularityWorkshop.MicroBundleRepository/actions/runs/44876122493): verification, build, tests, and Core/Azure/REST/FSM_COS integration package packing passed. Publish job was skipped; **no NuGet package was published**. | Passed; publication skipped |
 | Branch policy | Live repository has 15 branches, not exactly `master` + `development`. | Blocking Sith policy violation |
 
-The standard test matrix is Core 43, Local 26, Azure 29, REST client 20, REST Host 26, and CLI 6. The source-integrated matrix is Core 43, Local 26, Azure 29, REST client 22, REST Host 26, and CLI 6. Azure identity integration tests use Azurite; they do not establish a live production-account migration or mixed-version writer safety.
+The standard test matrix is Core 43, FSM_COS integration 10, Local 26, Azure 29, REST client 14, REST Host 26, and CLI 6. The source-integrated matrix is Core 43, FSM_COS integration 12, Local 26, Azure 29, REST client 14, REST Host 26, and CLI 6. Azure identity integration tests use Azurite; they do not establish a live production-account migration or mixed-version writer safety.
 
 ## Package publication posture
 
@@ -31,6 +32,7 @@ This is a **first-publication package line**, not an update to existing MicroBun
 | `TheSingularityWorkshop.MicroBundleRepository.Core` | `0.1.0-alpha.1` | .NET 10 | Not listed in publisher profile |
 | `TheSingularityWorkshop.MicroBundleRepository.Azure` | `0.1.0-alpha.1` | .NET 10 | Not listed in publisher profile |
 | `TheSingularityWorkshop.MicroBundleRepository.Rest` | `0.1.0-alpha.2` | .NET 10 | Not listed in publisher profile |
+| `TheSingularityWorkshop.MicroBundleRepository.FSM_COS` | `0.1.0-alpha.1` | .NET 10 | Not listed in publisher profile |
 
 The [publisher's NuGet profile](https://www.nuget.org/profiles/TheSingularityWorkshop) lists the published MicroBundleDomain, FSM_REST, and FSM_COS dependencies, but does not list these MicroBundleRepository package IDs. Treat the repository packages as unpublished until a direct package/version lookup proves otherwise. Successful packing is not publication.
 
@@ -42,12 +44,13 @@ The package-based build consumes published `MicroBundleDomain 1.0.1`, `FSM_REST 
 2. **Prove clean external package consumption.** Restore/build a clean consumer using the exact intended package versions, and validate the .NET 10 target and dependency graph. Source-integrated builds and package-based builds prove different things.
 3. **Complete live Azure operational validation.** Azurite covers deterministic integration behavior, not production storage migration. Quiesce or migrate older Azure writers before enabling concurrent writes under the new reservation protocol.
 4. **Complete deployment security/operations proof.** Verify trusted CORS origins, request-size enforcement (including chunked requests), secret provisioning/rotation, and failure behavior in the actual deployment configuration. CORS is not authorization.
-5. **Satisfy Sith branch policy.** Reduce the live inventory from 15 branches to exactly `master` + `development`. The current [branch audit](BRANCH_RECONCILIATION.md) identifies five refs ready for owner deletion; preserve all other unique work.
-6. **Prepare the first release correctly.** Finalize package versions, align the release branch according to the repository's package-aware release policy, run final exact-head build/test/pack, and obtain explicit owner authorization before any NuGet publication.
+5. **Finalize assembly isolation and dependency resolution.** The initial `AssemblyMicroBundleArtifactMaterializer` loads into the default .NET load context. Before production use with multiple bundle revisions or private dependencies, define per-Experience isolation, dependency resolution, and unload policy. Materialization executes code in-process; only trusted publisher artifacts may be loaded.
+6. **Satisfy Sith branch policy.** Reduce the live inventory from 15 branches to exactly `master` + `development`. The current [branch audit](BRANCH_RECONCILIATION.md) identifies five refs ready for owner deletion; preserve all other unique work.
+7. **Prepare the first release correctly.** Finalize package versions, align the release branch according to the repository's package-aware release policy, run final exact-head build/test/pack, and obtain explicit owner authorization before any NuGet publication.
 
 ## Current disposition
 
-**Implementation is integrated and post-merge CI is green; the repository is not release-ready.** The next critical engineering work is to complete the Domain/FSM_COS identity mapping proof and the clean external consumer test. The operational/release gates remain open.
+**Implementation and the separate FSM_COS adapter are integrated; post-integration CI and package packing are green; the repository is not release-ready.** The next critical engineering work is to complete the Domain/FSM_COS identity mapping proof, clean external consumer test, and assembly isolation policy. The operational/release gates remain open.
 
 **Release controls:** no NuGet publication, release, deployment, branch deletion, or `master` rewrite has been performed. The publish job remains skipped until the owner explicitly authorizes publication.
 
