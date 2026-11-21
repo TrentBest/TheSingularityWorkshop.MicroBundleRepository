@@ -93,17 +93,21 @@ The architectural invariant is simple:
 
 ## Artifact identity
 
-An artifact is addressed by three values:
+A MicroBundle revision has the portable identity:
 
-~~~text
-MicroBundle ID
-      +
-explicit version
-      +
-SHA-256 content identity
-~~~
+```text
+(ontology, exact version, SHA-256)
+```
 
-The physical Azure location is deterministic:
+The repository preserves the existing runtime-facing numeric address while owning the durable mapping between these two identities:
+
+- **Portable revision:** ontology string + exact version + SHA-256 of the immutable bytes.
+- **Repository-local address:** `MicroBundleArtifactAddress(ulong bundleId, version, contentHash)`.
+- **Local numeric ID:** a non-zero storage/runtime handle allocated by this repository. It is not globally portable and must not be authored into an Experience manifest.
+
+The mapping is one-to-one and durable. Re-ingesting the same complete revision returns its existing binding; conflicting, corrupt, missing, or mismatched bindings fail closed. The repository computes the SHA-256 from the supplied bytes and verifies the immutable artifact before exposing a binding.
+
+The physical Azure location remains repository-local and deterministic:
 
 ~~~text
 microbundles/
@@ -113,9 +117,7 @@ microbundles/
             └── {sha256}.bundle
 ~~~
 
-No database lookup is required to locate a complete artifact address.
-
-The repository verifies the SHA-256 before materializing the immutable artifact object. Storage metadata repeats the identity for inspection, but the bytes remain authoritative.
+See [Durable MicroBundle revision identity bindings](docs/IDENTITY_BINDINGS.md) for the normative mapping, persistence guarantees, and filesystem/Azure concurrency boundaries.
 
 ## Projects
 
@@ -234,23 +236,24 @@ Inspect the repository:
 dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- list
 ~~~
 
-Publish a local artifact:
+Publish a local artifact by its portable identity:
 
 ~~~powershell
-dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- put 2110 1.0.0 .undle.bin
+$env:MICRO_BUNDLE_REPOSITORY_WORKSHOP_PUBLISHER_KEY = "<Workshop-issued credential>"
+dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- publish workshop/example 1.0.0 ./bundle.bin
 ~~~
 
-Retrieve a known artifact:
+The publisher credential is supplied by the Workshop host through the environment. It is never accepted as a command-line argument or printed. The CLI sends it only on the mutation request. The repository computes the content hash, allocates the repository-local numeric ID, returns the portable identity binding, and the REST client reads the artifact back and verifies the exact bytes.
+
+The old caller-selected numeric-ID `put` command is retired. Numeric IDs remain repository-local results and retrieval addresses, not publisher inputs.
+
+Retrieve a known artifact using its repository-local numeric address:
 
 ~~~powershell
-dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- get 2110 1.0.0 <sha256> .undle.bin
+dotnet run --project src/CLI/TheSingularityWorkshop.MicroBundleRepository.Cli -- get 2110 1.0.0 <sha256> ./bundle.bin
 ~~~
 
-The CLI computes the SHA-256 from the supplied bytes and the existing Core artifact contract verifies the identity before the request is sent. That gives us a simple human-operated path for publishing and inspecting the small MicroBundles that will eventually compose the zeroth ontology:
-
-**The Singularity Workshop.**
-
-A future GUI, Workshop mailbox, or other client can use the same REST boundary without changing the repository contract.
+The CLI remains a thin operational surface over the REST boundary. A Workshop editor, mailbox, or other trusted host can invoke the same identity-aware publishing contract without moving storage allocation or authorization policy into the CLI.
 
 ## Azure configuration
 
