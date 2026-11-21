@@ -5,7 +5,7 @@
 
 ## Current inventory
 
-The table records the code heads used for this audit. PR #41's validated code head is `e0acab0e`; subsequent commits `9041c4aa`, `e3fc5768`, and `d9942f5c` update only documentation/readiness records and do not change the code under test.
+The table records the code heads used for this audit. PR #41's validated code head is `e0acab0e`; later commits on that branch update only documentation/readiness records and do not change the code under test. The current branch history is authoritative for the latest documentation commit.
 
 | Branch | Audited code head | Relationship / PR | Disposition |
 |---|---|---|---|
