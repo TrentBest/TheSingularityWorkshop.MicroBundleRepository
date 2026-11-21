@@ -10,6 +10,8 @@ namespace TheSingularityWorkshop.MicroBundleRepository.FSM_COS;
 /// <remarks>
 /// The repository verifies the artifact hash before this boundary is reached.
 /// The expected runtime ID is independent of the repository-local storage ID.
+/// Loading the assembly executes its code in-process; callers must restrict this materializer
+/// to trusted publishers. Hash verification is integrity, not code safety or sandboxing.
 /// </remarks>
 public sealed class AssemblyMicroBundleArtifactMaterializer : IMicroBundleArtifactMaterializer
 {
